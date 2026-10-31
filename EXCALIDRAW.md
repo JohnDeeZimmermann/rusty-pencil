@@ -9,9 +9,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 ## Tools
 
 - [ ] Selection tool (`V` / `1`) — M2
-- [ ] Rectangle (`R` / `2`) — M1
-- [ ] Diamond (`D` / `3`) — M1
-- [ ] Ellipse (`O` / `4`) — M1
+- [x] Rectangle (`R` / `2`) — M1
+- [x] Diamond (`D` / `3`) — M1
+- [x] Ellipse (`O` / `4`) — M1
 - [ ] Arrow (`A` / `5`) — M3
 - [ ] Line (`L` / `6`) — M3
 - [ ] Freedraw / pen (`P` / `7`) — M3
@@ -23,8 +23,8 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Laser pointer (`K`) — M9
 - [ ] Lasso selection — M9
 - [ ] Tool lock (`Q`): stay on the tool after drawing — M5
-- [ ] Shift while drawing: square / circle / 45° snapping — M1
-- [ ] Alt while drawing: draw from the centre — M1
+- [x] Shift while drawing: square / circle / 45° snapping — M1
+- [x] Alt while drawing: draw from the centre — M1
 
 ## Element properties
 
@@ -96,7 +96,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 - [x] Infinite canvas — M0
 - [ ] Pan: wheel, Space+drag, middle-mouse drag, hand tool — M3
-- [ ] Zoom: Ctrl+wheel, pinch, Ctrl+`+` / `-`, zoom indicator — M3
+- [ ] Zoom: Ctrl+wheel, pinch, Ctrl+`+` / `-`, zoom indicator — M3 (Ctrl+wheel, pinch and indicator done)
 - [ ] Reset zoom (Ctrl+0), zoom to fit (Shift+1), zoom to selection (Shift+2) — M3
 - [ ] "Scroll back to content" button — M3
 - [ ] Dark mode (Alt+Shift+D) — M5

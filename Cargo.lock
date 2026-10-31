@@ -1835,6 +1835,9 @@ dependencies = [
 [[package]]
 name = "pen-core"
 version = "0.0.1"
+dependencies = [
+ "thiserror 2.0.21",
+]
 
 [[package]]
 name = "pen-editor"

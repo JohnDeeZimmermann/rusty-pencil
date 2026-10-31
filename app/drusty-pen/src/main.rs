@@ -1,22 +1,38 @@
 //! The drusty-pen window. The only crate that imports `rune`: it turns rune events into
 //! `pen_editor::InputEvent`s and presents editor state as rune elements.
 
+mod paint;
 mod palette;
 mod present;
-mod scene;
+mod toolbar;
 
 use pen_core::WorldPt;
-use pen_editor::{Camera, Editor, InputEvent, ScreenPt, ScreenVec};
-use rune::{AppSpec, Color, Cx, El, LiveText, MagnifyEvent, Tx, WheelEvent, canvas, el, text};
+use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenPt, ScreenVec};
+use pen_render::{DrawList, SceneCache};
+use rune::{
+    AppSpec, Color, Cursor, Cx, Drag, El, Key, KeyEvent, LiveText, MagnifyEvent, Mods, Phase,
+    Shape, Tx, WheelEvent, canvas, el, memo, text,
+};
 
 /// The window's opening size, in points.
 const WINDOW: (f32, f32) = (1024.0, 720.0);
 
-/// App state: the editor plus the rune live values that present its camera. The live values
-/// are written only by [`State::input`], from the editor; they are never read back.
+/// Ctrl+wheel zoom speed: the zoom factor per point of wheel travel is `e^ZOOM_PER_POINT`.
+const ZOOM_PER_POINT: f32 = 0.006;
+
+/// App state: the editor, plus everything rune needs to present it. Presentation state is
+/// written only by [`State::input`], from the editor; it is never read back into the editor.
 struct State {
     editor: Editor,
     camera: present::LiveCamera,
+    /// Per-element paint, kept between document revisions.
+    cache: SceneCache,
+    /// The committed elements, rebuilt only when the document changes.
+    scene: Shape,
+    /// The element being drawn, rebuilt on every pointer move of a drag.
+    draft: Shape,
+    /// Scratch for the draft, so a drag doesn't allocate a fresh list per move.
+    draft_paint: DrawList,
 }
 
 impl State {
@@ -24,17 +40,47 @@ impl State {
         Self {
             editor: Editor::new(camera),
             camera: present::LiveCamera::new(&camera),
+            cache: SceneCache::new(),
+            scene: Shape::new(),
+            draft: Shape::new(),
+            draft_paint: DrawList::new(),
         }
     }
 
-    fn input(&mut self, event: InputEvent, tx: &mut Tx) {
-        match self.editor.handle(event) {
-            pen_editor::Redraw::Camera => {
-                self.camera.show(self.editor.camera());
-                // Only live values changed: no view rebuild, no layout.
-                tx.live_only();
-            }
+    /// Feeds one event to the editor and presents what changed, rebuilding as little as
+    /// possible. Returns what the editor reported.
+    fn input(&mut self, event: InputEvent, tx: &mut Tx) -> Redraw {
+        let camera = *self.editor.camera();
+        let redraw = self.editor.handle(event);
+        if *self.editor.camera() != camera {
+            self.camera.show(self.editor.camera());
         }
+        match redraw {
+            // Only live values changed: no view rebuild, no layout.
+            Redraw::Nothing | Redraw::Camera => tx.live_only(),
+            Redraw::Draft => self.show_draft(),
+            Redraw::Scene => {
+                self.show_scene();
+                self.show_draft();
+            }
+            // The toolbar reads the tool in `view`.
+            Redraw::Tool => {}
+        }
+        redraw
+    }
+
+    fn show_scene(&mut self) {
+        let doc = self.editor.document();
+        self.cache.update(doc);
+        self.scene = paint::shape(self.cache.prims(doc));
+    }
+
+    fn show_draft(&mut self) {
+        self.draft_paint.clear();
+        if let Some(draft) = self.editor.draft() {
+            pen_render::draw(&draft.kind, &draft.props, &mut self.draft_paint);
+        }
+        self.draft = paint::shape(self.draft_paint.prims());
     }
 }
 
@@ -46,6 +92,15 @@ impl std::fmt::Debug for State {
     }
 }
 
+fn mods(m: Mods) -> Modifiers {
+    Modifiers {
+        shift: m.shift,
+        alt: m.alt,
+        // Cmd on macOS, Ctrl elsewhere: the platform's command modifier.
+        ctrl: m.cmd,
+    }
+}
+
 fn init() -> State {
     let viewport = ScreenVec::new(WINDOW.0, WINDOW.1);
     let camera = present::camera_arg(rune::extra_args())
@@ -53,30 +108,56 @@ fn init() -> State {
     State::new(camera)
 }
 
+/// A zero-size layer at the world origin. The world node is laid out the same way, so
+/// `live_scale` (which scales about the node's centre) scales about (0, 0).
+fn layer(shape: Shape, key: &str) -> El {
+    canvas(shape).key(key).absolute(0.0, 0.0).size(0.0, 0.0)
+}
+
 fn view(s: &State, _: &mut Cx<State>) -> El {
-    // The world: one canvas in world points, laid out as a zero-size node at the viewport's
-    // origin so `live_scale` (which scales about the node's centre) scales about (0, 0).
-    let world = canvas(scene::test_scene())
+    let revision = s.editor.document().revision();
+    let world = el()
         .key("world")
         .absolute(0.0, 0.0)
         .size(0.0, 0.0)
         .live_offset(&s.camera.offset)
-        .live_scale(&s.camera.scale);
+        .live_scale(&s.camera.scale)
+        // A drag rebuilds the view on every move; the committed scene is reused unless the
+        // document changed.
+        .child(memo("scene", revision, || layer(s.scene.clone(), "scene")))
+        .child(layer(s.draft.clone(), "draft"));
 
     el().key("viewport")
         .w_full()
         .h_full()
         .fill(Color::WHITE)
+        .cursor(Cursor::Crosshair)
         .child(world)
-        .child(hint())
+        .child(toolbar::toolbar(s.editor.tool()))
         .child(zoom_pill(&s.camera.zoom_label))
+        .on_drag(|s: &mut State, d: &mut Drag, tx| {
+            let at = ScreenPt::new(d.x, d.y);
+            let mods = mods(tx.mods());
+            let event = match d.phase {
+                Phase::Down => InputEvent::PointerDown { at, mods },
+                Phase::Move => InputEvent::PointerMove { at, mods },
+                Phase::Up if d.cancelled() => InputEvent::Cancel,
+                Phase::Up => InputEvent::PointerUp { at, mods },
+            };
+            s.input(event, tx);
+        })
         .on_wheel(|s: &mut State, e: WheelEvent, tx| {
-            s.input(
+            let event = if e.mods.cmd || e.mods.ctrl {
+                InputEvent::Zoom {
+                    about: ScreenPt::new(e.x, e.y),
+                    factor: (e.dy * ZOOM_PER_POINT).exp(),
+                }
+            } else {
                 InputEvent::Pan {
                     by: ScreenVec::new(e.dx, e.dy),
-                },
-                tx,
-            );
+                }
+            };
+            s.input(event, tx);
             true
         })
         .on_magnify(|s: &mut State, e: MagnifyEvent, tx| {
@@ -91,32 +172,61 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         })
 }
 
-fn hint() -> El {
-    text("Scroll to pan  ·  Ctrl+scroll or pinch to zoom")
-        .key("hint")
-        .font(rune::tok::type_::BODY)
-        .color(palette::srgb(0x86_86_8e))
-        .pin(Some(16.0), Some(14.0), None, None)
+/// Keys no focused control took. Tool shortcuts, Escape, and modifier changes mid-drag.
+fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    let mods = mods(ev.mods);
+    let event = match &ev.key {
+        // Never consumed: a modifier is also part of whatever comes next.
+        Key::Modifier { .. } => {
+            s.input(InputEvent::Modifiers(mods), tx);
+            return false;
+        }
+        Key::Escape => InputEvent::Key {
+            key: pen_editor::Key::Escape,
+            mods,
+        },
+        Key::Text(t) => {
+            let mut chars = t.chars();
+            let (Some(c), None) = (chars.next(), chars.next()) else {
+                return false;
+            };
+            InputEvent::Key {
+                key: pen_editor::Key::Char(c.to_ascii_lowercase()),
+                mods,
+            }
+        }
+        _ => return false,
+    };
+    s.input(event, tx) != Redraw::Nothing
 }
 
 fn zoom_pill(label: &LiveText) -> El {
     el().key("zoom")
         .pin(Some(16.0), None, None, Some(16.0))
-        .px(12.0)
         .py(6.0)
         .radius(8.0)
-        .fill(palette::srgb(0xec_ec_f4))
+        .fill(palette::ui::pill())
         .child(
             text("100%")
                 .live_text(label)
-                .size(48.0, 18.0)
+                // Fixed width: a live label never relayouts, so it must fit "3000%".
+                .size(64.0, 18.0)
+                .align(rune::Align::Center)
                 .font(rune::tok::type_::LABEL)
-                .color(palette::srgb(0x33_33_3a)),
+                .color(palette::ui::pill_text()),
         )
 }
 
+fn spec() -> AppSpec<State> {
+    AppSpec {
+        on_key: Some(on_key),
+        ..AppSpec::new("drusty-pen", WINDOW, init, view)
+    }
+}
+
 fn main() {
-    rune::run(AppSpec::new("drusty-pen", WINDOW, init, view));
+    // Modifier keys on their own, so pressing Shift mid-drag squares the shape at once.
+    rune::App::new(spec()).modifier_keys().run();
 }
 
 #[cfg(test)]

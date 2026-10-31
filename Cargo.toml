@@ -13,6 +13,7 @@ publish = false
 pen-core = { path = "crates/pen-core" }
 pen-editor = { path = "crates/pen-editor" }
 pen-render = { path = "crates/pen-render" }
+thiserror = "2"
 # Pre-1.0: pinned by rev. Bump deliberately, one rev per PR, and re-run the app tests.
 rune = { git = "https://github.com/anomalyco/rune", rev = "791971423cf6614aff061491e1f82e283dfc9f0e" }
 

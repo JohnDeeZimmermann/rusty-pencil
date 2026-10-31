@@ -5,7 +5,7 @@ Work them in order. Each one ends with something you can see in the app.
 | # | File | Result | Estimate |
 |---|---|---|---|
 | M0 ✅ | [M0-skeleton.md](M0-skeleton.md) | Workspace builds, rune window shows an empty canvas, camera approach decided | 30–60 min |
-| M1 | [M1-basic-shapes.md](M1-basic-shapes.md) | Draw rectangles, diamonds, ellipses | 2–3 h |
+| M1 ✅ | [M1-basic-shapes.md](M1-basic-shapes.md) | Draw rectangles, diamonds, ellipses | 2–3 h |
 | M2 | [M2-select-and-history.md](M2-select-and-history.md) | Select, move, resize, delete, undo/redo | 1 day |
 | M3 | [M3-camera-lines-freedraw.md](M3-camera-lines-freedraw.md) | Pan/zoom, lines, arrows, freedraw | 1 day |
 | M4 | [M4-text-style-files.md](M4-text-style-files.md) | Text, hand-drawn look, save/open/autosave | 1–2 days |

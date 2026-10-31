@@ -4,6 +4,19 @@ A local-first, hand-drawn-style whiteboard in Rust, in the spirit of Excalidraw.
 [rune](https://github.com/anomalyco/rune) (wgpu + winit). No online features: no collaboration
 server, no sharing links, no AI.
 
+## Core principles
+
+Every change is judged against these four, in this order when they conflict:
+
+1. **Beautiful visuals.** Crisp, smooth shapes at every zoom; calm, consistent chrome. Check
+   every visual change in a screenshot before calling it done.
+2. **Smooth interactions.** Feedback on the same frame as the input: drafts follow the pointer,
+   modifiers apply the moment they're pressed, nothing janks or flickers.
+3. **High performance.** Pan and zoom are live-only; a drag rebuilds only what it touches;
+   nothing scales with document size per frame.
+4. **Polish.** Hints, tooltips, shortcuts, edge cases (clicks, cancels, degenerate shapes)
+   handled. Nothing half-finished ships.
+
 - Feature checklist: [`EXCALIDRAW.md`](EXCALIDRAW.md). Tick items when they ship.
 - Plan: [`milestones/`](milestones/README.md). Work one milestone at a time, in order.
 
