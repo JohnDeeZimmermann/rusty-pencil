@@ -39,10 +39,16 @@ impl Selection {
     pub(crate) fn all(doc: &Document) -> Self {
         Self(doc.elements().iter().map(pen_core::Element::id).collect())
     }
+    pub(crate) fn elements<'a>(
+        &'a self,
+        doc: &'a Document,
+    ) -> impl Iterator<Item = &'a pen_core::Element> + 'a {
+        self.ids().filter_map(|id| doc.get(id))
+    }
+
     #[must_use]
     pub fn bounds(&self, doc: &Document) -> Option<WorldRect> {
-        self.ids()
-            .filter_map(|id| doc.get(id))
+        self.elements(doc)
             .map(|e| e.kind.bounds())
             .reduce(WorldRect::union)
     }

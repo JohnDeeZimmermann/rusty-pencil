@@ -280,3 +280,42 @@ fn focus_cancel_preserves_an_idle_selection() {
     assert_eq!(ed.handle(InputEvent::Cancel), Redraw::Nothing);
     assert_eq!(ed.selection(), &before);
 }
+
+#[test]
+fn cancelling_a_new_target_restores_the_previous_selection_and_drops_its_preview() {
+    let mut ed = one();
+    key(&mut ed, Key::Char('r'), NONE);
+    drag(&mut ed, p(400.0, 100.0), p(500.0, 200.0), NONE);
+    key(&mut ed, Key::Char('v'), NONE);
+    click(&mut ed, p(180.0, 100.0), NONE);
+    let before = ed.selection().clone();
+    down(&mut ed, p(440.0, 100.0), NONE);
+    movement(&mut ed, p(480.0, 130.0), NONE);
+    assert_ne!(ed.selection(), &before);
+    ed.handle(InputEvent::Cancel);
+    assert_eq!(ed.selection(), &before);
+    assert!(ed.preview().is_empty());
+    drag(&mut ed, p(180.0, 150.0), p(200.0, 170.0), NONE);
+    assert_eq!(bounds(&ed), r(120.0, 120.0, 200.0, 100.0));
+    assert_eq!(
+        ed.document().elements()[1].kind.bounds(),
+        r(400.0, 100.0, 100.0, 100.0)
+    );
+}
+
+#[test]
+fn shift_pressed_during_marquee_keeps_the_selection_captured_at_press() {
+    let mut ed = one();
+    key(&mut ed, Key::Char('r'), NONE);
+    drag(&mut ed, p(400.0, 100.0), p(500.0, 200.0), NONE);
+    key(&mut ed, Key::Char('v'), NONE);
+    click(&mut ed, p(180.0, 100.0), NONE);
+    down(&mut ed, p(380.0, 80.0), NONE);
+    movement(&mut ed, p(520.0, 220.0), NONE);
+    assert!(ed.selection().is_empty());
+    ed.handle(InputEvent::Modifiers(SHIFT));
+    up(&mut ed, p(520.0, 220.0), SHIFT);
+    assert_eq!(ed.selection().len(), 2);
+    assert!(ed.marquee().is_none());
+    assert!(ed.preview().is_empty());
+}

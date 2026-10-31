@@ -6,7 +6,7 @@ mod camera;
 mod history;
 mod input;
 mod selection;
-mod selection_input;
+mod shortcuts;
 mod tool;
 mod tools;
 
@@ -38,7 +38,6 @@ pub struct Editor {
     gesture: Option<Gesture>,
     selection: Selection,
     history: History,
-    preview: Vec<Element>,
 }
 
 /// Uncommitted shape geometry, in world points.
@@ -85,14 +84,18 @@ impl Editor {
     /// Only touched elements, replacing their committed paint during a transform.
     #[must_use]
     pub fn preview(&self) -> &[Element] {
-        &self.preview
+        match &self.gesture {
+            Some(Gesture::Selecting(drag)) => drag.preview(),
+            _ => &[],
+        }
     }
     #[must_use]
     pub fn selection_bounds(&self) -> Option<WorldRect> {
-        if self.preview.is_empty() {
+        let preview = self.preview();
+        if preview.is_empty() {
             self.selection.bounds(&self.document)
         } else {
-            self.preview
+            preview
                 .iter()
                 .map(|e| e.kind.bounds())
                 .reduce(WorldRect::union)
@@ -133,7 +136,13 @@ impl Editor {
                     return Redraw::Nothing;
                 }
                 if self.tool == Tool::Select {
-                    self.selection_down(at, origin, mods);
+                    self.gesture = Some(Gesture::Selecting(SelectionDrag::begin(
+                        &self.document,
+                        &mut self.selection,
+                        &self.camera,
+                        at,
+                        mods,
+                    )));
                 } else {
                     self.gesture =
                         ShapeDrag::start(self.tool, origin, at, mods).map(Gesture::Drawing);
@@ -146,7 +155,15 @@ impl Editor {
                 self.drag_to(Some(at), mods);
                 match self.gesture.take() {
                     Some(Gesture::Drawing(drag)) => self.commit_shape(drag),
-                    Some(Gesture::Selecting(drag)) => self.selection_up(drag),
+                    Some(Gesture::Selecting(drag)) => {
+                        if let Some((command, before)) =
+                            drag.finish(&self.document, &mut self.selection)
+                            && self.execute(command, before)
+                        {
+                            return Redraw::Scene;
+                        }
+                        Redraw::Draft
+                    }
                     None => Redraw::Nothing,
                 }
             }
@@ -177,7 +194,7 @@ impl Editor {
     fn camera_moved(&mut self) -> Redraw {
         let pointer = match &self.gesture {
             Some(Gesture::Drawing(d)) => Some((d.pointer, d.mods)),
-            Some(Gesture::Selecting(d)) => Some((d.pointer, d.mods)),
+            Some(Gesture::Selecting(d)) => Some(d.pointer()),
             None => None,
         };
         if let Some((at, mods)) = pointer {
@@ -206,7 +223,13 @@ impl Editor {
                     Redraw::Draft
                 }
             }
-            Some(Gesture::Selecting(_)) => self.selection_update(at, mods),
+            Some(Gesture::Selecting(drag)) => {
+                if drag.update(at, mods, &self.camera) {
+                    Redraw::Draft
+                } else {
+                    Redraw::Nothing
+                }
+            }
             None => Redraw::Nothing,
         }
     }
@@ -240,9 +263,8 @@ impl Editor {
             return false;
         };
         if let Gesture::Selecting(drag) = gesture {
-            self.selection = drag.before;
+            drag.cancel(&mut self.selection);
         }
-        self.preview.clear();
         true
     }
 
