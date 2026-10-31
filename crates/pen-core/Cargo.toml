@@ -1,0 +1,13 @@
+[package]
+name = "pen-core"
+description = "Document model: elements, geometry, commands, file format. No GUI."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

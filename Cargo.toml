@@ -1,0 +1,42 @@
+[workspace]
+resolver = "3"
+members = ["crates/pen-core", "crates/pen-editor", "crates/pen-render", "app/drusty-pen"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+rust-version = "1.98"
+publish = false
+
+[workspace.dependencies]
+pen-core = { path = "crates/pen-core" }
+pen-editor = { path = "crates/pen-editor" }
+pen-render = { path = "crates/pen-render" }
+# Pre-1.0: pinned by rev. Bump deliberately, one rev per PR, and re-run the app tests.
+rune = { git = "https://github.com/anomalyco/rune", rev = "791971423cf6614aff061491e1f82e283dfc9f0e" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+print_stdout = "warn"
+# Selected pedantic lints: cheap to satisfy, catch real mistakes.
+semicolon_if_nothing_returned = "warn"
+redundant_closure_for_method_calls = "warn"
+needless_pass_by_value = "warn"
+explicit_iter_loop = "warn"
+manual_let_else = "warn"
+match_same_arms = "warn"
+float_cmp = "warn"
+cast_lossless = "warn"
+
+# Dependencies (rune, wgpu) build optimised so the debug app stays responsive.
+[profile.dev.package."*"]
+opt-level = 2
+debug = false

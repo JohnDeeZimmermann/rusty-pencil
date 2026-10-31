@@ -1,0 +1,15 @@
+[package]
+name = "pen-render"
+description = "Document + editor overlay to a backend-neutral DrawList. No GUI."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+pen-core.workspace = true
+pen-editor.workspace = true
+
+[lints]
+workspace = true

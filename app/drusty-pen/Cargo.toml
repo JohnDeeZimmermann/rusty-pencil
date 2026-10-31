@@ -1,0 +1,17 @@
+[package]
+name = "drusty-pen"
+description = "The drusty-pen whiteboard app. The only crate that imports rune."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+pen-core.workspace = true
+pen-editor.workspace = true
+pen-render.workspace = true
+rune.workspace = true
+
+[lints]
+workspace = true
