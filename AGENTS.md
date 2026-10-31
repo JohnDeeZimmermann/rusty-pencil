@@ -17,6 +17,7 @@ Every change is judged against these four, in this order when they conflict:
 4. **Polish.** Hints, tooltips, shortcuts, edge cases (clicks, cancels, degenerate shapes)
    handled. Nothing half-finished ships.
 
+- Design language: [`DESIGN.md`](DESIGN.md). All chrome uses its tokens (`design.rs`).
 - Feature checklist: [`EXCALIDRAW.md`](EXCALIDRAW.md). Tick items when they ship.
 - Plan: [`milestones/`](milestones/README.md). Work one milestone at a time, in order.
 

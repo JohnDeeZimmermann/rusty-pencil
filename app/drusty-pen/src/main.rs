@@ -1,6 +1,7 @@
 //! The drusty-pen window. The only crate that imports `rune`: it turns rune events into
 //! `pen_editor::InputEvent`s and presents editor state as rune elements.
 
+mod design;
 mod paint;
 mod palette;
 mod present;
@@ -10,8 +11,8 @@ use pen_core::WorldPt;
 use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenPt, ScreenVec};
 use pen_render::{DrawList, SceneCache};
 use rune::{
-    AppSpec, Color, Cursor, Cx, Drag, El, Key, KeyEvent, LiveText, MagnifyEvent, Mods, Phase,
-    Shape, Tx, WheelEvent, canvas, el, memo, text,
+    AppSpec, Cursor, Cx, Drag, El, Key, KeyEvent, LiveText, MagnifyEvent, Mods, Phase, Shape, Tx,
+    WheelEvent, canvas, el, memo, text,
 };
 
 /// The window's opening size, in points.
@@ -130,7 +131,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
     el().key("viewport")
         .w_full()
         .h_full()
-        .fill(Color::WHITE)
+        .fill(design::c(design::CANVAS))
         .cursor(Cursor::Crosshair)
         .child(world)
         .child(toolbar::toolbar(s.editor.tool()))
@@ -201,19 +202,17 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
 }
 
 fn zoom_pill(label: &LiveText) -> El {
-    el().key("zoom")
-        .pin(Some(16.0), None, None, Some(16.0))
-        .py(6.0)
-        .radius(8.0)
-        .fill(palette::ui::pill())
+    design::raised(el().key("zoom"), 14.0)
+        .pin(Some(design::S4), None, None, Some(design::S4))
+        .py(design::S1 + 2.0)
         .child(
             text("100%")
                 .live_text(label)
                 // Fixed width: a live label never relayouts, so it must fit "3000%".
                 .size(64.0, 18.0)
                 .align(rune::Align::Center)
-                .font(rune::tok::type_::LABEL)
-                .color(palette::ui::pill_text()),
+                .font(design::T_LABEL)
+                .color(design::c(design::INK)),
         )
 }
 

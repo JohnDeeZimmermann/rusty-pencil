@@ -1,31 +1,19 @@
-//! The floating tool island at the top of the window, and the hint under it.
+//! The floating tool island at the top of the window, and the hint pill under it.
 
 use pen_core::{Edges, Kind, Props, Srgba, WorldPt, WorldRect};
 use pen_editor::{InputEvent, Tool};
 use pen_render::DrawList;
-use rune::tok::TextStyle;
 use rune::{Color, Cursor, El, Tx, canvas, col, el, row, text};
 
-use crate::palette::{self, ui};
+use crate::design::{self as d, c};
 use crate::{State, paint};
-
-const BUTTON: f32 = 36.0;
-const ICON: f32 = 18.0;
-const DIGIT: TextStyle = TextStyle::new(9.0, 500.0);
-const HINT: TextStyle = TextStyle::new(12.0, 400.0);
 
 /// The island, centred at the top, and the active tool's hint below it.
 pub(crate) fn toolbar(active: Tool) -> El {
     let island = Tool::ALL.into_iter().fold(
-        row()
-            .key("tools")
-            .padding(4.0)
-            .gap(2.0)
-            .radius(10.0)
-            .fill(ui::island())
-            .border(1.0, ui::island_border())
-            .shadow(1.0, 4.0, ui::shadow())
-            .shadow(6.0, 18.0, ui::shadow())
+        d::raised(row().key("tools"), d::R_ISLAND)
+            .padding(d::S1 + 2.0)
+            .gap(d::S1)
             .cursor(Cursor::Default)
             // A press between buttons must not start drawing underneath the island.
             .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only()),
@@ -33,47 +21,54 @@ pub(crate) fn toolbar(active: Tool) -> El {
     );
     col()
         .key("toolbar")
-        .pin(Some(0.0), Some(14.0), Some(0.0), None)
+        .pin(Some(0.0), Some(d::S4), Some(0.0), None)
         .items_center()
-        .gap(10.0)
+        .gap(d::S3)
         .child(island)
         .child(
-            text(hint(active))
-                .key("hint")
-                .font(HINT)
-                .color(palette::color(ui::CAPTION)),
+            el().key("hint-pill")
+                .px(d::S3)
+                .py(d::S1 + 1.0)
+                .radius(14.0)
+                .fill(c(d::PAPER))
+                .border(1.5, c(d::INK))
+                .child(
+                    text(hint(active))
+                        .key("hint")
+                        .font(d::T_HINT)
+                        .color(c(d::MUTED)),
+                ),
         )
 }
 
 fn button(tool: Tool, active: bool) -> El {
-    let ink = if active { ui::ACTIVE_INK } else { ui::ICON_INK };
+    let ink = if active { d::ON_ACCENT } else { d::INK };
     el().key(format!("tool-{}", tool.letter()))
-        .size(BUTTON, BUTTON)
-        .radius(8.0)
+        .size(d::BUTTON, d::BUTTON)
+        .radius(d::R_BUTTON)
         .fill(if active {
-            ui::active()
+            c(d::ACCENT)
         } else {
             Color::TRANSPARENT
         })
+        .border(
+            d::OUTLINE,
+            if active {
+                c(d::INK)
+            } else {
+                Color::TRANSPARENT
+            },
+        )
         .hover(if active {
             Color::TRANSPARENT
         } else {
-            ui::hover()
+            c(d::ACCENT_SOFT)
         })
-        .press(ui::press())
+        .press_scale(d::PRESS)
         .items_center()
         .justify_center()
-        .child(canvas(icon(tool, ink)).size(ICON, ICON))
-        .child(
-            text(tool.digit().to_string())
-                .font(DIGIT)
-                .color(palette::color(if active {
-                    ui::ACTIVE_INK
-                } else {
-                    ui::CAPTION
-                }))
-                .pin(None, None, Some(3.0), Some(1.0)),
-        )
+        .child(canvas(icon(tool, ink)).size(d::ICON, d::ICON))
+        .child(badge(tool.digit()))
         .help(format!(
             "{} — {} or {}",
             tool.name(),
@@ -85,10 +80,23 @@ fn button(tool: Tool, active: bool) -> El {
         })
 }
 
+/// The shortcut digit on a sunny round sticker in the button's corner.
+fn badge(digit: char) -> El {
+    el().size(13.0, 13.0)
+        .radius(6.5)
+        .fill(c(d::BADGE))
+        .border(1.0, c(d::INK))
+        .items_center()
+        .justify_center()
+        .pin(None, None, Some(-3.0), Some(-3.0))
+        .child(text(digit.to_string()).font(d::T_BADGE).color(c(d::INK)))
+}
+
 /// Tool icons are the shapes themselves, drawn by the same renderer as the canvas.
 fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
-    let inset =
-        |d: f32| WorldRect::from_corners(WorldPt::new(d, d), WorldPt::new(ICON - d, ICON - d));
+    let inset = |e: f32| {
+        WorldRect::from_corners(WorldPt::new(e, e), WorldPt::new(d::ICON - e, d::ICON - e))
+    };
     let kind = match tool {
         Tool::Rectangle => Kind::Rect(inset(2.0)),
         Tool::Diamond => Kind::Diamond(inset(1.0)),
@@ -96,7 +104,7 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
     };
     let props = Props {
         stroke: ink,
-        stroke_width: 1.6,
+        stroke_width: d::ICON_STROKE,
         edges: Edges::Round,
         ..Props::default()
     };
@@ -116,5 +124,5 @@ fn hint(tool: Tool) -> String {
     } else {
         "square"
     };
-    format!("Drag to draw {what}  ·  Shift for a {square}  ·  Alt to draw from the centre")
+    format!("Drag to draw {what}  ·  Shift for a {square}  ·  Alt from the centre")
 }

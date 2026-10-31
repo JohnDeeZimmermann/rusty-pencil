@@ -3,6 +3,7 @@
 use super::*;
 use pen_core::{Kind, WorldRect};
 use pen_editor::Tool;
+use rune::Color;
 use rune::{Env, PhysicalInput, PhysicalKeyCode, Runtime};
 
 fn app() -> Runtime<State> {
