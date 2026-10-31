@@ -31,6 +31,32 @@ pub struct WorldRect {
 }
 
 impl WorldRect {
+    #[must_use]
+    pub fn contains(&self, p: WorldPt) -> bool {
+        p.x >= self.min.x && p.x <= self.max.x && p.y >= self.min.y && p.y <= self.max.y
+    }
+
+    #[must_use]
+    pub fn contains_rect(&self, other: Self) -> bool {
+        self.contains(other.min) && self.contains(other.max)
+    }
+
+    #[must_use]
+    pub fn union(self, other: Self) -> Self {
+        Self::from_corners(
+            WorldPt::new(self.min.x.min(other.min.x), self.min.y.min(other.min.y)),
+            WorldPt::new(self.max.x.max(other.max.x), self.max.y.max(other.max.y)),
+        )
+    }
+
+    #[must_use]
+    pub fn translated(self, dx: f32, dy: f32) -> Self {
+        Self::from_corners(
+            WorldPt::new(self.min.x + dx, self.min.y + dy),
+            WorldPt::new(self.max.x + dx, self.max.y + dy),
+        )
+    }
+
     /// The rect spanned by two opposite corners, in any order.
     #[must_use]
     pub fn from_corners(a: WorldPt, b: WorldPt) -> Self {
@@ -82,6 +108,8 @@ impl WorldRect {
     /// True when the rect has no area: one side is zero (or not finite).
     #[must_use]
     pub fn is_degenerate(&self) -> bool {
-        !(self.width() > 0.0 && self.height() > 0.0)
+        !self.min.is_finite()
+            || !self.max.is_finite()
+            || !(self.width() > 0.0 && self.height() > 0.0)
     }
 }

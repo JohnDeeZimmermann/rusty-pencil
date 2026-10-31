@@ -1,10 +1,11 @@
-//! Clean outlines for the box shapes. The hand-drawn style replaces these in M4.
+//! Canonical clean outlines, shared by hit testing and rendering.
 
 use std::f32::consts::{PI, TAU};
 
-use pen_core::{Edges, Kind, WorldPt, WorldRect};
+use crate::{Edges, Kind, WorldPt, WorldRect};
 
-use crate::TOLERANCE;
+/// Maximum outline flattening error, in world points.
+pub const TOLERANCE: f32 = 0.02;
 
 /// Excalidraw's adaptive corner radius: a quarter of `side` up to 128 pt, then a fixed 32 pt.
 fn adaptive_radius(side: f32) -> f32 {
@@ -12,7 +13,7 @@ fn adaptive_radius(side: f32) -> f32 {
 }
 
 /// The closed outline of `kind`, without repeating the first point at the end.
-pub(crate) fn outline(kind: &Kind, edges: Edges) -> Vec<WorldPt> {
+pub fn outline(kind: &Kind, edges: Edges) -> Vec<WorldPt> {
     match *kind {
         Kind::Rect(r) => {
             let (a, b) = (r.min(), r.max());

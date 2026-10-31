@@ -6,15 +6,16 @@
 #![forbid(unsafe_code)]
 
 mod cache;
-mod shapes;
+mod overlay;
 
 use pen_core::{Kind, Props, Srgba, WorldPt};
 
 pub use cache::SceneCache;
+pub use overlay::{OverlayKind, OverlayRect, overlay};
 
 /// Flattening tolerance in world points: curves stay within this of their true position.
 /// 0.02 pt is 0.6 px at the 3000% maximum zoom.
-pub const TOLERANCE: f32 = 0.02;
+pub use pen_core::TOLERANCE;
 
 /// One paint operation, in world points.
 #[derive(Debug, Clone, PartialEq)]
@@ -65,7 +66,7 @@ impl DrawList {
 
 /// Appends the paint for one element (or draft) to `out`: background fill, then stroke.
 pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
-    let outline = shapes::outline(kind, props.edges);
+    let outline = pen_core::outline(kind, props.edges);
     if outline.len() < 2 {
         return;
     }
@@ -89,3 +90,6 @@ pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod overlay_tests;

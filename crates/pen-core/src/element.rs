@@ -44,6 +44,27 @@ impl Element {
         }
     }
 
+    /// A geometry snapshot with identity and style preserved. Commands own version bumps.
+    #[must_use]
+    pub fn with_bounds(&self, bounds: WorldRect) -> Self {
+        let mut changed = self.clone();
+        changed.kind = self.kind.with_bounds(bounds);
+        changed
+    }
+
+    pub(crate) fn same_content(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.kind == other.kind
+            && self.props == other.props
+            && self.seed == other.seed
+    }
+
+    pub(crate) fn replace(&mut self, after: &Self) {
+        self.kind = after.kind;
+        self.props = after.props;
+        self.version = self.version.wrapping_add(1);
+    }
+
     #[must_use]
     pub fn id(&self) -> ElementId {
         self.id
@@ -71,6 +92,15 @@ pub enum Kind {
 }
 
 impl Kind {
+    #[must_use]
+    pub fn with_bounds(self, bounds: WorldRect) -> Self {
+        match self {
+            Self::Rect(_) => Self::Rect(bounds),
+            Self::Diamond(_) => Self::Diamond(bounds),
+            Self::Ellipse(_) => Self::Ellipse(bounds),
+        }
+    }
+
     #[must_use]
     pub fn bounds(&self) -> WorldRect {
         match *self {

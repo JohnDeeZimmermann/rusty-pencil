@@ -56,3 +56,11 @@ Use rune's bundled interface font. Keep controls compact and avoid heavy weights
 Tool icons use `pen_render::draw`, so their geometry matches the drawing tools. The document's
 stroke colours and shape defaults remain independent of chrome colours. The hand-drawn style
 is planned for M4.
+
+## Selection feedback
+
+Selection outlines use `ON_ACCENT` at 1 screen point, inset from white 8 × 8 screen-point
+handles with 2-point corners. Geometry has a 5-screen-point gap to the selection bounds.
+Marquee fill uses `SELECTION_WASH` (the accent ink at 24/255 alpha). These dimensions stay
+constant through pan and zoom. Canvas feedback appears and disappears immediately; toolbar
+press and hover motion remains subtle.

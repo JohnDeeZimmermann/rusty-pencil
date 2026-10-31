@@ -54,3 +54,7 @@ pub(crate) fn raised(el: rune::El, radius: f32) -> rune::El {
         .border(OUTLINE, c(BORDER))
         .shadow(LIFT, 8.0, c(SHADOW))
 }
+
+/// Transparent teal for the marquee; it never obscures document strokes.
+pub(crate) const SELECTION_WASH: Srgba = Srgba { a: 24, ..ON_ACCENT };
+pub(crate) const R_HANDLE: f32 = 2.0;

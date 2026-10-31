@@ -1,54 +1,60 @@
-//! Interaction over a `pen-core` document: tools, selection, camera and history.
-//!
-//! Driven only by [`InputEvent`]s, so every behaviour is testable without a window. The app
-//! crate translates GUI events into `InputEvent`s and presents the resulting state.
+//! GUI-neutral editor state. Every gesture is driven by input events; document mutations
+//! happen only on commit, while live previews contain only the elements being touched.
 #![forbid(unsafe_code)]
 
 mod camera;
+mod history;
 mod input;
+mod selection;
+mod selection_input;
 mod tool;
 mod tools;
 
-use pen_core::{Command, Document, Element, Kind, Props};
+use history::History;
+use pen_core::{Command, Document, Element, Kind, Props, WorldRect};
+use tools::{select::SelectionDrag, shape::ShapeDrag};
 
 pub use camera::{Camera, ScreenPt, ScreenVec};
 pub use input::{InputEvent, Key, Modifiers};
+pub use selection::{HANDLE_SIZE, Handle, SELECTION_PADDING, Selection};
 pub use tool::Tool;
-use tools::shape::ShapeDrag;
 
-/// A drag shorter than this many screen points is a click, and a click draws nothing.
+/// Screen points of movement required before a press becomes a drag.
 pub const CLICK_SLOP: f32 = 3.0;
 
-/// All editor state. The app owns exactly one and hands it `&mut` per event.
+#[derive(Debug, Clone)]
+enum Gesture {
+    Drawing(ShapeDrag),
+    Selecting(SelectionDrag),
+}
+
+/// Owned by the app; no window, renderer, or shared mutable state.
 #[derive(Debug, Clone, Default)]
 pub struct Editor {
     camera: Camera,
     document: Document,
     tool: Tool,
-    /// The props new elements get.
     style: Props,
-    gesture: Option<ShapeDrag>,
+    gesture: Option<Gesture>,
+    selection: Selection,
+    history: History,
+    preview: Vec<Element>,
 }
 
-/// An element being drawn: not in the document yet, rendered on the live layer.
+/// Uncommitted shape geometry, in world points.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Draft {
     pub kind: Kind,
     pub props: Props,
 }
 
-/// What changed after an event, so the app redraws as little as possible.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Redraw {
-    /// Nothing visible changed.
     Nothing,
-    /// Only the camera moved: present the same scene with a new transform.
     Camera,
-    /// The draft changed (the camera may have too); the document did not.
+    /// Only live preview / selection feedback changed.
     Draft,
-    /// The document changed (and the draft is gone).
     Scene,
-    /// The active tool changed.
     Tool,
 }
 
@@ -60,32 +66,56 @@ impl Editor {
             ..Self::default()
         }
     }
-
     #[must_use]
     pub fn camera(&self) -> &Camera {
         &self.camera
     }
-
     #[must_use]
     pub fn document(&self) -> &Document {
         &self.document
     }
-
     #[must_use]
     pub fn tool(&self) -> Tool {
         self.tool
     }
-
-    /// The element being drawn right now, if any.
+    #[must_use]
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+    /// Only touched elements, replacing their committed paint during a transform.
+    #[must_use]
+    pub fn preview(&self) -> &[Element] {
+        &self.preview
+    }
+    #[must_use]
+    pub fn selection_bounds(&self) -> Option<WorldRect> {
+        if self.preview.is_empty() {
+            self.selection.bounds(&self.document)
+        } else {
+            self.preview
+                .iter()
+                .map(|e| e.kind.bounds())
+                .reduce(WorldRect::union)
+        }
+    }
+    #[must_use]
+    pub fn marquee(&self) -> Option<WorldRect> {
+        match &self.gesture {
+            Some(Gesture::Selecting(drag)) => drag.marquee(),
+            _ => None,
+        }
+    }
     #[must_use]
     pub fn draft(&self) -> Option<Draft> {
-        self.gesture.map(|g| Draft {
-            kind: g.kind(),
-            props: self.style,
-        })
+        match self.gesture {
+            Some(Gesture::Drawing(drag)) => Some(Draft {
+                kind: drag.kind(),
+                props: self.style,
+            }),
+            _ => None,
+        }
     }
 
-    /// Applies one input event. Returns what kind of redraw it needs.
     pub fn handle(&mut self, event: InputEvent) -> Redraw {
         match event {
             InputEvent::Pan { by } => {
@@ -97,102 +127,143 @@ impl Editor {
                 self.camera_moved()
             }
             InputEvent::PointerDown { at, mods } => {
+                self.cancel();
                 let origin = self.camera.screen_to_world(at);
-                self.gesture = origin.is_finite().then_some(ShapeDrag {
-                    tool: self.tool,
-                    origin,
-                    current: origin,
-                    pointer: at,
-                    mods,
-                });
+                if !origin.is_finite() {
+                    return Redraw::Nothing;
+                }
+                if self.tool == Tool::Select {
+                    self.selection_down(at, origin, mods);
+                } else {
+                    self.gesture =
+                        ShapeDrag::start(self.tool, origin, at, mods).map(Gesture::Drawing);
+                }
                 Redraw::Draft
             }
             InputEvent::PointerMove { at, mods } => self.drag_to(Some(at), mods),
             InputEvent::Modifiers(mods) => self.drag_to(None, mods),
             InputEvent::PointerUp { at, mods } => {
                 self.drag_to(Some(at), mods);
-                self.commit()
+                match self.gesture.take() {
+                    Some(Gesture::Drawing(drag)) => self.commit_shape(drag),
+                    Some(Gesture::Selecting(drag)) => self.selection_up(drag),
+                    None => Redraw::Nothing,
+                }
             }
-            InputEvent::Cancel
-            | InputEvent::Key {
-                key: Key::Escape, ..
-            } => {
-                if self.gesture.take().is_some() {
+            InputEvent::Cancel => {
+                if self.cancel() {
                     Redraw::Draft
                 } else {
                     Redraw::Nothing
                 }
             }
-            InputEvent::Key { key, mods } => match Tool::for_key(key, mods) {
-                Some(tool) => self.select_tool(tool),
-                None => Redraw::Nothing,
-            },
+            InputEvent::Key {
+                key: Key::Escape, ..
+            } => {
+                if self.cancel() {
+                    Redraw::Draft
+                } else if !self.selection.is_empty() {
+                    self.selection.clear();
+                    Redraw::Draft
+                } else {
+                    Redraw::Nothing
+                }
+            }
+            InputEvent::Key { key, mods } => self.key(key, mods),
             InputEvent::SelectTool(tool) => self.select_tool(tool),
         }
     }
 
-    /// The pointer stays put on screen while the camera moves, so a drag in progress follows
-    /// it to the new world point under the pointer.
     fn camera_moved(&mut self) -> Redraw {
-        match self.gesture {
-            Some(drag) => {
-                self.drag_to(Some(drag.pointer), drag.mods);
-                Redraw::Draft
-            }
-            None => Redraw::Camera,
+        let pointer = match &self.gesture {
+            Some(Gesture::Drawing(d)) => Some((d.pointer, d.mods)),
+            Some(Gesture::Selecting(d)) => Some((d.pointer, d.mods)),
+            None => None,
+        };
+        if let Some((at, mods)) = pointer {
+            self.drag_to(Some(at), mods);
+            Redraw::Draft
+        } else {
+            Redraw::Camera
         }
     }
 
     fn drag_to(&mut self, at: Option<ScreenPt>, mods: Modifiers) -> Redraw {
-        let Some(drag) = &mut self.gesture else {
-            return Redraw::Nothing;
-        };
-        let before = *drag;
-        if let Some(at) = at {
-            let p = self.camera.screen_to_world(at);
-            if p.is_finite() {
-                drag.current = p;
-                drag.pointer = at;
+        match &mut self.gesture {
+            Some(Gesture::Drawing(drag)) => {
+                let before = *drag;
+                if let Some(at) = at {
+                    let point = self.camera.screen_to_world(at);
+                    if point.is_finite() {
+                        drag.current = point;
+                        drag.pointer = at;
+                    }
+                }
+                drag.mods = mods;
+                if *drag == before {
+                    Redraw::Nothing
+                } else {
+                    Redraw::Draft
+                }
             }
+            Some(Gesture::Selecting(_)) => self.selection_update(at, mods),
+            None => Redraw::Nothing,
         }
-        drag.mods = mods;
-        if *drag == before {
-            Redraw::Nothing
+    }
+
+    fn commit_shape(&mut self, drag: ShapeDrag) -> Redraw {
+        let bounds = drag.bounds();
+        let span = bounds.width().max(bounds.height()) * self.camera.zoom();
+        if bounds.is_degenerate() || span < CLICK_SLOP {
+            return Redraw::Draft;
+        }
+        let id = self.document.alloc_id();
+        let command = Command::Add {
+            element: Element::new(id, drag.kind(), self.style),
+            at: self.document.elements().len(),
+        };
+        if self.execute(command, self.selection.clone()) {
+            Redraw::Scene
         } else {
             Redraw::Draft
         }
     }
 
-    fn commit(&mut self) -> Redraw {
-        let Some(drag) = self.gesture.take() else {
-            return Redraw::Nothing;
+    fn execute(&mut self, command: Command, before: Selection) -> bool {
+        self.history
+            .execute(&mut self.document, command, before, self.selection.clone())
+            .is_ok()
+    }
+
+    fn cancel(&mut self) -> bool {
+        let Some(gesture) = self.gesture.take() else {
+            return false;
         };
-        let bounds = drag.bounds();
-        let zoom = self.camera.zoom();
-        let span = bounds.width().max(bounds.height()) * zoom;
-        if bounds.is_degenerate() || span < CLICK_SLOP {
-            return Redraw::Draft;
+        if let Gesture::Selecting(drag) = gesture {
+            self.selection = drag.before;
         }
-        let id = self.document.alloc_id();
-        let element = Element::new(id, drag.kind(), self.style);
-        let at = self.document.elements().len();
-        match self.document.apply(Command::Add { element, at }) {
-            // The inverse goes to history in M2.
-            Ok(_inverse) => Redraw::Scene,
-            Err(_) => Redraw::Draft,
-        }
+        self.preview.clear();
+        true
     }
 
     fn select_tool(&mut self, tool: Tool) -> Redraw {
         if self.tool == tool {
             return Redraw::Nothing;
         }
+        self.cancel();
         self.tool = tool;
+        if tool != Tool::Select {
+            self.selection.clear();
+        }
         Redraw::Tool
     }
 }
 
 #[cfg(test)]
 mod camera_tests;
+#[cfg(test)]
+mod history_tests;
+#[cfg(test)]
+mod selection_tests;
 #[cfg(test)]
 mod shape_tests;

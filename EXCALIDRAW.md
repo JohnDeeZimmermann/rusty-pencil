@@ -8,7 +8,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Tools
 
-- [ ] Selection tool (`V` / `1`) — M2
+- [x] Selection tool (`V` / `1`) — M2
 - [x] Rectangle (`R` / `2`) — M1
 - [x] Diamond (`D` / `3`) — M1
 - [x] Ellipse (`O` / `4`) — M1
@@ -47,15 +47,15 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Selecting and editing
 
-- [ ] Click to select, Shift+click to add/remove — M2
-- [ ] Drag a box to select — M2
-- [ ] Select all (Ctrl+A) — M2
-- [ ] Move by dragging; arrow keys nudge 1 px, Shift+arrow 10 px — M2
-- [ ] Resize with 8 handles; Shift keeps aspect ratio; Alt resizes from centre — M2
+- [x] Click to select, Shift+click to add/remove — M2
+- [x] Drag a box to select — M2
+- [x] Select all (Ctrl+A) — M2
+- [x] Move by dragging; arrow keys nudge 1 px, Shift+arrow 10 px — M2
+- [x] Resize with 8 handles; Shift keeps aspect ratio; Alt resizes from centre — M2
 - [ ] Rotate with the handle; Shift snaps to 15° — M6
 - [ ] Multi-element resize and rotate — M6
 - [ ] Flip horizontal / vertical (Shift+H / Shift+V) — M6
-- [ ] Delete (Del / Backspace) — M2
+- [x] Delete (Del / Backspace) — M2
 - [ ] Duplicate (Ctrl+D) and Alt+drag duplicate — M6
 - [ ] Copy, cut, paste within the app — M6
 - [ ] Paste plain text as a text element — M6
@@ -126,9 +126,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## History
 
-- [ ] Undo / redo (Ctrl+Z / Ctrl+Shift+Z, Ctrl+Y) — M2
-- [ ] A whole drag or edit is one undo step — M2
-- [ ] Undo restores the selection too — M2
+- [x] Undo / redo (Ctrl+Z / Ctrl+Shift+Z, Ctrl+Y) — M2
+- [x] A whole drag or edit is one undo step — M2
+- [x] Undo restores the selection too — M2
 
 ## Files and export
 

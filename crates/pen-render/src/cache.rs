@@ -60,6 +60,12 @@ impl SceneCache {
             .flat_map(|e| e.paint.prims())
     }
 
+    /// Cached operations for one element; does not rebuild geometry.
+    #[must_use]
+    pub fn element_prims(&self, id: ElementId) -> Option<&[Prim]> {
+        self.entries.get(&id).map(|entry| entry.paint.prims())
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.entries.len()

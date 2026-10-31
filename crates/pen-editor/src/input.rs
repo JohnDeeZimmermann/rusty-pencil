@@ -48,4 +48,10 @@ pub enum Key {
     /// A printable character, lowercased.
     Char(char),
     Escape,
+    Delete,
+    Backspace,
+    Left,
+    Right,
+    Up,
+    Down,
 }

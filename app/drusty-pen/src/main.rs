@@ -2,9 +2,11 @@
 //! `pen_editor::InputEvent`s and presents editor state as rune elements.
 
 mod design;
+mod overlay;
 mod paint;
 mod palette;
 mod present;
+mod scene;
 mod toolbar;
 
 use pen_core::WorldPt;
@@ -12,7 +14,7 @@ use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenPt, Screen
 use pen_render::{DrawList, SceneCache};
 use rune::{
     AppSpec, Cursor, Cx, Drag, El, Key, KeyEvent, LiveText, MagnifyEvent, Mods, Phase, Shape, Tx,
-    WheelEvent, canvas, el, memo, text,
+    WheelEvent, canvas, el, text,
 };
 
 /// The window's opening size, in points.
@@ -34,6 +36,8 @@ struct State {
     draft: Shape,
     /// Scratch for the draft, so a drag doesn't allocate a fresh list per move.
     draft_paint: DrawList,
+    overlay: overlay::Overlay,
+    layers: scene::Scene,
 }
 
 impl State {
@@ -45,6 +49,8 @@ impl State {
             scene: Shape::new(),
             draft: Shape::new(),
             draft_paint: DrawList::new(),
+            overlay: overlay::Overlay::default(),
+            layers: scene::Scene::default(),
         }
     }
 
@@ -56,16 +62,15 @@ impl State {
         if *self.editor.camera() != camera {
             self.camera.show(self.editor.camera());
         }
+        self.overlay.show(&self.editor);
         match redraw {
             // Only live values changed: no view rebuild, no layout.
             Redraw::Nothing | Redraw::Camera => tx.live_only(),
-            Redraw::Draft => self.show_draft(),
+            Redraw::Draft | Redraw::Tool => self.show_draft(),
             Redraw::Scene => {
                 self.show_scene();
                 self.show_draft();
             }
-            // The toolbar reads the tool in `view`.
-            Redraw::Tool => {}
         }
         redraw
     }
@@ -74,9 +79,18 @@ impl State {
         let doc = self.editor.document();
         self.cache.update(doc);
         self.scene = paint::shape(self.cache.prims(doc));
+        self.layers
+            .show(doc, &self.cache, self.editor.preview(), &self.scene, true);
     }
 
     fn show_draft(&mut self) {
+        self.layers.show(
+            self.editor.document(),
+            &self.cache,
+            self.editor.preview(),
+            &self.scene,
+            false,
+        );
         self.draft_paint.clear();
         if let Some(draft) = self.editor.draft() {
             pen_render::draw(&draft.kind, &draft.props, &mut self.draft_paint);
@@ -112,11 +126,14 @@ fn init() -> State {
 /// A zero-size layer at the world origin. The world node is laid out the same way, so
 /// `live_scale` (which scales about the node's centre) scales about (0, 0).
 fn layer(shape: Shape, key: &str) -> El {
-    canvas(shape).key(key).absolute(0.0, 0.0).size(0.0, 0.0)
+    canvas(shape)
+        .key(key)
+        .absolute(0.0, 0.0)
+        .size(0.0, 0.0)
+        .transition(rune::Transition::none())
 }
 
 fn view(s: &State, _: &mut Cx<State>) -> El {
-    let revision = s.editor.document().revision();
     let world = el()
         .key("world")
         .absolute(0.0, 0.0)
@@ -125,15 +142,21 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         .live_scale(&s.camera.scale)
         // A drag rebuilds the view on every move; the committed scene is reused unless the
         // document changed.
-        .child(memo("scene", revision, || layer(s.scene.clone(), "scene")))
+        .child(s.layers.view())
         .child(layer(s.draft.clone(), "draft"));
 
     el().key("viewport")
         .w_full()
         .h_full()
         .fill(design::c(design::CANVAS))
-        .cursor(Cursor::Crosshair)
+        .focusable(true)
+        .cursor(if s.editor.tool() == pen_editor::Tool::Select {
+            Cursor::Default
+        } else {
+            Cursor::Crosshair
+        })
         .child(world)
+        .child(s.overlay.view())
         .child(toolbar::toolbar(s.editor.tool()))
         .child(zoom_pill(&s.camera.zoom_label))
         .on_drag(|s: &mut State, d: &mut Drag, tx| {
@@ -182,8 +205,26 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
             s.input(InputEvent::Modifiers(mods), tx);
             return false;
         }
-        Key::Escape => InputEvent::Key {
-            key: pen_editor::Key::Escape,
+        Key::Command(c) => InputEvent::Key {
+            key: pen_editor::Key::Char(c.to_ascii_lowercase()),
+            mods,
+        },
+        Key::Escape
+        | Key::Delete
+        | Key::Backspace
+        | Key::Left
+        | Key::Right
+        | Key::Up
+        | Key::Down => InputEvent::Key {
+            key: match ev.key {
+                Key::Escape => pen_editor::Key::Escape,
+                Key::Delete => pen_editor::Key::Delete,
+                Key::Backspace => pen_editor::Key::Backspace,
+                Key::Left => pen_editor::Key::Left,
+                Key::Right => pen_editor::Key::Right,
+                Key::Up => pen_editor::Key::Up,
+                _ => pen_editor::Key::Down,
+            },
             mods,
         },
         Key::Text(t) => {

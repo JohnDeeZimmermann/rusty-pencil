@@ -1,8 +1,9 @@
 use crate::{Key, Modifiers};
 
-/// The active tool. More arrive with later milestones (selection in M2).
+/// The active tool. More arrive with later milestones.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Tool {
+    Select,
     #[default]
     Rectangle,
     Diamond,
@@ -11,11 +12,12 @@ pub enum Tool {
 
 impl Tool {
     /// Every tool, in toolbar order.
-    pub const ALL: [Tool; 3] = [Tool::Rectangle, Tool::Diamond, Tool::Ellipse];
+    pub const ALL: [Tool; 4] = [Tool::Select, Tool::Rectangle, Tool::Diamond, Tool::Ellipse];
 
     #[must_use]
     pub fn name(self) -> &'static str {
         match self {
+            Tool::Select => "Selection",
             Tool::Rectangle => "Rectangle",
             Tool::Diamond => "Diamond",
             Tool::Ellipse => "Ellipse",
@@ -26,6 +28,7 @@ impl Tool {
     #[must_use]
     pub fn letter(self) -> char {
         match self {
+            Tool::Select => 'v',
             Tool::Rectangle => 'r',
             Tool::Diamond => 'd',
             Tool::Ellipse => 'o',
@@ -36,6 +39,7 @@ impl Tool {
     #[must_use]
     pub fn digit(self) -> char {
         match self {
+            Tool::Select => '1',
             Tool::Rectangle => '2',
             Tool::Diamond => '3',
             Tool::Ellipse => '4',

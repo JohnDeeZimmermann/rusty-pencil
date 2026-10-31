@@ -79,6 +79,16 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
         WorldRect::from_corners(WorldPt::new(e, e), WorldPt::new(d::ICON - e, d::ICON - e))
     };
     let kind = match tool {
+        Tool::Select => {
+            let points = vec![
+                [4.0, 2.0],
+                [16.0, 10.0],
+                [10.0, 11.0],
+                [8.0, 17.0],
+                [4.0, 2.0],
+            ];
+            return rune::Shape::new().stroke(points, d::ICON_STROKE, c(ink));
+        }
         Tool::Rectangle => Kind::Rect(inset(2.0)),
         Tool::Diamond => Kind::Diamond(inset(1.0)),
         Tool::Ellipse => Kind::Ellipse(inset(2.0)),
@@ -96,6 +106,7 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
 
 fn hint(tool: Tool) -> String {
     let what = match tool {
+        Tool::Select => return "Click to select  ·  Shift to add  ·  Drag to move or box select  ·  Esc to cancel".into(),
         Tool::Rectangle => "a rectangle",
         Tool::Diamond => "a diamond",
         Tool::Ellipse => "an ellipse",

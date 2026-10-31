@@ -306,3 +306,6 @@ fn shapes_drawn_while_zoomed_are_in_world_points() {
     let expect = WorldRect::from_corners(WorldPt::ORIGIN, WorldPt::new(100.0, 50.0));
     assert_eq!(kinds(&rt), [Kind::Rect(expect)]);
 }
+
+#[path = "interaction_tests.rs"]
+mod selection;
