@@ -11,7 +11,7 @@ mod toolbar;
 
 use pen_core::WorldPt;
 use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenPt, ScreenVec};
-use pen_render::{DrawList, SceneCache};
+use pen_render::DrawList;
 use rune::{
     AppSpec, Cursor, Cx, Drag, El, Key, KeyEvent, LiveText, MagnifyEvent, Mods, Phase, Shape, Tx,
     WheelEvent, canvas, el, text,
@@ -28,16 +28,12 @@ const ZOOM_PER_POINT: f32 = 0.006;
 struct State {
     editor: Editor,
     camera: present::LiveCamera,
-    /// Per-element paint, kept between document revisions.
-    cache: SceneCache,
-    /// The committed elements, rebuilt only when the document changes.
-    scene: Shape,
+    scene: scene::Scene,
     /// The element being drawn, rebuilt on every pointer move of a drag.
     draft: Shape,
     /// Scratch for the draft, so a drag doesn't allocate a fresh list per move.
     draft_paint: DrawList,
     overlay: overlay::Overlay,
-    layers: scene::Scene,
 }
 
 impl State {
@@ -45,12 +41,10 @@ impl State {
         Self {
             editor: Editor::new(camera),
             camera: present::LiveCamera::new(&camera),
-            cache: SceneCache::new(),
-            scene: Shape::new(),
+            scene: scene::Scene::default(),
             draft: Shape::new(),
             draft_paint: DrawList::new(),
             overlay: overlay::Overlay::default(),
-            layers: scene::Scene::default(),
         }
     }
 
@@ -66,31 +60,14 @@ impl State {
         match redraw {
             // Only live values changed: no view rebuild, no layout.
             Redraw::Nothing | Redraw::Camera => tx.live_only(),
-            Redraw::Draft | Redraw::Tool => self.show_draft(),
-            Redraw::Scene => {
-                self.show_scene();
-                self.show_draft();
-            }
+            Redraw::Draft | Redraw::Tool | Redraw::Scene => self.show_feedback(),
         }
         redraw
     }
 
-    fn show_scene(&mut self) {
-        let doc = self.editor.document();
-        self.cache.update(doc);
-        self.scene = paint::shape(self.cache.prims(doc));
-        self.layers
-            .show(doc, &self.cache, self.editor.preview(), &self.scene, true);
-    }
-
-    fn show_draft(&mut self) {
-        self.layers.show(
-            self.editor.document(),
-            &self.cache,
-            self.editor.preview(),
-            &self.scene,
-            false,
-        );
+    fn show_feedback(&mut self) {
+        self.scene
+            .show(self.editor.document(), self.editor.preview());
         self.draft_paint.clear();
         if let Some(draft) = self.editor.draft() {
             pen_render::draw(&draft.kind, &draft.props, &mut self.draft_paint);
@@ -142,7 +119,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         .live_scale(&s.camera.scale)
         // A drag rebuilds the view on every move; the committed scene is reused unless the
         // document changed.
-        .child(s.layers.view())
+        .child(s.scene.view())
         .child(layer(s.draft.clone(), "draft"));
 
     el().key("viewport")

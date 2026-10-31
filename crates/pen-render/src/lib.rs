@@ -7,11 +7,13 @@
 
 mod cache;
 mod overlay;
+mod scene;
 
 use pen_core::{Kind, Props, Srgba, WorldPt};
 
 pub use cache::SceneCache;
 pub use overlay::{OverlayKind, OverlayRect, overlay};
+pub use scene::{Scene, ScenePart};
 
 /// Flattening tolerance in world points: curves stay within this of their true position.
 /// 0.02 pt is 0.6 px at the 3000% maximum zoom.
@@ -93,3 +95,6 @@ mod tests;
 
 #[cfg(test)]
 mod overlay_tests;
+
+#[cfg(test)]
+mod scene_tests;

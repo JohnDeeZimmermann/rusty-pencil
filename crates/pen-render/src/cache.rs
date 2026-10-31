@@ -62,7 +62,7 @@ impl SceneCache {
 
     /// Cached operations for one element; does not rebuild geometry.
     #[must_use]
-    pub fn element_prims(&self, id: ElementId) -> Option<&[Prim]> {
+    pub(crate) fn element_prims(&self, id: ElementId) -> Option<&[Prim]> {
         self.entries.get(&id).map(|entry| entry.paint.prims())
     }
 
