@@ -1,4 +1,4 @@
-//! The floating tool island at the top of the window, and the hint pill under it.
+//! The floating tool island at the top of the window, and the quiet hint under it.
 
 use pen_core::{Edges, Kind, Props, Srgba, WorldPt, WorldRect};
 use pen_editor::{InputEvent, Tool};
@@ -12,7 +12,7 @@ use crate::{State, paint};
 pub(crate) fn toolbar(active: Tool) -> El {
     let island = Tool::ALL.into_iter().fold(
         d::raised(row().key("tools"), d::R_ISLAND)
-            .padding(d::S1 + 2.0)
+            .padding(d::PADDING)
             .gap(d::S1)
             .cursor(Cursor::Default)
             // A press between buttons must not start drawing underneath the island.
@@ -26,18 +26,10 @@ pub(crate) fn toolbar(active: Tool) -> El {
         .gap(d::S3)
         .child(island)
         .child(
-            el().key("hint-pill")
-                .px(d::S3)
-                .py(d::S1 + 1.0)
-                .radius(14.0)
-                .fill(c(d::PAPER))
-                .border(1.5, c(d::INK))
-                .child(
-                    text(hint(active))
-                        .key("hint")
-                        .font(d::T_HINT)
-                        .color(c(d::MUTED)),
-                ),
+            text(hint(active))
+                .key("hint")
+                .font(d::T_HINT)
+                .color(c(d::MUTED)),
         )
 }
 
@@ -51,14 +43,6 @@ fn button(tool: Tool, active: bool) -> El {
         } else {
             Color::TRANSPARENT
         })
-        .border(
-            d::OUTLINE,
-            if active {
-                c(d::INK)
-            } else {
-                Color::TRANSPARENT
-            },
-        )
         .hover(if active {
             Color::TRANSPARENT
         } else {
@@ -68,7 +52,7 @@ fn button(tool: Tool, active: bool) -> El {
         .items_center()
         .justify_center()
         .child(canvas(icon(tool, ink)).size(d::ICON, d::ICON))
-        .child(badge(tool.digit()))
+        .child(shortcut(tool.digit(), active))
         .help(format!(
             "{} — {} or {}",
             tool.name(),
@@ -80,16 +64,13 @@ fn button(tool: Tool, active: bool) -> El {
         })
 }
 
-/// The shortcut digit on a sunny round sticker in the button's corner.
-fn badge(digit: char) -> El {
-    el().size(13.0, 13.0)
-        .radius(6.5)
-        .fill(c(d::BADGE))
-        .border(1.0, c(d::INK))
-        .items_center()
-        .justify_center()
-        .pin(None, None, Some(-3.0), Some(-3.0))
-        .child(text(digit.to_string()).font(d::T_BADGE).color(c(d::INK)))
+/// Shortcuts stay inside the hit target and follow the selected tool's colour.
+fn shortcut(digit: char, active: bool) -> El {
+    text(digit.to_string())
+        .size(d::SHORTCUT, d::SHORTCUT)
+        .font(d::T_BADGE)
+        .color(c(if active { d::ON_ACCENT } else { d::MUTED }))
+        .pin(None, None, Some(d::SHORTCUT_INSET), Some(d::SHORTCUT_INSET))
 }
 
 /// Tool icons are the shapes themselves, drawn by the same renderer as the canvas.

@@ -202,9 +202,9 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
 }
 
 fn zoom_pill(label: &LiveText) -> El {
-    design::raised(el().key("zoom"), 14.0)
+    design::raised(el().key("zoom"), design::R_STATUS)
         .pin(Some(design::S4), None, None, Some(design::S4))
-        .py(design::S1 + 2.0)
+        .py(design::PADDING)
         .child(
             text("100%")
                 .live_text(label)
