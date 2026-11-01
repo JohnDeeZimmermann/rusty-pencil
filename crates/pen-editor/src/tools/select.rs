@@ -206,8 +206,7 @@ impl SelectionDrag {
             };
             for element in doc.elements() {
                 // Bound text is reached through its container.
-                if element.kind.container().is_none() && bounds.contains_rect(element.kind.bounds())
-                {
+                if element.kind.container().is_none() && bounds.intersects(element.kind.bounds()) {
                     selection.insert(element.id());
                 }
             }

@@ -48,7 +48,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 ## Selecting and editing
 
 - [x] Click to select, Shift+click to add/remove — M2
-- [x] Drag a box to select — M2
+- [x] Drag a box to select overlapping elements, including partially enclosed paths — M2
 - [x] Select all (Ctrl+A) — M2
 - [x] Move by dragging; arrow keys nudge 1 px, Shift+arrow 10 px — M2
 - [x] Resize with 8 handles; Shift keeps aspect ratio; Alt resizes from centre — M2

@@ -43,9 +43,12 @@
 - Selection feedback uses live screen rectangles. Handles remain 8 screen points and outlines
   1 screen point at every zoom; camera events stay live-only. Feedback has no enter/exit fade.
 - Unfilled shapes select near their visible outline. Once selected, their interior is a move
-  target. Marquee selects fully enclosed elements on release; Shift adds. Membership is scanned
-  once on release so marquee animation does not walk the document each frame.
+  target. Marquee selects elements whose bounds overlap the box on release, including partially
+  enclosed paths; Shift adds. Membership is scanned once on release so marquee animation does
+  not walk the document each frame.
 - Arrow-key nudges are 1 or 10 screen points, converted through the camera. Shift constrains
   moves to one axis. Eight-handle resize applies to one element; multi-resize remains M6.
 - Reproduce visuals with `scripts/selection.json` in the app: snapshot times 1.85 (selected),
   2.6 (moving), 3.5 (resizing), 4.8 (undo), 5.5 (marquee), 6.8 (undo deletion).
+- `scripts/marquee-overlap.json`: snapshot at 2.8 (box crossing a freehand stroke and enclosing
+  a rectangle) and 3.3 (both selected, with a separate rectangle left unselected).

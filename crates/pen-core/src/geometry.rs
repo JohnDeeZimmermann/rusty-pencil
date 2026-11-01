@@ -42,6 +42,16 @@ impl WorldRect {
         self.contains(other.min) && self.contains(other.max)
     }
 
+    /// Inclusive overlap in world points. Zero-width/height path bounds and touching edges
+    /// count, so horizontal lines, vertical lines, and freehand dots remain selectable.
+    #[must_use]
+    pub fn intersects(&self, other: Self) -> bool {
+        self.min.x <= other.max.x
+            && self.max.x >= other.min.x
+            && self.min.y <= other.max.y
+            && self.max.y >= other.min.y
+    }
+
     #[must_use]
     pub fn union(self, other: Self) -> Self {
         Self::from_corners(

@@ -71,19 +71,46 @@ fn hollow_interior_does_not_select_an_unselected_shape() {
 }
 
 #[test]
-fn marquee_normalises_and_shift_adds_only_fully_enclosed_shapes() {
+fn marquee_normalises_and_shift_adds_overlapping_shapes() {
     let mut ed = one();
     key(&mut ed, Key::Char('r'), NONE);
     drag(&mut ed, p(400.0, 100.0), p(500.0, 200.0), NONE);
     key(&mut ed, Key::Char('v'), NONE);
     drag(&mut ed, p(510.0, 210.0), p(390.0, 90.0), NONE);
     assert_eq!(ed.selection().len(), 1);
-    drag(&mut ed, p(80.0, 80.0), p(310.0, 210.0), SHIFT);
+    drag(&mut ed, p(80.0, 80.0), p(200.0, 180.0), SHIFT);
     assert_eq!(ed.selection().len(), 2);
     drag(&mut ed, p(80.0, 80.0), p(200.0, 180.0), NONE);
-    assert!(ed.selection().is_empty(), "partial enclosure is excluded");
+    assert_eq!(ed.selection().len(), 1, "partial enclosure is included");
     key(&mut ed, Key::Char('a'), CTRL);
     assert_eq!(ed.selection().len(), 2);
+}
+
+#[test]
+fn marquee_selects_crossing_paths_and_enclosed_shapes_in_every_direction() {
+    for tool in [Tool::Line, Tool::Arrow, Tool::Freedraw] {
+        for (start, end) in [
+            (p(150.0, 50.0), p(400.0, 400.0)),
+            (p(400.0, 400.0), p(150.0, 50.0)),
+            (p(150.0, 400.0), p(400.0, 50.0)),
+            (p(400.0, 50.0), p(150.0, 400.0)),
+        ] {
+            let mut ed = Editor::default();
+            drag(&mut ed, p(200.0, 250.0), p(300.0, 350.0), NONE);
+            drag(&mut ed, p(500.0, 250.0), p(600.0, 350.0), NONE);
+            ed.handle(InputEvent::SelectTool(tool));
+            drag(&mut ed, p(70.0, 100.0), p(350.0, 100.0), NONE);
+            ed.handle(InputEvent::SelectTool(Tool::Select));
+            let elements = ed.document().elements().to_vec();
+            drag(&mut ed, start, end, NONE);
+            assert_eq!(
+                ed.selection().ids().collect::<Vec<_>>(),
+                [elements[0].id(), elements[2].id()],
+                "{tool:?}, {start:?} to {end:?}"
+            );
+            assert_eq!(ed.document().elements(), elements);
+        }
+    }
 }
 
 #[test]

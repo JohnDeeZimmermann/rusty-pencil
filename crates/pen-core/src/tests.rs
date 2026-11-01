@@ -38,6 +38,33 @@ fn degenerate_rects_have_no_area() {
 }
 
 #[test]
+fn rect_intersection_includes_crossings_touching_edges_and_path_bounds() {
+    let area = rect(10.0, 10.0, 20.0, 20.0);
+    for other in [
+        rect(0.0, 12.0, 30.0, 18.0),
+        rect(12.0, 0.0, 18.0, 30.0),
+        rect(12.0, 12.0, 18.0, 18.0),
+        rect(0.0, 0.0, 30.0, 30.0),
+        rect(20.0, 20.0, 30.0, 30.0),
+        rect(0.0, 15.0, 30.0, 15.0),
+        rect(15.0, 0.0, 15.0, 30.0),
+        rect(15.0, 15.0, 15.0, 15.0),
+    ] {
+        assert!(area.intersects(other), "{other:?}");
+        assert!(other.intersects(area), "{other:?}");
+    }
+    for other in [
+        rect(0.0, 12.0, 9.0, 18.0),
+        rect(21.0, 12.0, 30.0, 18.0),
+        rect(12.0, 0.0, 18.0, 9.0),
+        rect(12.0, 21.0, 18.0, 30.0),
+    ] {
+        assert!(!area.intersects(other), "{other:?}");
+        assert!(!other.intersects(area), "{other:?}");
+    }
+}
+
+#[test]
 fn ids_are_monotonic_and_seeds_differ() {
     let mut doc = Document::new();
     let (a, _) = add(&mut doc, Kind::Rect(rect(0.0, 0.0, 1.0, 1.0)));
