@@ -158,6 +158,6 @@ Tags say which milestone ships the item: `M1` … `M10`. Tick the box when it wo
 
 ## Web build
 
-- [ ] Runs in a WebGPU browser as a static WebAssembly page — M10
-- [ ] Autosave, workspace, preferences and library persist in browser storage — M10
-- [ ] Open files from disk, save and export as downloads, drag-and-drop files — M10
+- [x] Runs in a WebGPU browser as a static WebAssembly page — M10
+- [x] Autosave, workspace, preferences and library persist in browser storage — M10
+- [x] Open files from disk, save and export as downloads, drag-and-drop files — M10

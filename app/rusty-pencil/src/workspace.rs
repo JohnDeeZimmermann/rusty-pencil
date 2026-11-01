@@ -71,7 +71,7 @@ impl State {
         };
         let result = serde_json::to_vec(&workspace)
             .map_err(|e| e.to_string())
-            .and_then(|bytes| files::atomic_write(path, &bytes));
+            .and_then(|bytes| crate::platform::write(path, &bytes));
         if let Err(error) = result {
             self.files
                 .status
@@ -85,14 +85,12 @@ impl State {
         let Some(path) = &self.tabs.workspace else {
             return false;
         };
-        if !path.exists() {
+        if !crate::platform::exists(path) {
             return false;
         }
-        let result = std::fs::read(path)
-            .map_err(|e| e.to_string())
-            .and_then(|bytes| {
-                serde_json::from_slice::<Workspace>(&bytes).map_err(|e| e.to_string())
-            });
+        let result = crate::platform::read(path).and_then(|bytes| {
+            serde_json::from_slice::<Workspace>(&bytes).map_err(|e| e.to_string())
+        });
         let workspace = match result {
             Ok(w) if w.version == 1 => w,
             _ => {

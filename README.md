@@ -111,9 +111,23 @@ cargo run --release -p rusty-pencil
 That's it. Grab the rectangle (`2`), drag on the canvas, and you're drawing. Drawings save as
 `.rusty-pencil` files (`Ctrl+S`), which are plain, versioned JSON.
 
+### In the browser
+
+The same app also builds as a static WebAssembly page that runs in any WebGPU browser and keeps
+your drawings in browser storage:
+
+```sh
+app/rusty-pencil/web/build.sh
+python3 -m http.server 8000 -d target/web   # then open http://localhost:8000
+```
+
+[docs/web.md](docs/web.md) covers prerequisites, supported browsers and what differs from the
+desktop app.
+
 ## Learn more
 
 - [The full guide](docs/guide.md) walks through every feature and shortcut.
+- [The web build](docs/web.md) explains running rusty-pencil in a browser.
 - [DESIGN.md](DESIGN.md) describes the look and feel of the interface.
 - [EXCALIDRAW.md](EXCALIDRAW.md) tracks feature parity with Excalidraw.
 - [milestones/](milestones/README.md) shows how the app was built, step by step.

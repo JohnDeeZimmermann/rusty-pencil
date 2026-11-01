@@ -36,6 +36,10 @@ your platform's local application data directory. On launch, open tabs, their fi
 the active tab are restored, including unsaved work. Recovery does not overwrite named
 files. Reset canvas only clears the active tab and asks for confirmation first.
 
+In the browser build, tab shortcuts use Alt (Alt+T, Alt+W, Alt+PageDown, Alt+1…9) because the
+browser keeps the Ctrl versions, saving downloads a copy, and recovery lives in browser storage.
+See [web.md](web.md).
+
 ## Style and view
 
 The left inspector changes selected elements or the defaults for the next drawing. Choose

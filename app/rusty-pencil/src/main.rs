@@ -14,9 +14,11 @@ mod images;
 mod library;
 mod menu;
 mod navigation;
+mod open;
 mod overlay;
 mod paint;
 mod palette;
+mod platform;
 mod polish;
 mod preferences;
 mod present;
@@ -475,10 +477,14 @@ fn spec() -> AppSpec<State> {
 
 fn main() {
     // Modifier keys on their own, so pressing Shift mid-drag squares the shape at once.
-    rune::App::new(spec())
+    let app = rune::App::new(spec())
         .on_close(files::close)
-        .modifier_keys()
-        .run();
+        .modifier_keys();
+    #[cfg(not(target_arch = "wasm32"))]
+    app.run();
+    // The browser loads stored app data first, then starts the app.
+    #[cfg(target_arch = "wasm32")]
+    platform::run(app);
 }
 
 #[cfg(test)]

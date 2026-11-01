@@ -79,3 +79,27 @@ pub(crate) fn roughness(roughness: Roughness, dark: bool) -> Shape {
         if dark { d::INK.dark() } else { d::INK },
     )
 }
+
+/// A magnifier for Find. Drawn rather than typed: `⌕` is in none of the bundled fonts, and the
+/// browser has no system fonts to fall back on.
+pub(crate) fn find(color: Srgba) -> Shape {
+    // A circle of radius 5.5 centred at (8.5, 8.5), from four cubic quarter arcs.
+    let (cx, cy, r) = (8.5, 8.5, 5.5);
+    let k = r * 0.552_284_8;
+    let lens = rune::Path::new()
+        .move_to([cx + r, cy])
+        .cubic_to([cx + r, cy + k], [cx + k, cy + r], [cx, cy + r])
+        .cubic_to([cx - k, cy + r], [cx - r, cy + k], [cx - r, cy])
+        .cubic_to([cx - r, cy - k], [cx - k, cy - r], [cx, cy - r])
+        .cubic_to([cx + k, cy - r], [cx + r, cy - k], [cx + r, cy])
+        .close();
+    Shape::new()
+        .stroke_path(&lens, d::ICON_STROKE, rune::LineCap::Round, d::c(color))
+        .line(
+            [12.6, 12.6],
+            [17.0, 17.0],
+            d::ICON_STROKE,
+            rune::LineCap::Round,
+            d::c(color),
+        )
+}

@@ -93,15 +93,17 @@ fn save(s: &mut State, svg: bool, tx: &mut Tx) {
         }
     };
     let extension = if svg { "svg" } else { "png" };
-    tx.save_file(
+    crate::platform::save_file(
+        s,
+        tx,
         FileDialogOptions {
             title: "Export drawing".into(),
             file_name: Some(format!("Drawing.{extension}")),
             ..Default::default()
         }
         .filter("Drawing", &[extension]),
-        move |s: &mut State, result, _| match result {
-            Ok(Some(path)) => match std::fs::write(path, &data) {
+        move |s, result, _| match result {
+            Ok(Some(path)) => match crate::platform::deliver(&path, &data) {
                 Ok(()) => {
                     s.files.status.set("Exported drawing");
                     s.export.open = false;

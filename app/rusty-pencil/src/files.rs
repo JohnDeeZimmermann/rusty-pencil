@@ -1,6 +1,6 @@
 //! Local scene files and one-second debounced recovery. Scripted screenshots are isolated
 //! from the user's recovery unless they explicitly supply `--data-dir`.
-use crate::{State, design as d, scene};
+use crate::{State, design as d, platform, scene};
 use pen_core::{
     Document, WorldPt,
     file::{self, AppState, SceneFile},
@@ -8,7 +8,6 @@ use pen_core::{
 use pen_editor::{Camera, InputEvent};
 use rune::{El, FileDialogOptions, Key, KeyEvent, Tx, col, el, row, text};
 use std::{
-    io::Write,
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -111,15 +110,7 @@ impl State {
             .into_iter()
             .any(|a| matches!(a.as_str(), "--snap" | "--script" | "--tree"));
         self.files.recovery = directory
-            .or_else(|| {
-                if isolated {
-                    None
-                } else {
-                    // Keep the existing data directory so recovery and preferences survive renames.
-                    directories::ProjectDirs::from("", "", "drusty-pen")
-                        .map(|p| p.data_local_dir().to_owned())
-                }
-            })
+            .or_else(|| if isolated { None } else { platform::data_dir() })
             .map(|p| p.join("autosave.drusty-pen"));
         self.files.status.set("Local canvas");
         self.tabs.workspace = self
@@ -131,7 +122,7 @@ impl State {
         self.restore_preferences();
         let restored_workspace = self.restore_workspace();
         if !restored_workspace
-            && let Some(path) = self.files.recovery.clone().filter(|p| p.exists())
+            && let Some(path) = self.files.recovery.clone().filter(|p| platform::exists(p))
         {
             match read(&path) {
                 Ok(scene) => {
@@ -177,52 +168,15 @@ impl State {
         self.refresh_canvas();
     }
 
-    pub(crate) fn open_path(&mut self, path: &Path, tx: &mut Tx) {
-        if self.tabs.closing.is_some() {
-            return;
-        }
-        let path = identity(path);
-        if let Some(id) = self.tabs.entries.iter().find_map(|t| {
-            let files = t.parked.as_ref().map_or(&self.files, |c| &c.files);
-            (files.path.as_deref() == Some(path.as_path())).then_some(t.id)
-        }) {
-            self.switch_tab(id, tx);
-            return;
-        }
-        match read(&path) {
-            Ok(scene) => {
-                self.new_tab(tx);
-                self.install(&scene);
-                self.files.path = Some(path.to_owned());
-                self.files.dirty = false;
-                self.files.refresh_label();
-                self.files.changed(tx);
-                self.autosave();
-                self.files.status.set(if scene.skipped_elements > 0 {
-                    format!(
-                        "Opened {} · skipped {} unsupported elements",
-                        name(&path),
-                        scene.skipped_elements
-                    )
-                } else if scene.dropped_bindings > 0 {
-                    format!(
-                        "Opened {} · dropped {} invalid bindings",
-                        name(&path),
-                        scene.dropped_bindings
-                    )
-                } else {
-                    format!("Opened {}", name(&path))
-                });
-            }
-            Err(error) => self.files.status.set(format!("Could not open: {error}")),
-        }
-    }
-
     fn save_tab_path(&mut self, id: crate::tabs::TabId, path: &Path, tx: &mut Tx) {
         let path = identity(path);
         if self.tabs.entries.iter().any(|t| {
             let files = t.parked.as_ref().map_or(&self.files, |c| &c.files);
-            t.id != id && files.path.as_deref() == Some(path.as_path())
+            t.id != id
+                && files
+                    .path
+                    .as_deref()
+                    .is_some_and(|p| platform::same_file(p, &path))
         }) {
             self.files
                 .status
@@ -242,7 +196,10 @@ impl State {
         } else {
             return;
         };
-        match write(&path, &snapshot) {
+        let delivered = file::save(&snapshot)
+            .map_err(|e| e.to_string())
+            .and_then(|bytes| platform::deliver(&path, &bytes));
+        match delivered {
             Ok(()) => {
                 let files = if id == self.tabs.active {
                     &mut self.files
@@ -260,7 +217,9 @@ impl State {
                 files.path = Some(path.to_owned());
                 files.dirty = false;
                 files.refresh_label();
-                files.status.set(format!("Saved {}", name(&path)));
+                files
+                    .status
+                    .set(format!("{} {}", platform::SAVED, name(&path)));
                 if let Some(recovery) = &files.recovery {
                     match write(recovery, &snapshot) {
                         Ok(()) => files.pending = false,
@@ -308,7 +267,7 @@ impl State {
             "rusty-pencil scene",
             &["rusty-pencil", "drusty-pen", "json", "excalidraw"],
         );
-        tx.save_file(options, move |s: &mut State, result, tx| match result {
+        platform::save_file(self, tx, options, move |s, result, tx| match result {
             Ok(Some(path)) => s.save_tab_path(id, &path, tx),
             Ok(None) => {
                 s.tabs.closing = None;
@@ -322,7 +281,8 @@ impl State {
             self.sync_text(tx);
             self.input(InputEvent::FinishText, tx);
         }
-        tx.open_file(
+        platform::open_file(
+            tx,
             FileDialogOptions {
                 title: "Open canvas".into(),
                 ..Default::default()
@@ -331,8 +291,8 @@ impl State {
                 "rusty-pencil scene",
                 &["rusty-pencil", "drusty-pen", "json", "excalidraw"],
             ),
-            |s: &mut State, result, tx| match result {
-                Ok(Some(path)) => s.open_path(&path, tx),
+            |s, result, tx| match result {
+                Ok(Some(picked)) => s.open_picked(&picked, tx),
                 Ok(None) => {}
                 Err(e) => s.files.status.set(format!("Could not open: {e}")),
             },
@@ -369,7 +329,7 @@ impl State {
     }
 }
 
-fn identity(path: &Path) -> PathBuf {
+pub(crate) fn identity(path: &Path) -> PathBuf {
     path.canonicalize().unwrap_or_else(|_| {
         let parent = path
             .parent()
@@ -389,27 +349,16 @@ pub(crate) fn name(path: &Path) -> String {
         .into_owned()
 }
 
+/// Reads a scene from app data (recovery).
 pub(crate) fn read(path: &Path) -> Result<SceneFile, String> {
-    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    let bytes = platform::read(path)?;
     file::load(&bytes).map_err(|e| e.to_string())
 }
 
+/// Writes a scene to app data (recovery), atomically.
 pub(crate) fn write(path: &Path, scene: &SceneFile) -> Result<(), String> {
     let bytes = file::save(scene).map_err(|e| e.to_string())?;
-    atomic_write(path, &bytes)
-}
-
-pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    let parent = path
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
-    temp.write_all(bytes).map_err(|e| e.to_string())?;
-    temp.as_file().sync_all().map_err(|e| e.to_string())?;
-    temp.persist(path).map_err(|e| e.to_string())?;
-    Ok(())
+    platform::write(path, &bytes)
 }
 
 pub(crate) fn poll(s: &mut State, now: f64, tx: &mut Tx) -> bool {
@@ -496,7 +445,7 @@ pub(crate) fn menu(s: &State) -> El {
     col()
         .w_full()
         .child(
-            menu_action("New tab", "new-canvas-tab", "Ctrl+T", dark)
+            menu_action("New tab", "new-canvas-tab", platform::TAB_KEYS.new, dark)
                 .on_press_tx(|s: &mut State, tx| s.new_tab(tx)),
         )
         .gap(d::S1)

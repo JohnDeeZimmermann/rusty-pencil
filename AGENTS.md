@@ -42,10 +42,14 @@ Data flows one way: rune event → `InputEvent` → editor → `Command` → `Do
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+cargo clippy -p rusty-pencil --target wasm32-unknown-unknown -- -D warnings
 cargo run -p rusty-pencil
 ```
 
-Run all three checks before calling work done. The toolchain is pinned in `rust-toolchain.toml`.
+Run all four checks before calling work done. The wasm check keeps the browser build
+compiling; `app/rusty-pencil/src/platform/` is the only place that may differ by target. Build
+and prove the web version with `app/rusty-pencil/web/build.sh` and `web/smoke.mjs` (see
+[`docs/web.md`](docs/web.md)). The toolchain is pinned in `rust-toolchain.toml`.
 
 Screenshot without a window: `cargo run -p rusty-pencil -- --snap out.png --scale 1`. Rune's
 `--script events.json --at SECONDS` drives real input first (see `app/rusty-pencil/scripts/`).

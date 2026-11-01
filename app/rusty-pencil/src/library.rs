@@ -1,5 +1,5 @@
 //! Personal, offline scene snippets; fresh identities and references are assigned on drop.
-use crate::{State, design as d, polish::button};
+use crate::{State, design as d, platform, polish::button};
 use pen_core::{WorldRect, file::SceneFile};
 use pen_editor::{InputEvent, ScreenPt};
 use rune::{El, FileDialogOptions, Phase, Tx, col, el, row, text};
@@ -50,11 +50,8 @@ pub(crate) fn restore(s: &mut State) {
         .as_ref()
         .and_then(|p| p.parent())
         .map(|p| p.join("library.drusty-library"));
-    if let Some(path) = s.library.path.as_ref().filter(|p| p.exists()) {
-        match std::fs::read(path)
-            .map_err(|e| e.to_string())
-            .and_then(|bytes| decode(&bytes))
-        {
+    if let Some(path) = s.library.path.as_ref().filter(|p| platform::exists(p)) {
+        match platform::read(path).and_then(|bytes| decode(&bytes)) {
             Ok(items) => {
                 s.library.items = items;
                 s.library.revision = s.library.revision.wrapping_add(1);
@@ -69,8 +66,7 @@ pub(crate) fn restore(s: &mut State) {
 fn persist(s: &mut State) {
     s.library.revision = s.library.revision.wrapping_add(1);
     if let Some(path) = &s.library.path
-        && let Err(e) =
-            encode(&s.library.items).and_then(|bytes| crate::files::atomic_write(path, &bytes))
+        && let Err(e) = encode(&s.library.items).and_then(|bytes| platform::write(path, &bytes))
     {
         s.files.status.set(format!("Could not save library: {e}"));
     }
@@ -107,7 +103,8 @@ pub(crate) fn add(s: &mut State) {
     s.files.status.set("Added selection to library");
 }
 fn import(_: &mut State, tx: &mut Tx) {
-    tx.open_file(
+    platform::open_file(
+        tx,
         FileDialogOptions {
             title: "Import library".into(),
             ..Default::default()
@@ -116,11 +113,8 @@ fn import(_: &mut State, tx: &mut Tx) {
             "rusty-pencil library",
             &["rusty-pencil-library", "drusty-library", "json"],
         ),
-        |s: &mut State, result, _| match result {
-            Ok(Some(path)) => match std::fs::read(path)
-                .map_err(|e| e.to_string())
-                .and_then(|bytes| decode(&bytes))
-            {
+        |s, result, _| match result {
+            Ok(Some(picked)) => match decode(&picked.bytes) {
                 Ok(items) => {
                     for item in items {
                         if !s.library.items.contains(&item) {
@@ -133,7 +127,7 @@ fn import(_: &mut State, tx: &mut Tx) {
                 Err(e) => s.files.status.set(format!("Could not import library: {e}")),
             },
             Ok(None) => {}
-            Err(e) => s.files.status.set(e.to_string()),
+            Err(e) => s.files.status.set(e),
         },
     );
 }
@@ -145,23 +139,25 @@ fn export(s: &mut State, tx: &mut Tx) {
             return;
         }
     };
-    tx.save_file(
+    platform::save_file(
+        s,
+        tx,
         FileDialogOptions {
             title: "Export library".into(),
             file_name: Some("Library.rusty-pencil-library".into()),
             ..Default::default()
         }
         .filter("rusty-pencil library", &["rusty-pencil-library"]),
-        move |s: &mut State, result, _| match result {
+        move |s, result, _| match result {
             Ok(Some(path)) => {
-                if let Err(e) = crate::files::atomic_write(&path, &bytes) {
+                if let Err(e) = platform::deliver(&path, &bytes) {
                     s.files.status.set(e);
                 } else {
                     s.files.status.set("Exported library");
                 }
             }
             Ok(None) => {}
-            Err(e) => s.files.status.set(e.to_string()),
+            Err(e) => s.files.status.set(e),
         },
     );
 }

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="description" content="A local-first, hand-drawn-style whiteboard. Your drawings stay in this browser.">
+<title>rusty-pencil</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: none; background: #f8f9f7; }
+    #status { position: fixed; inset: 0; display: grid; place-content: center; gap: 8px; text-align: center;
+        font: 14px/1.5 system-ui, sans-serif; color: #6b6f6c; }
+    #status strong { font-size: 16px; font-weight: 600; color: #1e1e1e; }
+    #status[hidden] { display: none; }
+</style>
+<div id="status" role="status"><strong>rusty-pencil</strong><span id="detail">Loading…</span></div>
+<script type="module">
+import init from './app.js';
+const status = document.querySelector('#status');
+const detail = document.querySelector('#detail');
+try {
+    if (!navigator.gpu || !await navigator.gpu.requestAdapter()) {
+        throw new Error('This browser has no WebGPU. Use a current Chrome, Edge or Safari, or Firefox 141+ on Windows, served over HTTPS or localhost.');
+    }
+    await init();
+    status.hidden = true;
+} catch (error) {
+    detail.textContent = error.message ?? String(error);
+    console.error(error);
+}
+</script>
+</html>
