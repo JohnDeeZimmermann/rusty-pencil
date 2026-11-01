@@ -6,7 +6,7 @@ use pen_editor::{ScreenPt, Tool};
 use rune::{Color, MagnifyEvent, WheelEvent};
 use rune::{Env, PhysicalInput, PhysicalKeyCode, Runtime};
 
-fn app() -> Runtime<State> {
+pub(crate) fn app() -> Runtime<State> {
     let camera = Camera::centred_on(WorldPt::ORIGIN, ScreenVec::new(WINDOW.0, WINDOW.1), 1.0);
     let mut rt = Runtime::with_text(
         State::new(camera),
@@ -23,9 +23,9 @@ fn app() -> Runtime<State> {
     rt
 }
 
-const FRAME: f64 = 1.0 / 60.0;
+pub(crate) const FRAME: f64 = 1.0 / 60.0;
 
-fn drag(rt: &mut Runtime<State>, from: (f32, f32), to: (f32, f32)) {
+pub(crate) fn drag(rt: &mut Runtime<State>, from: (f32, f32), to: (f32, f32)) {
     rt.pointer_move(from.0, from.1);
     rt.pointer_down(from.0, from.1);
     rt.frame(FRAME);
@@ -56,7 +56,7 @@ fn kinds(rt: &Runtime<State>) -> Vec<Kind> {
         .collect()
 }
 
-fn key(rt: &mut Runtime<State>, c: &str) {
+pub(crate) fn key(rt: &mut Runtime<State>, c: &str) {
     rt.key(KeyEvent {
         key: Key::Text(c.into()),
         mods: Mods::default(),

@@ -175,6 +175,11 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         .size(0.0, 0.0)
         .live_offset(&s.camera.offset)
         .live_scale(&s.camera.scale)
+        // Rune snaps a scaled layer to device pixels at rest, lets go of that correction as
+        // soon as it moves and eases it back once still, so shapes hop up-left on the first
+        // pan or zoom frame and drift back after. Free-form drawings don't need hard pixel
+        // edges; draw them at their exact sub-pixel positions on every frame instead.
+        .pixel_snap(false)
         // A drag rebuilds the view on every move; the committed scene is reused unless the
         // document changed.
         .child(s.scene.view())
@@ -281,5 +286,7 @@ fn main() {
         .run();
 }
 
+#[cfg(test)]
+mod pan_snap_tests;
 #[cfg(test)]
 mod tests;
