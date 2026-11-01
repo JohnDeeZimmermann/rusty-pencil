@@ -130,34 +130,60 @@ pub(crate) fn open(s: &mut State, path: &Path, at: ScreenPt, tx: &mut Tx) {
 }
 pub(crate) fn dialog(s: &mut State, tx: &mut Tx) {
     s.menu = None;
-    tx.open_file(
+    crate::platform::open_file(
+        tx,
         FileDialogOptions {
             title: "Insert image".into(),
             ..Default::default()
         }
         .filter("Image", &["png", "jpg", "jpeg"]),
-        |s: &mut State, result, tx| match result {
-            Ok(Some(path)) => open(s, &path, centre(s), tx),
+        |s, result, tx| match result {
+            Ok(Some(picked)) => {
+                let at = centre(s);
+                insert(s, picked.bytes, at, tx);
+            }
             Ok(None) => {}
             Err(e) => s.files.status.set(format!("Could not insert image: {e}")),
         },
     );
+}
+fn is_scene(path: &Path) -> bool {
+    matches!(
+        path.extension().and_then(|s| s.to_str()),
+        Some("excalidraw" | "rusty-pencil" | "drusty-pen" | "json")
+    )
+}
+/// Each further dropped image lands this far (screen points) below and right of the last.
+const DROP_STEP: f32 = 20.0;
+/// Files dropped by the browser, already read: scenes open in tabs, images land at `at`.
+#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+pub(crate) fn drop_picked(
+    s: &mut State,
+    files: Vec<crate::platform::Picked>,
+    at: ScreenPt,
+    tx: &mut Tx,
+) {
+    for (i, file) in files.into_iter().enumerate() {
+        if is_scene(&file.path) {
+            s.open_picked(&file, tx);
+        } else {
+            let step = i as f32 * DROP_STEP;
+            insert(s, file.bytes, ScreenPt::new(at.x + step, at.y + step), tx);
+        }
+    }
 }
 pub(crate) fn drop_files(s: &mut State, files: &[PathBuf], tx: &mut Tx) {
     let at = tx
         .drop_point()
         .map_or_else(|| centre(s), |p| ScreenPt::new(p.x, p.y));
     for (i, path) in files.iter().enumerate() {
-        if matches!(
-            path.extension().and_then(|s| s.to_str()),
-            Some("excalidraw" | "rusty-pencil" | "drusty-pen" | "json")
-        ) {
+        if is_scene(path) {
             s.open_path(path, tx);
         } else {
             open(
                 s,
                 path,
-                ScreenPt::new(at.x + i as f32 * 20.0, at.y + i as f32 * 20.0),
+                ScreenPt::new(at.x + i as f32 * DROP_STEP, at.y + i as f32 * DROP_STEP),
                 tx,
             );
         }

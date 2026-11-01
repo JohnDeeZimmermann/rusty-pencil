@@ -11,16 +11,29 @@ rust-version.workspace = true
 pen-core.workspace = true
 pen-editor.workspace = true
 pen-render.workspace = true
-rune = { workspace = true, features = ["native-file-dialog"] }
 rune-kit = { git = "https://github.com/anomalyco/rune", rev = "791971423cf6614aff061491e1f82e283dfc9f0e" }
 # Rune-kit supplies accessible inspector fields and controls using the pinned GUI revision.
 # Serialize the local workspace manifest without inventing another file format.
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-directories = "6"
-tempfile = "3"
 # Decode bounded PNG/JPEG sources into Rune pixel surfaces.
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rune = { workspace = true, features = ["native-file-dialog"] }
+directories = "6"
+tempfile = "3"
+
+# The browser build: no file dialogs, desktop services or bundled UI fonts (the app supplies
+# its own through `AppSpec::fonts`), so those bytes stay out of the wasm. Same rev as the
+# workspace pin; bump both together.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+rune = { git = "https://github.com/anomalyco/rune", rev = "791971423cf6614aff061491e1f82e283dfc9f0e", default-features = false }
+# The page side of storage, file pickers, downloads and drops (`platform/web.rs`).
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Blob", "BlobPropertyBag", "DataTransfer", "Document", "DragEvent", "Element", "EventTarget", "File", "FileList", "HtmlAnchorElement", "HtmlElement", "HtmlInputElement", "Url", "Window"] }
 
 [lints]
 workspace = true

@@ -7,7 +7,12 @@ use rune::text::{RichLayoutOptions, TextSystem};
 use rune::{Align, El, Family, Key, TextEdit, Tx, col, el, text, text_input, tok::TextStyle};
 
 pub(crate) static FONTS: &[&[u8]] = &[
+    #[cfg(not(target_arch = "wasm32"))]
     include_bytes!("../../../assets/fonts/Inter.ttf"),
+    // The browser downloads every byte: the same Inter without stylistic sets and the scripts
+    // it rarely needs (see `assets/fonts/README.md`).
+    #[cfg(target_arch = "wasm32")]
+    include_bytes!("../../../assets/fonts/Inter-web.ttf"),
     include_bytes!("../../../assets/fonts/PatrickHand.ttf"),
     include_bytes!("../../../assets/fonts/RobotoMono.ttf"),
 ];

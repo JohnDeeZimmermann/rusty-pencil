@@ -148,7 +148,16 @@ pub(crate) fn controls(s: &State) -> El {
                         .on_press(|s: &mut State| s.library.open = !s.library.open),
                 )
                 .child(
-                    button("⌕", "find-open", false, dark)
+                    button("", "find-open", false, dark)
+                        .label("Find text")
+                        .child(
+                            rune::canvas(crate::property_icons::find(if dark {
+                                d::INK.dark()
+                            } else {
+                                d::INK
+                            }))
+                            .size(d::ICON, d::ICON),
+                        )
                         .help("Find text · Ctrl+F")
                         .on_press_tx(|s: &mut State, tx| open(s, Modal::Find, tx)),
                 )
@@ -330,6 +339,11 @@ pub(crate) fn dialog(s: &State) -> El {
             ),
     );
     if modal == Modal::Help {
+        let keys = crate::platform::TAB_KEYS;
+        let tabs = format!(
+            "{} New tab · {} Close tab · {} Next tab",
+            keys.new, keys.close, keys.next
+        );
         for label in [
             "V Select · R Rectangle · D Diamond · O Ellipse",
             "A Arrow · L Line · P Pen · T Text · 9 Image",
@@ -342,6 +356,7 @@ pub(crate) fn dialog(s: &State) -> El {
             "Alt+S Snap · Alt+Z Zen · Alt+R View · Alt+/ Stats",
             "Shift+1 Fit drawing · Shift+2 Fit selection",
             "Ctrl+S Save · Ctrl+O Open · Ctrl+Shift+E Export",
+            &tabs,
         ] {
             content = content.child(
                 text(label)

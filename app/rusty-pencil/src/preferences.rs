@@ -1,5 +1,5 @@
 //! Window-wide appearance is stored separately from scenes and workspace recovery.
-use crate::{State, files};
+use crate::{State, platform};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -19,11 +19,10 @@ impl State {
         else {
             return;
         };
-        if !path.exists() {
+        if !platform::exists(&path) {
             return;
         }
-        match std::fs::read(path)
-            .map_err(|e| e.to_string())
+        match platform::read(&path)
             .and_then(|bytes| serde_json::from_slice(&bytes).map_err(|e| e.to_string()))
         {
             Ok(preferences) => self.preferences = preferences,
@@ -47,7 +46,7 @@ impl State {
         };
         let result = serde_json::to_vec(&self.preferences)
             .map_err(|e| e.to_string())
-            .and_then(|bytes| files::atomic_write(&path, &bytes));
+            .and_then(|bytes| platform::write(&path, &bytes));
         if let Err(error) = result {
             self.files
                 .status

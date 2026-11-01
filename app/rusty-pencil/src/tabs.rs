@@ -192,8 +192,7 @@ impl State {
             && path.file_name().is_some_and(|n| {
                 n == "autosave.drusty-pen" || n == format!("tab-{}.drusty-pen", id.0).as_str()
             })
-            && let Err(error) = std::fs::remove_file(path)
-            && error.kind() != std::io::ErrorKind::NotFound
+            && let Err(error) = crate::platform::remove(&path)
         {
             self.files
                 .status
@@ -215,8 +214,13 @@ pub(crate) fn key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
         Key::Text(t) if t.len() == 1 => t.chars().next().map(|c| c.to_ascii_lowercase()),
         _ => None,
     };
-    let cycle =
-        (ev.mods.ctrl || ev.mods.cmd) && matches!(ev.key, Key::Tab | Key::PageUp | Key::PageDown);
+    // The browser keeps Ctrl+Tab, Ctrl+PageUp/Down and Ctrl+T/N/W; there, tabs use Alt instead.
+    let (held, other) = if crate::platform::TAB_KEYS_USE_ALT {
+        (ev.mods.alt, ev.mods.cmd)
+    } else {
+        (ev.mods.ctrl || ev.mods.cmd, ev.mods.alt)
+    };
+    let cycle = held && matches!(ev.key, Key::Tab | Key::PageUp | Key::PageDown);
     if cycle {
         let len = s.tabs.entries.len();
         let at = s
@@ -234,7 +238,7 @@ pub(crate) fn key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
         s.switch_tab(s.tabs.entries[next].id, tx);
         return true;
     }
-    if !ev.mods.cmd || ev.mods.alt {
+    if !held || other {
         return false;
     }
     match command {
@@ -304,7 +308,7 @@ pub(crate) fn view(s: &State) -> El {
                         .radius(d::R_BUTTON)
                         .role("button")
                         .label("Close tab")
-                        .help("Close tab · Ctrl+W")
+                        .help(format!("Close tab · {}", crate::platform::TAB_KEYS.close))
                         .items_center()
                         .justify_center()
                         .hover(d::themed(d::ACCENT_SOFT, dark))
@@ -338,7 +342,7 @@ pub(crate) fn view(s: &State) -> El {
                 .radius(d::R_BUTTON)
                 .role("button")
                 .label("New tab")
-                .help("New canvas · Ctrl+T / Ctrl+N")
+                .help(format!("New canvas · {}", crate::platform::TAB_KEYS.new))
                 .items_center()
                 .justify_center()
                 .hover(d::themed(d::ACCENT_SOFT, dark))
