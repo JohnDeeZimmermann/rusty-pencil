@@ -1,4 +1,4 @@
-//! The drusty-pen window. The only crate that imports `rune`: it turns rune events into
+//! The rusty-pencil window. The only crate that imports `rune`: it turns rune events into
 //! `pen_editor::InputEvent`s and presents editor state as rune elements.
 
 mod arrange;
@@ -469,7 +469,7 @@ fn spec() -> AppSpec<State> {
         fonts: text::FONTS,
         families: text::FAMILIES,
         poll: Some(polish::poll),
-        ..AppSpec::new("drusty-pen", WINDOW, init, view)
+        ..AppSpec::new("rusty-pencil", WINDOW, init, view)
     }
 }
 

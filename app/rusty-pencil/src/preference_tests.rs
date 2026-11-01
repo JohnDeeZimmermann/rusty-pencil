@@ -57,7 +57,7 @@ fn theme_is_global_across_existing_and_new_tabs_and_does_not_dirty_canvases() {
 fn opening_and_resetting_scenes_preserve_the_global_theme() {
     let mut rt = app();
     let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("legacy.drusty-pen");
+    let path = dir.path().join("legacy.rusty-pencil");
     let mut value = serde_json::to_value(rt.state.snapshot()).unwrap();
     value["app_state"]["settings"]["dark"] = true.into();
     std::fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
@@ -68,7 +68,7 @@ fn opening_and_resetting_scenes_preserve_the_global_theme() {
         "legacy file appearance cannot override the editor"
     );
     toggle(&mut rt);
-    let light = dir.path().join("light.drusty-pen");
+    let light = dir.path().join("light.rusty-pencil");
     crate::files::write(&light, &rt.state.snapshot()).unwrap();
     rt.drop_files(vec![light], None);
     rt.frame(FRAME);

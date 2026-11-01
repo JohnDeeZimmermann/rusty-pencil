@@ -150,7 +150,7 @@ pub(crate) fn drop_files(s: &mut State, files: &[PathBuf], tx: &mut Tx) {
     for (i, path) in files.iter().enumerate() {
         if matches!(
             path.extension().and_then(|s| s.to_str()),
-            Some("excalidraw" | "drusty-pen" | "json")
+            Some("excalidraw" | "rusty-pencil" | "drusty-pen" | "json")
         ) {
             s.open_path(path, tx);
         } else {

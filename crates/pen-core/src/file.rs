@@ -59,9 +59,9 @@ pub enum FileError {
     Truncated,
     #[error("Invalid scene JSON: {0}")]
     Json(serde_json::Error),
-    #[error("This is not a drusty-pen scene")]
+    #[error("This is not a rusty-pencil scene")]
     Format,
-    #[error("Scene version {0} needs a newer drusty-pen")]
+    #[error("Scene version {0} needs a newer rusty-pencil")]
     NewerVersion(u32),
     #[error("Invalid scene data: {0}")]
     Invalid(String),
@@ -86,7 +86,7 @@ impl SceneFile {
                     }
                 })
                 .collect(),
-            format: "drusty-pen".into(),
+            format: "rusty-pencil".into(),
             version: VERSION,
             elements: doc.elements().to_vec(),
             app_state,
@@ -120,7 +120,7 @@ impl SceneFile {
     }
 
     fn validate(&self) -> Result<(), FileError> {
-        if self.format != "drusty-pen" {
+        if !matches!(self.format.as_str(), "rusty-pencil" | "drusty-pen") {
             return Err(FileError::Format);
         }
         if self.version > VERSION {
@@ -200,7 +200,10 @@ pub fn load(bytes: &[u8]) -> Result<SceneFile, FileError> {
     if value.get("type").and_then(serde_json::Value::as_str) == Some("excalidraw") {
         return crate::import::excalidraw(&value);
     }
-    if value.get("format").and_then(serde_json::Value::as_str) != Some("drusty-pen") {
+    if !matches!(
+        value.get("format").and_then(serde_json::Value::as_str),
+        Some("rusty-pencil" | "drusty-pen")
+    ) {
         return Err(FileError::Format);
     }
     let version = value

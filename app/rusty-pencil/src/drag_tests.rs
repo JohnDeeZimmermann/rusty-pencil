@@ -47,7 +47,7 @@ fn connected_selection() -> Runtime<State> {
 }
 
 #[test]
-#[ignore = "release timing harness: cargo test --release -p drusty-pen multiselect_drag_timing -- --ignored --nocapture"]
+#[ignore = "release timing harness: cargo test --release -p rusty-pencil multiselect_drag_timing -- --ignored --nocapture"]
 fn multiselect_drag_timing() {
     let mut rt = connected_selection();
     rt.pointer_move(650.0, 300.0);

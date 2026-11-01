@@ -55,6 +55,6 @@
 - **Toolbar is drawn by the app, not rune-kit:** the icons are the shapes themselves, drawn by
   `pen_render::draw`, so toolbar and canvas match exactly.
 - Ctrl+wheel zoom (M3) landed early: the M0 hint already promised it.
-- Headless check: `cargo run -p drusty-pen -- --snap out.png --scale 2 --script
-  app/drusty-pen/scripts/shapes.json --at 2.0` draws all three shapes and leaves a draft
+- Headless check: `cargo run -p rusty-pencil -- --snap out.png --scale 2 --script
+  app/rusty-pencil/scripts/shapes.json --at 2.0` draws all three shapes and leaves a draft
   mid-drag.

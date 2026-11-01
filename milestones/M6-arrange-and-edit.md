@@ -54,7 +54,7 @@ keys, including bound text. Geometry-only patches do not sort or reindex the doc
 scene files default the new fields and receive keys in their existing paint order.
 
 The action registry owns ids, labels, chords, enablement and execution. Clipboard JSON is
-tagged `application/vnd.drusty-pen.elements+json` inside a lossless HTML `<pre>` transport,
+tagged `application/vnd.rusty-pencil.elements+json` inside a lossless HTML `<pre>` transport,
 beside readable plain text: the pinned Rune clipboard has no arbitrary MIME slots. Imported
 JSON uses the scene validator, and paste remaps element ids, nested groups and text bindings.
 Text style paste uses the app's actual font measurements and stays one undo step.
@@ -64,7 +64,7 @@ with the same registry and design tokens. Scripted headless app tests exercise t
 clipboard transport, styles and input routing. Core/editor tests cover arrange actions and
 single-step undo/redo, nested group entry, rotation, modifier changes, locks and erasing.
 
-Visual checks: `app/drusty-pen/scripts/m6-arrange.json` at 7.0 seconds,
+Visual checks: `app/rusty-pencil/scripts/m6-arrange.json` at 7.0 seconds,
 `m6-menu.json` at 7.7 seconds, and `m6-dark.json` / `m6-eraser.json` at 8.3 seconds, scale 1. Rotated text editing
 was also inspected in a screenshot. Release arrange run (421 frames): mean frame CPU
 0.486 ms, p95 0.883 ms. Release context-menu run (463 frames): mean 0.482 ms,

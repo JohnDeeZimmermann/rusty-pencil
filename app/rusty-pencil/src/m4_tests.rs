@@ -107,7 +107,7 @@ fn property_buttons_keep_typing_focus_and_measured_geometry() {
 #[test]
 fn save_open_save_as_and_drop_use_real_dialog_callbacks() {
     let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("世界.drusty-pen");
+    let path = dir.path().join("世界.rusty-pencil");
     let mut rt = app();
     begin(&mut rt);
     key(&mut rt, "Saved while typing");

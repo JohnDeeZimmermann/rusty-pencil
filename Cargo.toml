@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/pen-core", "crates/pen-editor", "crates/pen-render", "app/drusty-pen"]
+members = ["crates/pen-core", "crates/pen-editor", "crates/pen-render", "app/rusty-pencil"]
 
 [workspace.package]
 version = "0.0.1"

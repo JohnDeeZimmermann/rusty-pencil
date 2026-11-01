@@ -3,7 +3,7 @@ use pen_editor::ScreenVec;
 #[test]
 fn atomic_write_replaces_scene_without_leaving_temporary_files() {
     let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("canvas.drusty-pen");
+    let path = dir.path().join("canvas.rusty-pencil");
     let scene = SceneFile::new(&Document::new(), AppState::default());
     write(&path, &scene).unwrap();
     write(&path, &scene).unwrap();
@@ -122,7 +122,7 @@ fn failed_autosave_does_not_spin_or_panic_and_retries_on_close() {
     assert!(poll(&mut s, 1.1, &mut tx));
     assert!(!poll(&mut s, 1.2, &mut tx));
     assert!(s.files.status.0.get().contains("Could not autosave"));
-    s.files.recovery = Some(dir.path().join("good.drusty-pen"));
+    s.files.recovery = Some(dir.path().join("good.rusty-pencil"));
     close(&mut s, &mut tx);
     assert!(s.files.recovery.as_ref().unwrap().exists());
 }

@@ -98,8 +98,8 @@ fn opening_files_creates_tabs_and_focuses_duplicates_without_losing_edits() {
     let mut rt = app();
     drag(&mut rt, (350.0, 260.0), (550.0, 400.0));
     let dir = tempfile::tempdir().unwrap();
-    let a = dir.path().join("a.drusty-pen");
-    let b = dir.path().join("b.drusty-pen");
+    let a = dir.path().join("a.rusty-pencil");
+    let b = dir.path().join("b.rusty-pencil");
     crate::files::write(&a, &rt.state.snapshot()).unwrap();
     crate::files::write(&b, &rt.state.snapshot()).unwrap();
     rt.drop_files(vec![a.clone(), b], None);
@@ -140,7 +140,7 @@ fn closing_dirty_tabs_supports_cancel_discard_and_save_and_keeps_one_canvas() {
     chord(&mut rt, 'w');
     click(&mut rt, "save-close-tab");
     let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("kept.drusty-pen");
+    let path = dir.path().join("kept.rusty-pencil");
     rt.resolve_file_dialog(Some(path.clone())).unwrap();
     rt.frame(FRAME);
     assert_eq!(crate::files::read(&path).unwrap().elements.len(), 1);
@@ -166,7 +166,7 @@ fn save_dialog_targets_its_originating_tab_after_switching() {
     chord(&mut rt, 's');
     chord(&mut rt, 't');
     let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("first.drusty-pen");
+    let path = dir.path().join("first.rusty-pencil");
     rt.resolve_file_dialog(Some(path.clone())).unwrap();
     rt.frame(FRAME);
     assert_eq!(crate::files::read(&path).unwrap().elements.len(), 1);
@@ -269,13 +269,13 @@ fn failed_close_save_keeps_the_canvas_and_duplicate_save_paths_are_rejected() {
     let dir = tempfile::tempdir().unwrap();
     let blocker = dir.path().join("blocker");
     std::fs::write(&blocker, b"not a directory").unwrap();
-    rt.resolve_file_dialog(Some(blocker.join("canvas.drusty-pen")))
+    rt.resolve_file_dialog(Some(blocker.join("canvas.rusty-pencil")))
         .unwrap();
     rt.frame(FRAME);
     assert!(rt.state.tabs.closing.is_some());
     assert_eq!(rt.state.editor.document().elements().len(), 1);
     click(&mut rt, "cancel-close-tab");
-    let path = dir.path().join("first.drusty-pen");
+    let path = dir.path().join("first.rusty-pencil");
     chord(&mut rt, 's');
     rt.resolve_file_dialog(Some(path.clone())).unwrap();
     rt.frame(FRAME);

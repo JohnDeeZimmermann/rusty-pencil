@@ -23,7 +23,7 @@ struct File {
 }
 fn encode(items: &[SceneFile]) -> Result<Vec<u8>, String> {
     serde_json::to_vec_pretty(&File {
-        format: "drusty-pen-library".into(),
+        format: "rusty-pencil-library".into(),
         version: 1,
         items: items.to_vec(),
     })
@@ -31,7 +31,11 @@ fn encode(items: &[SceneFile]) -> Result<Vec<u8>, String> {
 }
 fn decode(bytes: &[u8]) -> Result<Vec<SceneFile>, String> {
     let file: File = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
-    if file.format != "drusty-pen-library" || file.version != 1 {
+    if !matches!(
+        file.format.as_str(),
+        "rusty-pencil-library" | "drusty-pen-library"
+    ) || file.version != 1
+    {
         return Err("Unsupported library file".into());
     }
     for item in &file.items {
@@ -108,7 +112,10 @@ fn import(_: &mut State, tx: &mut Tx) {
             title: "Import library".into(),
             ..Default::default()
         }
-        .filter("drusty-pen library", &["drusty-library", "json"]),
+        .filter(
+            "rusty-pencil library",
+            &["rusty-pencil-library", "drusty-library", "json"],
+        ),
         |s: &mut State, result, _| match result {
             Ok(Some(path)) => match std::fs::read(path)
                 .map_err(|e| e.to_string())
@@ -141,10 +148,10 @@ fn export(s: &mut State, tx: &mut Tx) {
     tx.save_file(
         FileDialogOptions {
             title: "Export library".into(),
-            file_name: Some("Library.drusty-library".into()),
+            file_name: Some("Library.rusty-pencil-library".into()),
             ..Default::default()
         }
-        .filter("drusty-pen library", &["drusty-library"]),
+        .filter("rusty-pencil library", &["rusty-pencil-library"]),
         move |s: &mut State, result, _| match result {
             Ok(Some(path)) => {
                 if let Err(e) = crate::files::atomic_write(&path, &bytes) {

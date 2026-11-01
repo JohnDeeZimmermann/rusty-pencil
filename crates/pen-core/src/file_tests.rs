@@ -47,7 +47,7 @@ fn garbage_truncation_and_newer_version_are_distinct() {
     assert!(matches!(load(b"garbage"), Err(FileError::Json(_))));
     assert!(matches!(load(b"{\"format\":"), Err(FileError::Truncated)));
     assert!(matches!(
-        load(br#"{"format":"drusty-pen","version":999,"elements":["future kind"]}"#),
+        load(br#"{"format":"rusty-pencil","version":999,"elements":["future kind"]}"#),
         Err(FileError::NewerVersion(999))
     ));
     assert!(matches!(
@@ -216,4 +216,16 @@ fn scene_files_neither_store_nor_restore_dark_appearance() {
     value["app_state"]["settings"]["dark"] = true.into();
     let loaded = load(&serde_json::to_vec(&value).unwrap()).unwrap();
     assert!(!loaded.app_state.settings.dark);
+}
+
+#[test]
+fn renamed_scenes_write_new_identity_and_read_legacy_identity() {
+    let scene = scene();
+    assert_eq!(scene.format, "rusty-pencil");
+    let mut legacy = scene.clone();
+    legacy.format = "drusty-pen".into();
+    let loaded = load(&save(&legacy).unwrap()).unwrap();
+    assert_eq!(loaded.document().unwrap().elements(), scene.elements);
+    let resaved = SceneFile::new(&loaded.document().unwrap(), loaded.app_state);
+    assert_eq!(resaved.format, "rusty-pencil");
 }

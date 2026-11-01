@@ -87,12 +87,17 @@ fn library_add_drag_import_export_and_restore_are_local() {
     chord(&mut rt, 'z', false);
     assert_eq!(rt.state.editor.document().elements().len(), 2);
     click(&mut rt, "library-export");
-    let path = dir.path().join("export.drusty-library");
+    let path = dir.path().join("export.rusty-pencil-library");
     rt.resolve_file_dialog(Some(path.clone())).unwrap();
     rt.frame(FRAME);
     click(&mut rt, "library-remove-0");
     assert!(rt.state.library.items.is_empty());
     click(&mut rt, "library-import");
+    let bytes = std::fs::read(&path).unwrap();
+    let json = String::from_utf8(bytes).unwrap();
+    assert!(json.contains("rusty-pencil-library"));
+    // Import a library exported before the application rename.
+    std::fs::write(&path, json.replace("rusty-pencil", "drusty-pen")).unwrap();
     rt.resolve_file_dialog(Some(path)).unwrap();
     rt.frame(FRAME);
     assert_eq!(rt.state.library.items.len(), 1);

@@ -23,7 +23,7 @@
 3. [x] Bundle fonts under `assets/fonts/` (check licences: OFL or similar).
 4. [x] `pen-render`: rough generator seeded by `element.seed` (evaluate the `roughr` crate vs own
        port); cache output by `(id, version)`, sampled for all zooms (see Notes).
-5. [x] `pen-core::file`: `SceneFile { format: "drusty-pen", version: u32, elements, app_state }` with
+5. [x] `pen-core::file`: `SceneFile { format: "rusty-pencil", version: u32, elements, app_state }` with
        serde; `load` migrates old versions and returns typed errors.
 6. [x] App: file dialogs (`rune::FileDialogs`), `on_drop_files`, autosave to the platform data dir
        debounced to 1 s after the last change.
@@ -66,7 +66,7 @@
 - Reset uses a modal confirmation, clears recovery, resets camera and defaults, and detaches
   the named save file. Scripted/headless runs leave normal recovery untouched; `--data-dir`
   opts into a separate directory for restore tests. `--open` opens a scene directly.
-- Visual fixture: `app/drusty-pen/scripts/m4-text-style.json`, snapshot at 18.6 seconds.
+- Visual fixture: `app/rusty-pencil/scripts/m4-text-style.json`, snapshot at 18.6 seconds.
   Workspace tests cover file round trips for all kinds, corruption and migration, deterministic
   outlines, unchanged draft/commit paint, native text/IME dispatch, font controls, live camera,
   save/open/drop, reset cancellation, debounce, active-draft recovery and write failures.

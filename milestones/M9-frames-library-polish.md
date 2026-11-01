@@ -87,6 +87,6 @@ laser/lasso feedback.
 InputEvent tests cover tools, ownership, undo, preview cancellation, clipboard, links, lasso,
 laser fading, snapping, migration and read-only guards. Rune tests exercise fields, search focus,
 the Action palette, links, image sampling, library drag/drop, dialogs and library recovery.
-`app/drusty-pen/scripts/m9-frames.json` reproduces light frames (6.0 s), Stats (6.5 s), the
+`app/rusty-pencil/scripts/m9-frames.json` reproduces light frames (6.0 s), Stats (6.5 s), the
 library (7.6 s), dark library (8.4 s), palette (9.2 s), help (10.4 s), laser (11.6 s) and zen
 mode (13.2 s).

@@ -1,21 +1,21 @@
 <div align="center">
 
-<img src="assets/icon.svg" width="72" height="72" alt="drusty-pen logo">
+<img src="assets/icon.svg" width="72" height="72" alt="rusty-pencil logo">
 
-# drusty-pen
+# rusty-pencil
 
 **A cosy, hand-drawn whiteboard that lives on your machine.**
 
 Sketch ideas, map out systems and doodle in the margins. No account, no cloud, no waiting.
 Just you, a blank canvas and a pen that feels like paper.
 
-<img src="assets/readme/hero.png" alt="A hand-drawn flowchart in drusty-pen, from 'Spark of an idea' to 'Ship it!'" width="820">
+<img src="assets/readme/hero.png" alt="A hand-drawn flowchart in rusty-pencil, from 'Spark of an idea' to 'Ship it!'" width="820">
 
 </div>
 
 ## Why you'll like it
 
-drusty-pen is a native whiteboard written in Rust, in the spirit of Excalidraw. Every stroke
+rusty-pencil is a native whiteboard written in Rust, in the spirit of Excalidraw. Every stroke
 comes out slightly imperfect on purpose, so your diagrams look like something you scribbled
 on a napkin (only much tidier). It runs on the GPU, so it opens fast and stays smooth while
 you pan, zoom and drag.
@@ -84,7 +84,7 @@ becomes optional.
 
 ## All the little extras
 
-A few more things tucked into drusty-pen that make day-to-day sketching nicer:
+A few more things tucked into rusty-pencil that make day-to-day sketching nicer:
 
 | Feature | What it does |
 |---|---|
@@ -103,13 +103,13 @@ You need a Rust toolchain; the exact version is pinned in `rust-toolchain.toml`,
 picks it up for you. Then run:
 
 ```sh
-git clone https://github.com/JohnDeeZimmermann/drusty-pen.git
-cd drusty-pen
-cargo run --release -p drusty-pen
+git clone https://github.com/JohnDeeZimmermann/rusty-pencil.git
+cd rusty-pencil
+cargo run --release -p rusty-pencil
 ```
 
 That's it. Grab the rectangle (`2`), drag on the canvas, and you're drawing. Drawings save as
-`.drusty-pen` files (`Ctrl+S`), which are plain, versioned JSON.
+`.rusty-pencil` files (`Ctrl+S`), which are plain, versioned JSON.
 
 ## Learn more
 

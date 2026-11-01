@@ -7,7 +7,7 @@ the camera will work.
 
 ## Done when
 
-- [x] `cargo run -p drusty-pen` opens a window with a full-size canvas.
+- [x] `cargo run -p rusty-pencil` opens a window with a full-size canvas.
 - [x] `cargo test --workspace` and `cargo clippy --workspace --all-targets -- -D warnings` pass.
 - [x] The camera decision below is filled in.
 
@@ -19,7 +19,7 @@ the camera will work.
        `rune = { git = "https://github.com/anomalyco/rune", rev = "791971423cf6614aff061491e1f82e283dfc9f0e" }`.
 3. [x] Create empty crates `crates/pen-core`, `crates/pen-editor`, `crates/pen-render` with `lib.rs`
        and one smoke test each.
-4. [x] Create `app/drusty-pen` with `rune::run(AppSpec::new(...))`, one `canvas()` filling the
+4. [x] Create `app/rusty-pencil` with `rune::run(AppSpec::new(...))`, one `canvas()` filling the
        window, drawing a single test rectangle.
 5. [x] Add a headless app test using `rune::Runtime` (pattern: rune's `examples/sketch`).
 6. [x] **Camera spike** (time-box 30 min), answer:
@@ -42,7 +42,7 @@ Chosen: **A**. Reason: the spike answered all three questions in A's favour.
 2. **Zoom about the cursor works.** `live_scale` scales about the node centre. For a zero-size
    node at (0, 0) the centre is the origin, so the presented transform is
    `screen = world * zoom + offset`. With `screen = (world - scroll) * zoom` that gives
-   `offset = -scroll * zoom` (`app/drusty-pen/src/present.rs`). The headless test checks that
+   `offset = -scroll * zoom` (`app/rusty-pencil/src/present.rs`). The headless test checks that
    rune's drawn rect matches `Camera::world_to_screen`.
 3. **Event coordinates.** `on_wheel` and `on_magnify` sit on the *unscaled* viewport, so they
    get viewport points. The editor's `Camera` converts them to world points. (A handler on the
@@ -61,8 +61,8 @@ scene `Shape` is never rebuilt while the camera moves.
   (`palette::srgb`, or `rune::color::hex`).
 - Stroke widths in the world `Shape` scale with zoom (2 pt at 300% draws 6 px). That matches
   Excalidraw, where stroke width is in world units.
-- Headless screenshots: `cargo run -p drusty-pen -- --snap out.png --scale 1`, optionally with
-  `--camera X,Y,ZOOM` or `--script app/drusty-pen/scripts/pan-zoom.json --at 0.5`.
+- Headless screenshots: `cargo run -p rusty-pencil -- --snap out.png --scale 1`, optionally with
+  `--camera X,Y,ZOOM` or `--script app/rusty-pencil/scripts/pan-zoom.json --at 0.5`.
 - Window resize does not re-centre the camera. Nothing needs it yet.
 
 - M3 clarified the zero-size-node approach: only the **world transform** stays zero-size.

@@ -58,10 +58,10 @@
   paint to local coordinates and carry world-space layout bounds, so zooming away from the
   world origin does not hide visible content. `instant_changes` on the world keeps layout
   animation out of document edits. A native-runtime test checks emitted primitives at 3000%.
-- Visual fixture: `app/drusty-pen/scripts/m3-paths.json`, snapshots at 7.1 s (paths, moved and
+- Visual fixture: `app/rusty-pencil/scripts/m3-paths.json`, snapshots at 7.1 s (paths, moved and
   inserted points), 8.5 s (200%), 9.6 s (3000%), 10.5 s (return button), 11.5 s (fit all).
-  Run with `cargo run -p drusty-pen -- --snap snaps/m3.png --scale 1 --script
-  app/drusty-pen/scripts/m3-paths.json --at 7.1`.
+  Run with `cargo run -p rusty-pencil -- --snap snaps/m3.png --scale 1 --script
+  app/rusty-pencil/scripts/m3-paths.json --at 7.1`.
 
 - Release check on this machine (`--scale 1`, scripted input): 427 frames through 7.1 s,
   frame CPU mean **0.338 ms**, p95 **0.747 ms**. At 3000% through 9.6 s: mean **0.416 ms**,

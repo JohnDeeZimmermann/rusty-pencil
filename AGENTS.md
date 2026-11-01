@@ -1,4 +1,4 @@
-# drusty-pen
+# rusty-pencil
 
 A local-first, hand-drawn-style whiteboard in Rust, in the spirit of Excalidraw. The GUI is
 [rune](https://github.com/anomalyco/rune) (wgpu + winit). No online features: no collaboration
@@ -28,9 +28,9 @@ Every change is judged against these four, in this order when they conflict:
 | `crates/pen-core` | Elements, ids, `Document`, geometry, hit testing, commands, file format | std, serde, glam |
 | `crates/pen-editor` | Tools, interaction state machines, selection, camera, history | `pen-core` |
 | `crates/pen-render` | `Document` + editor overlay → `DrawList`; hand-drawn style; shape cache | `pen-core`, `pen-editor` |
-| `app/drusty-pen` | rune window, panels, event and draw-list adapters | everything + `rune` |
+| `app/rusty-pencil` | rune window, panels, event and draw-list adapters | everything + `rune` |
 
-**Only `app/drusty-pen` imports `rune`.** Rune is pre-1.0 and pinned by git rev. Every other crate
+**Only `app/rusty-pencil` imports `rune`.** Rune is pre-1.0 and pinned by git rev. Every other crate
 builds and tests with no window and no GPU.
 
 Data flows one way: rune event → `InputEvent` → editor → `Command` → `Document` → `DrawList` →
@@ -42,13 +42,13 @@ Data flows one way: rune event → `InputEvent` → editor → `Command` → `Do
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo run -p drusty-pen
+cargo run -p rusty-pencil
 ```
 
 Run all three checks before calling work done. The toolchain is pinned in `rust-toolchain.toml`.
 
-Screenshot without a window: `cargo run -p drusty-pen -- --snap out.png --scale 1`. Rune's
-`--script events.json --at SECONDS` drives real input first (see `app/drusty-pen/scripts/`).
+Screenshot without a window: `cargo run -p rusty-pencil -- --snap out.png --scale 1`. Rune's
+`--script events.json --at SECONDS` drives real input first (see `app/rusty-pencil/scripts/`).
 Always include a screenshot of the app in the final response when work is done.
 
 ## Rust guidelines

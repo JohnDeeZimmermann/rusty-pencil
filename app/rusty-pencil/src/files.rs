@@ -115,6 +115,7 @@ impl State {
                 if isolated {
                     None
                 } else {
+                    // Keep the existing data directory so recovery and preferences survive renames.
                     directories::ProjectDirs::from("", "", "drusty-pen")
                         .map(|p| p.data_local_dir().to_owned())
                 }
@@ -293,7 +294,7 @@ impl State {
                 self.files
                     .path
                     .as_deref()
-                    .map_or_else(|| "Untitled.drusty-pen".into(), name),
+                    .map_or_else(|| "Untitled.rusty-pencil".into(), name),
             ),
             directory: self
                 .files
@@ -303,7 +304,10 @@ impl State {
                 .map(Path::to_owned),
             ..Default::default()
         }
-        .filter("drusty-pen scene", &["drusty-pen", "json", "excalidraw"]);
+        .filter(
+            "rusty-pencil scene",
+            &["rusty-pencil", "drusty-pen", "json", "excalidraw"],
+        );
         tx.save_file(options, move |s: &mut State, result, tx| match result {
             Ok(Some(path)) => s.save_tab_path(id, &path, tx),
             Ok(None) => {
@@ -323,7 +327,10 @@ impl State {
                 title: "Open canvas".into(),
                 ..Default::default()
             }
-            .filter("drusty-pen scene", &["drusty-pen", "json", "excalidraw"]),
+            .filter(
+                "rusty-pencil scene",
+                &["rusty-pencil", "drusty-pen", "json", "excalidraw"],
+            ),
             |s: &mut State, result, tx| match result {
                 Ok(Some(path)) => s.open_path(&path, tx),
                 Ok(None) => {}

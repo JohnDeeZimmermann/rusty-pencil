@@ -5,7 +5,7 @@ use pen_core::{Element, Kind, WorldPt, WorldRect, file};
 use pen_editor::{Action, InputEvent};
 use rune::{ClipboardContent, Tx};
 
-const MIME: &str = "application/vnd.drusty-pen.elements+json";
+const MIME: &str = "application/vnd.rusty-pencil.elements+json";
 
 fn encode(
     elements: &[Element],
@@ -32,7 +32,7 @@ fn encode(
                 }
             })
             .collect(),
-        format: "drusty-pen".into(),
+        format: "rusty-pencil".into(),
         version: file::VERSION,
         elements: elements.to_vec(),
         app_state: file::AppState::default(),
@@ -49,7 +49,9 @@ fn encode(
 
 fn decode(content: &ClipboardContent) -> Option<file::SceneFile> {
     let html = content.html()?;
-    let (_, data) = html.split_once(MIME)?;
+    let (_, data) = html
+        .split_once(MIME)
+        .or_else(|| html.split_once("application/vnd.drusty-pen.elements+json"))?;
     let (data, _) = data.split_once("</pre>")?;
     let json = data
         .trim()
@@ -129,6 +131,17 @@ mod tests {
     use super::*;
     use crate::tests::{FRAME, app, drag};
     use rune::{Key, KeyEvent, Mods};
+
+    #[test]
+    fn renamed_clipboard_accepts_legacy_mime_and_scene_identity() {
+        let content = encode(&[], &Default::default()).unwrap();
+        let html = content.html().unwrap();
+        assert!(html.contains(MIME));
+        assert!(decode(&content).is_some());
+        let legacy =
+            ClipboardContent::new("").with_html(html.replace("rusty-pencil", "drusty-pen"));
+        assert!(decode(&legacy).is_some());
+    }
 
     fn chord(rt: &mut rune::Runtime<State>, c: char) {
         rt.key(KeyEvent {

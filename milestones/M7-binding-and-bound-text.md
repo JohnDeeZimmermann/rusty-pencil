@@ -81,7 +81,7 @@
 - **Verification.** Event-driven core/editor and Rune tests cover binding feedback, Ctrl,
   live moves, resize/rotation, dependency chains, deletion, duplication, undo, text wrapping
   and alignment; file tests cover recovery and round trips. Scripted screenshots:
-  `app/drusty-pen/scripts/m7-connections.json` (connected sharp/curved/elbow geometry and label)
+  `app/rusty-pencil/scripts/m7-connections.json` (connected sharp/curved/elbow geometry and label)
   `m7-bound-text.json` (wrapping and shape text), and `m7-vertical-align.json` (all vertical
   placements). Release scripted rendering: frame CPU p50 0.437 ms, p95 1.131 ms across 877
   forced frames; pan/zoom still only updates live presentation values.
@@ -97,8 +97,8 @@
   so releasing a move preserves the pattern. Rune input tests assert no view commits during
   connected multiselect motion, immediate subpixel presentation, cancellation and one-step
   undo; renderer tests cover deformation, every element kind and hatch continuity.
-  Release timing harness: `cargo test --release -p drusty-pen multiselect_drag_timing --
+  Release timing harness: `cargo test --release -p rusty-pencil multiselect_drag_timing --
   --ignored --nocapture` (7 elements, 360 pointer+frame samples). Before: mean 0.775 ms,
   p95 0.844 ms; after: mean 0.214 ms, p95 0.239 ms. These are headless CPU timings, excluding
-  GPU work. `app/drusty-pen/scripts/multiselect-drag.json` reproduces the connected selection
+  GPU work. `app/rusty-pencil/scripts/multiselect-drag.json` reproduces the connected selection
   and holds a six-second drag for screenshots and rendered traces.

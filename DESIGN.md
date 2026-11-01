@@ -1,10 +1,10 @@
-# drusty-pen design language
+# rusty-pencil design language
 
 **Quiet, precise, approachable.** A pale studio surface, small floating controls, and a muted
 teal selection. Personality comes from the drawings and carefully spaced shapes. Chrome stays
 light enough to leave attention on the canvas.
 
-Tokens live in `app/drusty-pen/src/design.rs`. Views use those tokens for colours, sizes,
+Tokens live in `app/rusty-pencil/src/design.rs`. Views use those tokens for colours, sizes,
 radii, typography, and motion.
 
 ## Principles

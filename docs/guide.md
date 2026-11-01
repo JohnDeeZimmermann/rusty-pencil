@@ -1,11 +1,11 @@
-# The drusty-pen guide
+# The rusty-pencil guide
 
-Everything drusty-pen can do, one workflow at a time. For the quick tour with pictures, start
+Everything rusty-pencil can do, one workflow at a time. For the quick tour with pictures, start
 at the [README](../README.md).
 
 ## Run and draw
 
-Run `cargo run -p drusty-pen` with the pinned Rust toolchain. Use the toolbar or letter shortcuts
+Run `cargo run -p rusty-pencil` with the pinned Rust toolchain. Use the toolbar or letter shortcuts
 for shapes, paths, pen, selection and text (`T`). Click to place text, press Enter for another
 line, and finish with Escape or a click away. Double-click a text element to edit it again.
 Double-click inside a rectangle, diamond or ellipse to write text that wraps inside it (the
@@ -27,7 +27,7 @@ last tab. Use Cmd for command shortcuts on macOS (Ctrl+Tab also works there).
 The top-left File menu contains Open, Save, Export and Reset canvas. Save the active tab with
 Ctrl+S, use Ctrl+Shift+S for Save as, and open with Ctrl+O. Opening or dropping scene files
 creates tabs; opening a file already in a tab focuses it. Scene files are versioned JSON
-with the `.drusty-pen` extension. A dot beside a tab name means it has changes to save to a
+with the `.rusty-pencil` extension. A dot beside a tab name means it has changes to save to a
 file. Closing with **×** or Ctrl+W offers Save, Discard and Cancel when needed. Closing the
 last tab leaves a fresh canvas.
 
@@ -57,8 +57,8 @@ keeps the same appearance. Changing appearance does not mark a canvas as unsaved
 The README screenshots come from the scenes in `assets/readme/scenes/`; open one with
 `--open` and snap it the same way.
 
-For isolated checks, use `cargo run -p drusty-pen -- --snap snaps/m5.png --scale 1
---script app/drusty-pen/scripts/m5-properties.json --at 19.5`. Substitute `m5-dark.json` for dark
+For isolated checks, use `cargo run -p rusty-pencil -- --snap snaps/m5.png --scale 1
+--script app/rusty-pencil/scripts/m5-properties.json --at 19.5`. Substitute `m5-dark.json` for dark
 mode and grid coverage. Snapshots do not read or write normal recovery. Add `--data-dir PATH`
 to test recovery in a separate directory, or `--open PATH` to load a scene directly.
 Use `tabs.json` under the same script directory with `--at 6.5` to check three
@@ -73,7 +73,7 @@ pixels and supports undo. Images are embedded once per content hash in saved sce
 File → Export (Ctrl+Shift+E) saves PNG or SVG at 1×/2×/3× with background, dark-mode and
 selection-only choices. Copy the selection as PNG with Ctrl+Shift+C, or as SVG source with
 Ctrl+Alt+Shift+C. SVG text is outlined using the bundled fonts. Exported images do not embed
-an editable scene; save a `.drusty-pen` file to keep editing later.
+an editable scene; save a `.rusty-pencil` file to keep editing later.
 
 Open or drop `.excalidraw` files to import supported elements. A notice counts skipped
 unsupported types. Individual images are limited to 16 MiB / 16 megapixels; decoded previews
@@ -89,7 +89,7 @@ that frame at its exact size. Frames are axis-aligned and cannot be nested.
 
 Open **Library** on the right and use **Add selection** to keep reusable drawings. Drag a
 thumbnail onto the canvas, or click it to place a copy in the viewport centre. Import and
-export `.drusty-library` files to move your collection between machines. The library stays
+export `.rusty-pencil-library` files to move your collection between machines. The library stays
 in the platform's local app-data directory, alongside workspace recovery, and embeds its
 images. Placing an item creates fresh ids and one undo step.
 
@@ -114,5 +114,9 @@ An empty value removes the link. Use **Open link** or Ctrl+click the element to 
 web links open in your system browser and local links focus the destination on the canvas.
 
 For M9 visual coverage, run the snapshot command with
-`--script app/drusty-pen/scripts/m9-frames.json --at 8.4` to inspect dark-mode frames and
+`--script app/rusty-pencil/scripts/m9-frames.json --at 8.4` to inspect dark-mode frames and
 the personal library. Other review times are recorded in the M9 milestone file.
+
+The app was previously named `drusty-pen`. Existing `.drusty-pen` scenes and
+`.drusty-library` libraries still open. Recovery, preferences, and the local library keep
+using the original data directory and internal filenames so existing work remains available.
