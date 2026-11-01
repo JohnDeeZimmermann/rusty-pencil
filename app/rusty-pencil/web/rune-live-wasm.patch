@@ -1,0 +1,17 @@
+Rune's `Live::new` asserts lock-free 128-bit atomics, which wasm32 lacks, so every `Live` value
+panics in the browser at rune rev 7919714 (and on `dev` as of 2026-11-01). The page runs rune on
+one thread, so portable-atomic's uncontended fallback is safe there. Drop this file and the
+patching in `build.sh` once rune skips the assert on wasm32 upstream.
+
+--- a/crates/rune/src/live.rs
++++ b/crates/rune/src/live.rs
+@@ -140,6 +140,9 @@
+ }
+ impl<T: LiveValue> Live<T> {
+     pub fn new(value: T) -> Self {
++        // wasm32 has no 128-bit atomics, but the page runs Rune on one thread: portable-atomic's
++        // uncontended fallback lock is as good as lock-free there.
++        #[cfg(not(target_arch = "wasm32"))]
+         assert!(AtomicU128::is_lock_free(), "Rune Live requires lock-free 128-bit atomics on this CPU");
+         Self { source: Source::new(value.encode().unwrap_or(0)), _t: PhantomData }
+     }
