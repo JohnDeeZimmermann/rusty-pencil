@@ -2,7 +2,13 @@
 //! happen only on commit, while live previews contain only the elements being touched.
 #![forbid(unsafe_code)]
 
+mod actions;
+mod arrange;
+mod arrange_positions;
+pub use actions::Action;
 mod camera;
+mod eraser;
+mod eraser_index;
 mod follow;
 mod history;
 mod input;
@@ -12,6 +18,7 @@ mod properties;
 pub use properties::GRID_SPACING;
 mod selection;
 mod shortcuts;
+mod style_clipboard;
 mod text;
 mod text_style;
 mod tool;
@@ -42,6 +49,10 @@ enum Gesture {
 /// Owned by the app; no window, renderer, or shared mutable state.
 #[derive(Debug, Clone, Default)]
 pub struct Editor {
+    eraser: Option<eraser::Eraser>,
+    group_scope: Option<pen_core::GroupId>,
+    clipboard: Vec<Element>,
+    copied_style: Option<arrange::CopiedStyle>,
     camera: Camera,
     document: Document,
     tool: Tool,
@@ -101,6 +112,11 @@ impl Editor {
     pub fn selection(&self) -> &Selection {
         &self.selection
     }
+    #[must_use]
+    pub fn selection_locked(&self) -> bool {
+        self.selection.elements(&self.document).any(|e| e.locked)
+    }
+
     /// Only touched elements, replacing their committed paint during a transform. Includes
     /// bound text following a previewed container.
     #[must_use]
@@ -111,6 +127,9 @@ impl Editor {
     }
 
     fn base_preview(&self) -> &[Element] {
+        if let Some(stroke) = &self.eraser {
+            return &stroke.preview;
+        }
         if let Some(edit) = &self.property_edit
             && edit.text_is_absent()
         {
@@ -141,10 +160,7 @@ impl Editor {
         if preview.is_empty() {
             self.selection.bounds(&self.document)
         } else {
-            preview
-                .iter()
-                .map(|e| e.kind.bounds())
-                .reduce(WorldRect::union)
+            preview.iter().map(Element::bounds).reduce(WorldRect::union)
         }
     }
     #[must_use]
@@ -187,6 +203,31 @@ impl Editor {
 
     fn dispatch(&mut self, event: InputEvent) -> Redraw {
         match event {
+            InputEvent::Context { at } => {
+                self.finish_text();
+                self.cancel();
+                self.tool = Tool::Select;
+                let point = self.camera.screen_to_world(at);
+                if let Some(e) = self
+                    .document
+                    .elements()
+                    .iter()
+                    .rev()
+                    .find(|e| e.hit_test(point, 5.0 / self.camera.zoom()))
+                {
+                    let id = pen_core::bound::owner(&self.document, e.id());
+                    if !self.selection.contains(id) {
+                        self.selection = Selection::only(id);
+                        self.selection
+                            .expand_group(&self.document, id, self.group_scope);
+                    }
+                }
+                Redraw::Tool
+            }
+            InputEvent::Action(action) => self.action(action),
+            InputEvent::Paste(elements) => {
+                self.paste_elements(&elements, pen_core::WorldPt::new(20.0, 20.0))
+            }
             InputEvent::TextChanged { content, bounds } => self.update_text(content, bounds),
             InputEvent::FinishText => self.finish_text(),
             InputEvent::TextStyle { font, size, align } => self.set_text_style(font, size, align),
@@ -272,6 +313,7 @@ impl Editor {
                 if self.cancel() {
                     Redraw::Draft
                 } else if !self.selection.is_empty() {
+                    self.group_scope = None;
                     self.selection.clear();
                     Redraw::Draft
                 } else {
@@ -305,6 +347,9 @@ impl Editor {
     }
 
     fn drag_to(&mut self, at: Option<ScreenPt>, mods: Modifiers) -> Redraw {
+        if self.eraser.is_some() {
+            return self.erase_to(at, mods);
+        }
         if let Some(edit) = &mut self.point_editor {
             return if edit.update(at, mods, &self.camera, self.settings.grid) {
                 Redraw::Draft
@@ -338,7 +383,13 @@ impl Editor {
                 }
             }
             Some(Gesture::Selecting(drag)) => {
-                if drag.update(at, mods, &self.camera, self.settings.grid) {
+                if drag.update(
+                    at,
+                    mods,
+                    &self.camera,
+                    self.settings.grid,
+                    &mut self.document,
+                ) {
                     Redraw::Draft
                 } else {
                     Redraw::Nothing
@@ -377,6 +428,7 @@ impl Editor {
     }
 
     fn cancel(&mut self) -> bool {
+        let erased = self.eraser.take().is_some();
         let property = self.property_edit.is_some();
         if property {
             self.end_property(true);
@@ -384,7 +436,7 @@ impl Editor {
         let panning = self.navigation.pan.take().is_some() || property;
         let editing = self.point_editor.as_mut().is_some_and(PointEditor::cancel);
         let Some(gesture) = self.gesture.take() else {
-            return panning || editing;
+            return panning || editing || erased;
         };
         if let Gesture::Selecting(drag) = gesture {
             drag.cancel(&mut self.selection);
@@ -427,3 +479,6 @@ mod bound_text_tests;
 
 #[cfg(test)]
 mod property_tests;
+
+#[cfg(test)]
+mod arrange_tests;

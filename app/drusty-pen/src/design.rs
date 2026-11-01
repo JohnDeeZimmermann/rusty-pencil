@@ -33,6 +33,7 @@ pub(crate) const R_STATUS: f32 = 8.0;
 pub(crate) const SHORTCUT: f32 = 10.0;
 pub(crate) const SHORTCUT_INSET: f32 = 3.0;
 pub(crate) const S1: f32 = 4.0;
+pub(crate) const S2: f32 = 8.0;
 pub(crate) const S3: f32 = 12.0;
 pub(crate) const S4: f32 = 16.0;
 
@@ -100,3 +101,10 @@ pub(crate) const T_CAPTION: TextStyle = TextStyle::new(11.0, 500.0);
 pub(crate) const T_CONTROL: TextStyle = TextStyle::new(12.0, 450.0);
 /// Symbol labels (arrowheads) need more size than words to read at a glance.
 pub(crate) const T_GLYPH: TextStyle = TextStyle::new(16.0, 400.0);
+
+// Arrange menu: two compact action columns, clamped to the viewport.
+pub(crate) const MENU_COLUMN: f32 = 216.0;
+pub(crate) const MENU_ROW: f32 = 30.0;
+pub(crate) const MENU_WIDTH: f32 = 456.0;
+pub(crate) const MENU_HEIGHT: f32 = 436.0;
+pub(crate) const ROTATE_STEM: f32 = 19.0;

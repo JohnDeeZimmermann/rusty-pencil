@@ -61,7 +61,7 @@ fn native_commands_select_delete_undo_redo_and_nudge() {
 fn selection_overlay_pans_and_zooms_live_without_view_rebuild() {
     let mut rt = selected_app();
     let before = overlay_rects(&rt);
-    assert_eq!(before.len(), 9);
+    assert_eq!(before.len(), 10);
     let commits = rt.stats.commits;
     rt.wheel_event(WheelEvent::new(30.0, -20.0).at(100.0, 500.0));
     rt.frame(FRAME);
@@ -72,7 +72,7 @@ fn selection_overlay_pans_and_zooms_live_without_view_rebuild() {
         "camera updates must remain live-only with handles"
     );
     let after = overlay_rects(&rt);
-    assert_eq!(after.len(), 9);
+    assert_eq!(after.len(), 10);
     assert!(near(&after[0][2..], &[410.0, 210.0]));
     for handle in &after[1..] {
         assert!(near(&handle[2..], &[8.0, 8.0]));
@@ -90,7 +90,7 @@ fn dragging_selected_shape_and_handle_commits_then_undoes() {
     assert_eq!(kinds(&rt), [Kind::Rect(world(350.0, 330.0, 550.0, 430.0))]);
     command(&mut rt, 'z', false);
     assert_eq!(kinds(&rt), [Kind::Rect(world(300.0, 300.0, 500.0, 400.0))]);
-    assert_eq!(overlay_rects(&rt).len(), 9);
+    assert_eq!(overlay_rects(&rt).len(), 10);
 }
 
 #[test]

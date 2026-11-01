@@ -88,6 +88,10 @@ impl Scene {
             }
         }
         self.push_part(paint);
+        for element in preview.iter().filter(|e| doc.get(e.id()).is_none()) {
+            self.preview_parts.insert(element.id(), self.parts.len());
+            self.push_part(DrawList::new());
+        }
     }
 
     fn push_part(&mut self, paint: DrawList) {

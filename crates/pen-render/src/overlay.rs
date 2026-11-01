@@ -19,7 +19,7 @@ pub struct OverlayRect {
 }
 
 /// Reuses `out`. Camera changes only update the presentation of these screen rectangles;
-/// document paint stays cached. Multi-selection resizing belongs to M6.
+/// document paint stays cached. Handles work for single and multi-element selections.
 pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
     out.clear();
     if editor.tool() != Tool::Select {
@@ -27,9 +27,12 @@ pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
     }
     let camera = editor.camera();
     if let Some((path, active)) = editor.editable_points() {
+        let (centre, angle) = editor
+            .point_edit_transform()
+            .unwrap_or((pen_core::WorldPt::ORIGIN, 0.0));
         let mut previous = None;
         for (i, point) in path.world_points().enumerate() {
-            let p = camera.world_to_screen(point);
+            let p = camera.world_to_screen(pen_core::rotate(point, centre, angle));
             if let Some(a) = previous {
                 let a: pen_editor::ScreenPt = a;
                 out.push(OverlayRect {
@@ -66,8 +69,11 @@ pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
             kind: OverlayKind::Outline,
             rect: screen(bounds, SELECTION_PADDING),
         });
-        if editor.selection().len() == 1 && editor.marquee().is_none() {
-            for handle in Handle::ALL {
+        if !editor.selection().is_empty()
+            && editor.marquee().is_none()
+            && !editor.selection_locked()
+        {
+            for handle in Handle::ALL.into_iter().chain([Handle::Rotate]) {
                 let p = camera.world_to_screen(handle.position(bounds, camera.zoom()));
                 out.push(OverlayRect {
                     kind: OverlayKind::Handle(handle),

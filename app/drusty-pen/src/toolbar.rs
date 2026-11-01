@@ -31,7 +31,7 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
             .child(el().size(d::S1, d::BUTTON).items_center().justify_center().child(el().size(d::OUTLINE, d::ICON).fill(c(d::BORDER))))
             .child(roughness_button(editor.roughness(), dark)))
         .child(
-            text(if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else { hint(active) })
+            text(if editor.selection_locked() { "Selection is locked  ·  Right-click to unlock  ·  Ctrl + Shift + L toggles the lock".into() } else if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else { hint(active) })
                 .key("hint")
                 .font(d::T_HINT)
                 .color(c(d::MUTED)),
@@ -91,6 +91,21 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
         WorldRect::from_corners(WorldPt::new(e, e), WorldPt::new(d::ICON - e, d::ICON - e))
     };
     let kind = match tool {
+        Tool::Eraser => {
+            return rune::Shape::new().stroke(
+                vec![
+                    [3.0, 12.0],
+                    [11.0, 3.0],
+                    [18.0, 9.0],
+                    [10.0, 18.0],
+                    [7.0, 18.0],
+                    [3.0, 12.0],
+                    [10.0, 18.0],
+                ],
+                d::ICON_STROKE,
+                c(ink),
+            );
+        }
         Tool::Text => {
             return rune::Shape::new()
                 .stroke(vec![[3.0, 4.0], [17.0, 4.0]], d::ICON_STROKE, c(ink))
@@ -165,8 +180,9 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
 
 fn hint(tool: Tool) -> String {
     let what = match tool {
+        Tool::Eraser => return "Drag to erase  ·  Hold Alt to restore this stroke  ·  Esc to cancel".into(),
         Tool::Text => return "Click to write  ·  Enter for a new line  ·  Esc to finish  ·  Double-click to edit".into(),
-        Tool::Select => return "Click to select  ·  Shift to add  ·  Drag to move or box select  ·  Double-click to write".into(),
+        Tool::Select => return "Drag to move  ·  Alt + drag to duplicate  ·  Shift snaps rotation  ·  Right-click to arrange".into(),
         Tool::Hand => return "Drag to pan  ·  Wheel to scroll  ·  Ctrl + wheel to zoom  ·  Shift + 1 to fit all".into(),
         Tool::Line | Tool::Arrow => return "Drag or click point to point  ·  Shift snaps 15°  ·  Enter / Esc / double-click to finish".into(),
         Tool::Freedraw => return "Drag to draw freely  ·  Esc to cancel  ·  Space + drag to pan".into(),

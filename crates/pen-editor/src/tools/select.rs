@@ -8,9 +8,11 @@ use pen_core::{Command, Document, Element, WorldPt, WorldRect};
 enum Action {
     Move(Vec<Element>),
     Resize {
-        original: Element,
+        originals: Vec<Element>,
+        bounds: WorldRect,
         handle: Handle,
     },
+    Rotate(Vec<Element>, WorldRect),
     Box,
     /// Shift removes the clicked element without starting a move.
     Toggle,
@@ -33,44 +35,68 @@ pub(crate) struct SelectionDrag {
     pointer: ScreenPt,
     mods: Modifiers,
     preview: Vec<Element>,
+    duplicate: bool,
+    duplicates: Vec<Element>,
 }
 
 impl SelectionDrag {
     /// The editor rejects nonfinite presses before starting a gesture. Selection changes
     /// immediately; geometry remains in the document until the returned edit is executed.
     pub(crate) fn begin(
-        doc: &Document,
+        doc: &mut Document,
         selection: &mut Selection,
         camera: &Camera,
         at: ScreenPt,
         mods: Modifiers,
-        _grid: bool,
+        scope: Option<pen_core::GroupId>,
     ) -> Self {
         let origin = camera.screen_to_world(at);
         let before = selection.clone();
-        let handle = if selection.len() == 1 {
+        let handle = if selection.elements(doc).any(|e| e.locked) {
+            None
+        } else {
             selection
                 .bounds(doc)
                 .and_then(|r| Handle::hit(r, origin, camera.zoom()))
-        } else {
-            None
         };
+        let handle = handle.filter(|_| {
+            selection.len() == 1 || !selection.bounds(doc).is_some_and(|b| b.contains(origin))
+        });
         let hit = doc
             .elements()
             .iter()
             .rev()
-            .find(|e| e.hit_test(origin, 5.0 / camera.zoom()))
+            .find(|e| {
+                !e.locked
+                    && !doc
+                        .get(pen_core::bound::owner(doc, e.id()))
+                        .is_some_and(|owner| owner.locked)
+                    && e.hit_test(origin, 5.0 / camera.zoom())
+            })
             .map(|e| pen_core::bound::owner(doc, e.id()));
         let action = if let Some(handle) = handle {
-            selection
-                .elements(doc)
-                .next()
-                .cloned()
-                .map(|original| Action::Resize { original, handle })
-                .unwrap_or(Action::Box)
+            let originals = selection.elements(doc).cloned().collect();
+            let bounds = selection.bounds(doc).unwrap_or_default();
+            if handle == Handle::Rotate {
+                Action::Rotate(originals, bounds)
+            } else {
+                Action::Resize {
+                    originals,
+                    bounds,
+                    handle,
+                }
+            }
         } else if let Some(id) = hit {
             if mods.shift {
-                selection.toggle(id);
+                if selection.contains(id) {
+                    let mut members = Selection::default();
+                    members.expand_group(doc, id, scope);
+                    for id in members.ids() {
+                        selection.toggle(id);
+                    }
+                } else {
+                    selection.expand_group(doc, id, scope);
+                }
                 if !selection.contains(id) {
                     Action::Toggle
                 } else {
@@ -78,11 +104,15 @@ impl SelectionDrag {
                 }
             } else {
                 if !selection.contains(id) {
-                    *selection = Selection::only(id);
+                    selection.clear();
+                    selection.expand_group(doc, id, scope);
                 }
                 Action::Move(selection.elements(doc).cloned().collect())
             }
-        } else if !mods.shift && selection.bounds(doc).is_some_and(|r| r.contains(origin)) {
+        } else if !mods.shift
+            && !selection.elements(doc).any(|e| e.locked)
+            && selection.bounds(doc).is_some_and(|r| r.contains(origin))
+        {
             // Once selected, a hollow shape can be grabbed by its interior.
             Action::Move(selection.elements(doc).cloned().collect())
         } else {
@@ -91,8 +121,11 @@ impl SelectionDrag {
             }
             Action::Box
         };
-        Self {
+        let duplicate = mods.alt && matches!(action, Action::Move(_));
+        let mut drag = Self {
             action,
+            duplicate,
+            duplicates: Vec::new(),
             phase: Phase::Pressed,
             before,
             origin,
@@ -101,6 +134,59 @@ impl SelectionDrag {
             pointer: at,
             mods,
             preview: Vec::new(),
+        };
+        if duplicate {
+            drag.prepare_duplicates(doc);
+        }
+        drag
+    }
+
+    fn prepare_duplicates(&mut self, doc: &mut Document) {
+        if !self.duplicates.is_empty() {
+            return;
+        }
+        if let Action::Move(originals) = &self.action {
+            let mut originals = originals.clone();
+            let selected: Vec<_> = originals.iter().map(Element::id).collect();
+            originals.extend(
+                doc.elements()
+                    .iter()
+                    .filter(|e| {
+                        e.kind
+                            .container()
+                            .is_some_and(|c| selected.contains(&c.id()))
+                    })
+                    .cloned(),
+            );
+            originals.sort_by(|a, b| a.z_key.cmp(&b.z_key));
+            let ids: std::collections::BTreeMap<_, _> =
+                originals.iter().map(|e| (e.id(), doc.alloc_id())).collect();
+            let mut next_group = doc
+                .elements()
+                .iter()
+                .flat_map(|e| &e.group_ids)
+                .map(|g| g.0)
+                .max()
+                .unwrap_or(0);
+            let mut groups = std::collections::BTreeMap::new();
+            for e in &mut originals {
+                *e = e.copied(ids[&e.id()]);
+                for g in &mut e.group_ids {
+                    *g = *groups.entry(*g).or_insert_with(|| {
+                        next_group += 1;
+                        pen_core::GroupId(next_group)
+                    });
+                }
+                if let pen_core::Kind::Text { container, .. } = &mut e.kind {
+                    *container = container.and_then(|c| {
+                        ids.get(&c.id()).map(|id| match c {
+                            pen_core::Container::Shape(_) => pen_core::Container::Shape(*id),
+                            pen_core::Container::Path(_) => pen_core::Container::Path(*id),
+                        })
+                    });
+                }
+            }
+            self.duplicates = originals;
         }
     }
 
@@ -112,6 +198,7 @@ impl SelectionDrag {
         mods: Modifiers,
         camera: &Camera,
         grid: bool,
+        doc: &mut Document,
     ) -> bool {
         let old = (self.pointer, self.current, self.mods);
         if let Some(at) = at {
@@ -131,6 +218,10 @@ impl SelectionDrag {
         if self.phase == Phase::Pressed {
             return false;
         }
+        self.duplicate = mods.alt && matches!(self.action, Action::Move(_));
+        if self.duplicate {
+            self.prepare_duplicates(doc);
+        }
         self.preview.clear();
         let delta = WorldPt::new(
             self.current.x - self.origin.x,
@@ -138,6 +229,11 @@ impl SelectionDrag {
         );
         match &self.action {
             Action::Move(originals) => {
+                let originals = if self.duplicate {
+                    &self.duplicates
+                } else {
+                    originals
+                };
                 let delta = if grid {
                     let bounds = originals
                         .iter()
@@ -169,9 +265,13 @@ impl SelectionDrag {
                         .map(|e| e.with_bounds(e.kind.bounds().translated(dx, dy))),
                 );
             }
-            Action::Resize { original, handle } => {
+            Action::Resize {
+                originals,
+                bounds,
+                handle,
+            } => {
                 let delta = if grid {
-                    let bounds = original.kind.bounds();
+                    let bounds = *bounds;
                     let (hx, hy) = handle.axes();
                     let anchor = WorldPt::new(
                         bounds.centre().x + hx * bounds.width() / 2.0,
@@ -188,20 +288,49 @@ impl SelectionDrag {
                 } else {
                     delta
                 };
-                self.preview.push(original.with_bounds(resize(
-                    original.kind.bounds(),
-                    *handle,
-                    delta,
-                    if matches!(original.kind, pen_core::Kind::Text { .. }) {
-                        Modifiers {
-                            shift: true,
-                            ..mods
-                        }
+                let mods = if originals.len() == 1
+                    && matches!(originals[0].kind, pen_core::Kind::Text { .. })
+                {
+                    Modifiers {
+                        shift: true,
+                        ..mods
+                    }
+                } else {
+                    mods
+                };
+                let target = resize(*bounds, *handle, delta, mods, camera.zoom());
+                for original in originals {
+                    let b = original.kind.bounds();
+                    let map = |p: WorldPt| {
+                        WorldPt::new(
+                            target.min().x
+                                + (p.x - bounds.min().x) * target.width()
+                                    / bounds.width().max(0.001),
+                            target.min().y
+                                + (p.y - bounds.min().y) * target.height()
+                                    / bounds.height().max(0.001),
+                        )
+                    };
+                    self.preview.push(
+                        original.with_bounds(WorldRect::from_corners(map(b.min()), map(b.max()))),
+                    );
+                }
+            }
+            Action::Rotate(originals, bounds) => {
+                let c = bounds.centre();
+                let mut angle = (self.current.y - c.y).atan2(self.current.x - c.x)
+                    - (self.origin.y - c.y).atan2(self.origin.x - c.x);
+                if mods.shift {
+                    let step = std::f32::consts::PI / 12.0;
+                    let base = if originals.len() == 1 {
+                        originals[0].angle
                     } else {
-                        mods
-                    },
-                    camera.zoom(),
-                )));
+                        0.0
+                    };
+                    angle = ((angle + base) / step).round() * step - base;
+                }
+                self.preview
+                    .extend(originals.iter().map(|e| e.rotated(c, angle)));
             }
             Action::Box | Action::Toggle => {}
         }
@@ -242,18 +371,39 @@ impl SelectionDrag {
             };
             for element in doc.elements() {
                 // Bound text is reached through its container.
-                if element.kind.container().is_none() && bounds.intersects(element.kind.bounds()) {
-                    selection.insert(element.id());
+                if !element.locked
+                    && element.kind.container().is_none()
+                    && bounds.intersects(element.bounds())
+                {
+                    selection.expand_group(doc, element.id(), None);
                 }
             }
             return None;
+        }
+        if self.duplicate && !self.preview.is_empty() {
+            selection.clear();
+            for e in &self.preview {
+                if e.kind.container().is_none() {
+                    selection.insert(e.id());
+                }
+            }
+            let commands = self
+                .preview
+                .into_iter()
+                .enumerate()
+                .map(|(i, element)| Command::Add {
+                    element,
+                    at: doc.elements().len() + i,
+                })
+                .collect();
+            return Some((Command::Group(commands), self.before));
         }
         let commands = self
             .preview
             .iter()
             .filter_map(|after| {
                 let before = doc.get(after.id())?;
-                (before.kind != after.kind).then(|| Command::Patch {
+                (before != after).then(|| Command::Patch {
                     id: after.id(),
                     before: before.clone(),
                     after: after.clone(),

@@ -139,3 +139,35 @@ fn hex_parsing_and_dark_colours_preserve_alpha_hue_and_stored_values() {
     assert_eq!(original.dark().a, 128);
     assert_eq!(original.hex(), "#1971c2");
 }
+
+#[test]
+fn arrangement_metadata_round_trips_and_older_scenes_default_safely() {
+    let mut scene = scene();
+    scene.elements[0].angle = 0.75;
+    scene.elements[0].locked = true;
+    scene.elements[0].group_ids = vec![crate::GroupId(1), crate::GroupId(2)];
+    let loaded = load(&save(&scene).unwrap()).unwrap();
+    assert_eq!(loaded.elements, scene.elements);
+    let mut old = serde_json::to_value(&scene).unwrap();
+    for e in old["elements"].as_array_mut().unwrap() {
+        let e = e.as_object_mut().unwrap();
+        for key in ["angle", "locked", "group_ids", "z_key"] {
+            e.remove(key);
+        }
+    }
+    let old = load(&serde_json::to_vec(&old).unwrap()).unwrap();
+    let doc = old.document().unwrap();
+    assert!(
+        doc.elements()
+            .iter()
+            .all(|e| e.angle.abs() < f32::EPSILON && !e.locked && e.group_ids.is_empty())
+    );
+    assert!(doc.elements().windows(2).all(|e| e[0].z_key < e[1].z_key));
+}
+
+#[test]
+fn malformed_fractional_key_is_rejected_at_the_file_boundary() {
+    let mut value = serde_json::to_value(scene()).unwrap();
+    value["elements"][0]["z_key"] = serde_json::json!([0]);
+    assert!(load(&serde_json::to_vec(&value).unwrap()).is_err());
+}

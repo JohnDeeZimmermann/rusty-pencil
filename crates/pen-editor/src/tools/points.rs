@@ -6,6 +6,7 @@ use pen_core::{Command, Document, Element, ElementId, Kind, Path, PathPoint, Wor
 #[derive(Debug, Clone)]
 struct PointDrag {
     before: Element,
+    baseline: Path,
     pointer: ScreenPt,
     grab: WorldPt,
     mods: Modifiers,
@@ -49,7 +50,11 @@ impl PointEditor {
         let Some(path) = before.kind.path() else {
             return false;
         };
-        let p = camera.screen_to_world(at);
+        let p = pen_core::rotate(
+            camera.screen_to_world(at),
+            before.kind.bounds().centre(),
+            -before.angle,
+        );
         let reach = 8.0 / camera.zoom();
         let vertex = path
             .world_points()
@@ -75,9 +80,12 @@ impl PointEditor {
             );
             (i + 1, WorldPt::ORIGIN)
         };
+        let baseline = linear_path(&mut after.kind).clone();
+        preserve_pivot(&mut after, before.kind.bounds().centre());
         self.active = Some(index);
         self.drag = Some(PointDrag {
             before: before.clone(),
+            baseline,
             pointer: at,
             grab,
             mods: Modifiers::NONE,
@@ -103,11 +111,17 @@ impl PointEditor {
             drag.pointer = at;
         }
         drag.mods = mods;
-        let p = camera.screen_to_world(drag.pointer);
+        let p = pen_core::rotate(
+            camera.screen_to_world(drag.pointer),
+            drag.before.kind.bounds().centre(),
+            -drag.before.angle,
+        );
         if !p.is_finite() {
             return false;
         }
         let path = linear_path(&mut after.kind);
+        path.origin = drag.baseline.origin;
+        path.points.clone_from(&drag.baseline.points);
         let mut p =
             crate::properties::snap(WorldPt::new(p.x + drag.grab.x, p.y + drag.grab.y), grid);
         let anchor = if index > 0 { index - 1 } else { 1 };
@@ -115,10 +129,8 @@ impl PointEditor {
             p = snap(from, p, mods.shift);
         }
         let offset = WorldPt::new(p.x - path.origin.x, p.y - path.origin.y);
-        if path.points[index].offset == offset {
-            return false;
-        }
         path.points[index].offset = offset;
+        preserve_pivot(after, drag.before.kind.bounds().centre());
         true
     }
 
@@ -153,6 +165,7 @@ impl PointEditor {
         }
         let mut after = before.clone();
         linear_path(&mut after.kind).points.remove(index);
+        preserve_pivot(&mut after, before.kind.bounds().centre());
         self.active = None;
         Some(Command::Patch {
             id: self.id,
@@ -179,4 +192,17 @@ fn distance(p: WorldPt, a: WorldPt, b: WorldPt) -> f32 {
     }
     .clamp(0.0, 1.0);
     (p.x - a.x - t * dx).hypot(p.y - a.y - t * dy)
+}
+
+// Changing a path's bounds changes its rotation pivot. Compensate by a translation so
+// untouched vertices stay at their original world positions throughout the edit.
+fn preserve_pivot(element: &mut Element, original: WorldPt) {
+    if element.angle == 0.0 {
+        return;
+    }
+    let c = element.kind.bounds().centre();
+    let rotated = pen_core::rotate(c, original, element.angle);
+    let path = linear_path(&mut element.kind);
+    path.origin.x += rotated.x - c.x;
+    path.origin.y += rotated.y - c.y;
 }

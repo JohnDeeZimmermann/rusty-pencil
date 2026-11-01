@@ -56,6 +56,9 @@ impl Editor {
     }
 
     pub(crate) fn set_property(&mut self, property: Property) -> Redraw {
+        if self.selection.elements(&self.document).any(|e| e.locked) {
+            return Redraw::Nothing;
+        }
         property.apply(&mut self.style);
         if let Some(session) = &mut self.text_session {
             property.apply(&mut session.element.props);
@@ -87,6 +90,9 @@ impl Editor {
     }
 
     pub(crate) fn begin_property(&mut self) -> Redraw {
+        if self.selection.elements(&self.document).any(|e| e.locked) {
+            return Redraw::Nothing;
+        }
         self.cancel();
         self.property_edit = Some(PropertyEdit {
             defaults: self.style,

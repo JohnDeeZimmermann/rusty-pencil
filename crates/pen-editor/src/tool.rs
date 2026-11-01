@@ -13,11 +13,12 @@ pub enum Tool {
     Freedraw,
     Text,
     Hand,
+    Eraser,
 }
 
 impl Tool {
     /// Every tool, in toolbar order.
-    pub const ALL: [Tool; 9] = [
+    pub const ALL: [Tool; 10] = [
         Tool::Select,
         Tool::Rectangle,
         Tool::Diamond,
@@ -27,6 +28,7 @@ impl Tool {
         Tool::Freedraw,
         Tool::Text,
         Tool::Hand,
+        Tool::Eraser,
     ];
 
     #[must_use]
@@ -41,6 +43,7 @@ impl Tool {
             Tool::Freedraw => "Pen",
             Tool::Text => "Text",
             Tool::Hand => "Hand",
+            Tool::Eraser => "Eraser",
         }
     }
 
@@ -57,6 +60,7 @@ impl Tool {
             Tool::Freedraw => 'p',
             Tool::Text => 't',
             Tool::Hand => 'h',
+            Tool::Eraser => 'e',
         }
     }
 
@@ -73,6 +77,7 @@ impl Tool {
             Tool::Freedraw => '7',
             Tool::Text => '8',
             Tool::Hand => 'h',
+            Tool::Eraser => '0',
         }
     }
 

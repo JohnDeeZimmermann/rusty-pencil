@@ -15,6 +15,11 @@ impl Editor {
         }
         let finished_text = self.text_session.is_some();
         self.finish_text();
+        if self.tool == Tool::Eraser {
+            self.cancel();
+            self.eraser = Some(crate::eraser::Eraser::new(&self.document));
+            return self.erase_to(Some(at), mods);
+        }
         if self.tool == Tool::Text {
             return self.begin_text(TextTarget::At(at));
         }
@@ -31,12 +36,12 @@ impl Editor {
         self.cancel();
         self.gesture = if self.tool == Tool::Select {
             Some(Gesture::Selecting(SelectionDrag::begin(
-                &self.document,
+                &mut self.document,
                 &mut self.selection,
                 &self.camera,
                 at,
                 mods,
-                self.settings.grid,
+                self.group_scope,
             )))
         } else if matches!(self.tool, Tool::Line | Tool::Arrow | Tool::Freedraw) {
             Some(Gesture::Path(PathDraw::begin(
@@ -69,6 +74,9 @@ impl Editor {
             return redraw;
         }
         self.drag_to(Some(at), mods);
+        if self.eraser.is_some() {
+            return self.finish_erase();
+        }
         if let Some(edit) = &mut self.point_editor {
             let command = edit.finish();
             return if command.is_some_and(|c| self.execute(c, self.selection.clone())) {
@@ -133,13 +141,34 @@ impl Editor {
             .elements()
             .iter()
             .rev()
-            .find(|e| e.hit_test_interior(point, 5.0 / self.camera.zoom()))
+            .find(|e| {
+                !e.locked
+                    && !self
+                        .document
+                        .get(bound::owner(&self.document, e.id()))
+                        .is_some_and(|owner| owner.locked)
+                    && e.hit_test_interior(point, 5.0 / self.camera.zoom())
+            })
             .map(|e| bound::owner(&self.document, e.id()))
             .and_then(|id| self.document.get(id));
         let Some(element) = hit else {
             // Like Excalidraw: double-click on empty canvas starts writing there.
             return self.begin_text(TextTarget::At(at));
         };
+        let next_group = match self.group_scope {
+            Some(scope) => element
+                .group_ids
+                .iter()
+                .position(|g| *g == scope)
+                .and_then(|i| i.checked_sub(1))
+                .map(|i| element.group_ids[i]),
+            None => element.group_ids.last().copied(),
+        };
+        if let Some(group) = next_group {
+            self.group_scope = Some(group);
+            self.selection = Selection::only(element.id());
+            return Redraw::Draft;
+        }
         if matches!(element.kind, Kind::Text { .. }) {
             return self.begin_text(TextTarget::Existing(element.id()));
         }
@@ -161,7 +190,7 @@ impl Editor {
         let Some(element) = self.selection.elements(&self.document).next() else {
             return Redraw::Nothing;
         };
-        if !element.kind.is_linear() {
+        if element.locked || !element.kind.is_linear() {
             return Redraw::Nothing;
         }
         let id = element.id();
@@ -169,6 +198,17 @@ impl Editor {
         self.tool = Tool::Select;
         self.point_editor = Some(PointEditor::new(id));
         Redraw::Tool
+    }
+
+    /// Rotation applied to point-editing geometry, in world points and clockwise radians.
+    #[must_use]
+    pub fn point_edit_transform(&self) -> Option<(pen_core::WorldPt, f32)> {
+        let edit = self.point_editor.as_ref()?;
+        let e = edit
+            .preview()
+            .first()
+            .or_else(|| self.document.get(edit.id))?;
+        Some((e.kind.bounds().centre(), e.angle))
     }
 
     /// Editable vertices and the active vertex index. Geometry includes the live drag.

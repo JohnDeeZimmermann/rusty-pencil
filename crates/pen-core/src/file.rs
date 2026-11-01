@@ -110,6 +110,8 @@ impl SceneFile {
             let bounds = e.kind.bounds();
             if e.id().get() == 0
                 || e.id().get() == u64::MAX
+                || !e.z_key.valid()
+                || !e.angle.is_finite()
                 || !bounds.min().is_finite()
                 || !bounds.max().is_finite()
                 || !bounds.width().is_finite()

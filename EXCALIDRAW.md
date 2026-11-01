@@ -17,7 +17,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Freedraw / pen (`P` / `7`) — M3
 - [x] Text (`T` / `8`) — M4
 - [ ] Image (`9`) — M8
-- [ ] Eraser (`E` / `0`), hold Alt to un-erase — M6
+- [x] Eraser (`E` / `0`), hold Alt to un-erase — M6
 - [x] Hand / pan tool (`H`) — M3
 - [ ] Frame tool (`F`) — M9
 - [ ] Laser pointer (`K`) — M9
@@ -43,7 +43,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Arrowheads at start/end: none, arrow, bar, dot, triangle, circle, diamond (filled + outline) — M5
 - [ ] Arrow type: sharp, curved, elbow — M7
 - [x] Defaults: new elements use the last chosen properties — M5
-- [ ] Copy styles / paste styles (Ctrl+Alt+C / V) — M6
+- [x] Copy styles / paste styles (Ctrl+Alt+C / V) — M6
 
 ## Selecting and editing
 
@@ -52,16 +52,16 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Select all (Ctrl+A) — M2
 - [x] Move by dragging; arrow keys nudge 1 px, Shift+arrow 10 px — M2
 - [x] Resize with 8 handles; Shift keeps aspect ratio; Alt resizes from centre — M2
-- [ ] Rotate with the handle; Shift snaps to 15° — M6
-- [ ] Multi-element resize and rotate — M6
-- [ ] Flip horizontal / vertical (Shift+H / Shift+V) — M6
+- [x] Rotate with the handle; Shift snaps to 15° — M6
+- [x] Multi-element resize and rotate — M6
+- [x] Flip horizontal / vertical (Shift+H / Shift+V) — M6
 - [x] Delete (Del / Backspace) — M2
-- [ ] Duplicate (Ctrl+D) and Alt+drag duplicate — M6
-- [ ] Copy, cut, paste within the app — M6
-- [ ] Paste plain text as a text element — M6
-- [ ] Group / ungroup (Ctrl+G / Ctrl+Shift+G), nested groups — M6
-- [ ] Double-click into a group to edit one member — M6
-- [ ] Lock / unlock elements — M6
+- [x] Duplicate (Ctrl+D) and Alt+drag duplicate — M6
+- [x] Copy, cut, paste within the app — M6
+- [x] Paste plain text as a text element — M6
+- [x] Group / ungroup (Ctrl+G / Ctrl+Shift+G), nested groups — M6
+- [x] Double-click into a group to edit one member — M6
+- [x] Lock / unlock elements — M6
 - [x] Edit line/arrow points (Ctrl+Enter or Ctrl+double-click), add and delete points — M3
 - [x] Multi-point lines and arrows by clicking point to point — M3
 - [ ] Hyperlink on an element (Ctrl+K), opens in the system browser — M9
@@ -86,9 +86,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Arranging
 
-- [ ] Send backward / to back, bring forward / to front — M6
-- [ ] Align left, centre, right, top, middle, bottom — M6
-- [ ] Distribute horizontally / vertically — M6
+- [x] Send backward / to back, bring forward / to front — M6
+- [x] Align left, centre, right, top, middle, bottom — M6
+- [x] Distribute horizontally / vertically — M6
 - [ ] Snap to objects (Alt+S) with guide lines — M9
 - [x] Grid toggle (Ctrl+') and snap to grid — M5
 
@@ -106,7 +106,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Stats panel (Alt+/): edit x, y, w, h, angle — M9
 - [ ] Find text on canvas (Ctrl+F) — M9
 - [ ] Command palette (Ctrl+/) — M9
-- [ ] Context menu (right-click) — M6
+- [x] Context menu (right-click) — M6
 - [ ] Keyboard shortcut help (`?`) — M9
 - [ ] Eye-dropper for colours (`I`) — M9
 

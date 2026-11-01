@@ -12,6 +12,7 @@ fn setup() -> (Document, Element) {
         at: 0,
     })
     .expect("fresh");
+    let element = doc.get(element.id()).expect("inserted with z-key").clone();
     (doc, element)
 }
 fn rect(x: f32, y: f32, w: f32, h: f32) -> WorldRect {

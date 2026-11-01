@@ -4,6 +4,8 @@
 //! points: y down, unbounded in every direction.
 #![forbid(unsafe_code)]
 
+mod arrange;
+pub use arrange::{GroupId, ZKey, rotate};
 mod arrowheads;
 pub mod bound;
 pub use arrowheads::{Head, arrowheads};

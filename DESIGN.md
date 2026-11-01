@@ -110,3 +110,17 @@ say “Mixed”; changing one field preserves every other value.
 Text controls appear first when relevant. Canvas colour is the last field. Dark appearance
 reverses colour lightness without modifying the document. The grid has a 20-world-point pitch
 and follows camera changes through live scale and phase values.
+
+
+## Arrange and edit
+
+A round rotation handle sits 28 screen points above the selection bounds, connected to the
+outline by a fine teal stem. Single and multi-element selections share the eight resize
+handles. Locked selections keep their outline and hide transform handles; the toolbar hint
+explains how to unlock them.
+
+The context menu uses native Rune menus where supported. The fallback is a paper surface with
+two compact action columns, 30-point rows, shortcut labels in muted badge type, and a fine
+vertical divider. Selection and clipboard actions sit on the left; ordering, alignment and
+distribution sit on the right. Disabled actions stay muted. The menu clamps within an
+8-point viewport margin and dismisses on Escape or an outside click without drawing.

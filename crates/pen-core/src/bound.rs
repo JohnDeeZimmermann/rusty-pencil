@@ -123,8 +123,12 @@ pub fn fit(text: &Element, container: &Element) -> Element {
         _ => None,
     };
     let mut out = text.clone();
+    out.angle = container.angle;
+    out.locked = container.locked;
     if let (Some(placed), Kind::Text { bounds, .. }) = (placed, &mut out.kind) {
-        *bounds = placed;
+        let c = placed.centre();
+        let to = crate::rotate(c, container.kind.bounds().centre(), container.angle);
+        *bounds = placed.translated(to.x - c.x, to.y - c.y);
     }
     out
 }
@@ -169,7 +173,7 @@ pub fn follow(doc: &Document, command: Command) -> Command {
             Some(None) => extra.push(Command::Remove { id: text.id() }),
             Some(Some(after)) => {
                 let after = fit(text, after);
-                if after.kind != text.kind {
+                if after != *text {
                     extra.push(Command::Patch {
                         id: text.id(),
                         before: text.clone(),

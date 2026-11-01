@@ -4,6 +4,11 @@ use crate::{ScreenPt, ScreenVec};
 /// top-left.
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
+    Context {
+        at: ScreenPt,
+    },
+    Action(crate::Action),
+    Paste(Vec<pen_core::Element>),
     TextChanged {
         content: String,
         bounds: pen_core::WorldRect,

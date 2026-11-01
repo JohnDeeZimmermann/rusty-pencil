@@ -79,7 +79,7 @@ impl Navigation {
             .elements()
             .iter()
             .map(|e| {
-                let r = e.kind.bounds();
+                let r = e.bounds();
                 let pad = (e.props.stroke_width * 4.0).max(1.0);
                 WorldRect::from_centre(r.centre(), r.width() / 2.0 + pad, r.height() / 2.0 + pad)
             })

@@ -79,7 +79,12 @@ impl Document {
     /// including element versions and revision, unchanged.
     pub fn apply(&mut self, command: Command) -> Result<Command, DocError> {
         self.validate(&command, &mut BTreeMap::new())?;
+        let order_changed = changes_order(&command);
         let inverse = self.apply_validated(command)?;
+        if order_changed {
+            self.elements.sort_by(|a, b| a.z_key.cmp(&b.z_key));
+            self.reindex();
+        }
         self.revision = self.revision.wrapping_add(1);
         Ok(inverse)
     }
@@ -132,10 +137,19 @@ impl Document {
                 inverses.reverse();
                 Command::Group(inverses)
             }
-            Command::Add { element, at } => {
+            Command::Add { mut element, at } => {
                 let id = element.id();
                 self.next_id = self.next_id.max(id.get());
-                self.elements.insert(at.min(self.elements.len()), element);
+                let at = at.min(self.elements.len());
+                if element.z_key.is_empty() {
+                    element.z_key = crate::ZKey::between(
+                        at.checked_sub(1)
+                            .and_then(|i| self.elements.get(i))
+                            .map(|e| &e.z_key),
+                        self.elements.get(at).map(|e| &e.z_key),
+                    );
+                }
+                self.elements.insert(at, element);
                 self.reindex();
                 Command::Remove { id }
             }
@@ -145,13 +159,18 @@ impl Document {
                 self.reindex();
                 Command::Add { element, at }
             }
-            Command::Patch { id, before, after } => {
+            Command::Patch {
+                id,
+                before: _,
+                after,
+            } => {
                 let at = *self.index.get(&id).ok_or(DocError::Missing(id))?;
+                let original = self.elements[at].clone();
                 self.elements[at].replace(&after);
                 Command::Patch {
                     id,
-                    before: after,
-                    after: before,
+                    before: self.elements[at].clone(),
+                    after: original,
                 }
             }
         })
@@ -161,5 +180,15 @@ impl Document {
         self.index.clear();
         self.index
             .extend(self.elements.iter().enumerate().map(|(at, e)| (e.id(), at)));
+    }
+}
+
+fn changes_order(command: &Command) -> bool {
+    match command {
+        Command::Group(commands) => commands.iter().any(changes_order),
+        Command::Patch { before, after, .. } => {
+            !after.z_key.is_empty() && before.z_key != after.z_key
+        }
+        Command::Add { .. } | Command::Remove { .. } => true,
     }
 }

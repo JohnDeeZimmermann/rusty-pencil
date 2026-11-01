@@ -5,7 +5,25 @@ use pen_core::{Element, Kind, Roughness, WorldPt};
 use std::f32::consts::TAU;
 
 pub fn draw_element(element: &Element, out: &mut DrawList) {
+    if element.props.opacity == 0 {
+        return;
+    }
+    let first = out.prims.len();
     draw_seeded(&element.kind, &element.props, element.seed(), out);
+    if element.angle == 0.0 {
+        return;
+    }
+    let centre = element.kind.bounds().centre();
+    for prim in &mut out.prims[first..] {
+        match prim {
+            Prim::Text { angle, .. } => *angle = element.angle,
+            Prim::Fill { points, .. } | Prim::Stroke { points, .. } => {
+                for point in points {
+                    *point = pen_core::rotate(*point, centre, element.angle);
+                }
+            }
+        }
+    }
 }
 
 pub fn draw_seeded(kind: &Kind, props: &pen_core::Props, seed: u32, out: &mut DrawList) {

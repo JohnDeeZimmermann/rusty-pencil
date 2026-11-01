@@ -131,6 +131,9 @@ impl Editor {
         align: TextAlign,
         mut measure: impl FnMut(&str, Font, f32, Option<f32>) -> (f32, f32),
     ) -> Redraw {
+        if self.selection.elements(&self.document).any(|e| e.locked) {
+            return Redraw::Nothing;
+        }
         if !size.is_finite() || !(1.0..=1000.0).contains(&size) {
             return Redraw::Nothing;
         }
@@ -204,6 +207,9 @@ impl Editor {
     }
 
     pub(crate) fn set_roughness(&mut self, roughness: Roughness) -> Redraw {
+        if self.selection.elements(&self.document).any(|e| e.locked) {
+            return Redraw::Nothing;
+        }
         self.style.roughness = roughness;
         let commands = self
             .selection

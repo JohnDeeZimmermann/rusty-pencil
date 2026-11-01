@@ -40,11 +40,30 @@ impl Selection {
         Self(
             doc.elements()
                 .iter()
-                .filter(|e| e.kind.container().is_none())
+                .filter(|e| e.kind.container().is_none() && !e.locked)
                 .map(pen_core::Element::id)
                 .collect(),
         )
     }
+    pub(crate) fn expand_group(
+        &mut self,
+        doc: &Document,
+        id: ElementId,
+        scope: Option<pen_core::GroupId>,
+    ) {
+        let Some(e) = doc.get(id) else { return };
+        let group = active_group(e, scope);
+        if let Some(group) = group {
+            for e in doc.elements().iter().filter(|e| {
+                !e.locked && e.kind.container().is_none() && e.group_ids.contains(&group)
+            }) {
+                self.insert(e.id());
+            }
+        } else {
+            self.insert(id);
+        }
+    }
+
     pub(crate) fn elements<'a>(
         &'a self,
         doc: &'a Document,
@@ -55,7 +74,7 @@ impl Selection {
     #[must_use]
     pub fn bounds(&self, doc: &Document) -> Option<WorldRect> {
         self.elements(doc)
-            .map(|e| e.kind.bounds())
+            .map(pen_core::Element::bounds)
             .reduce(WorldRect::union)
     }
 }
@@ -75,6 +94,7 @@ pub enum Handle {
     S,
     Sw,
     W,
+    Rotate,
 }
 
 impl Handle {
@@ -92,7 +112,7 @@ impl Handle {
     pub(crate) fn axes(self) -> (f32, f32) {
         match self {
             Self::Nw => (-1.0, -1.0),
-            Self::N => (0.0, -1.0),
+            Self::N | Self::Rotate => (0.0, -1.0),
             Self::Ne => (1.0, -1.0),
             Self::E => (1.0, 0.0),
             Self::Se => (1.0, 1.0),
@@ -105,6 +125,9 @@ impl Handle {
     /// Handle centres are padded from the geometry by a constant screen distance.
     #[must_use]
     pub fn position(self, bounds: WorldRect, zoom: f32) -> WorldPt {
+        if self == Self::Rotate {
+            return WorldPt::new(bounds.centre().x, bounds.min().y - 28.0 / zoom);
+        }
         let (x, y) = self.axes();
         let c = bounds.centre();
         let pad = SELECTION_PADDING / zoom;
@@ -115,10 +138,24 @@ impl Handle {
     }
 
     pub(crate) fn hit(bounds: WorldRect, point: WorldPt, zoom: f32) -> Option<Self> {
-        Self::ALL.into_iter().find(|h| {
+        Self::ALL.into_iter().chain([Self::Rotate]).find(|h| {
             let p = h.position(bounds, zoom);
             (p.x - point.x).abs() * zoom <= HANDLE_REACH
                 && (p.y - point.y).abs() * zoom <= HANDLE_REACH
         })
+    }
+}
+
+/// The selectable group immediately inside the current editing scope.
+pub(crate) fn active_group(
+    e: &pen_core::Element,
+    scope: Option<pen_core::GroupId>,
+) -> Option<pen_core::GroupId> {
+    match scope {
+        Some(scope) => e.group_ids.iter().position(|g| *g == scope).map_or_else(
+            || e.group_ids.last().copied(),
+            |i| i.checked_sub(1).map(|i| e.group_ids[i]),
+        ),
+        None => e.group_ids.last().copied(),
     }
 }

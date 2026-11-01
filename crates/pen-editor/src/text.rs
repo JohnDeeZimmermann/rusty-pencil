@@ -94,6 +94,8 @@ impl Editor {
         self.style = style;
         self.selection.clear();
         self.history = History::default();
+        self.eraser = None;
+        self.group_scope = None;
         self.property_edit = None;
         self.gesture = None;
         self.point_editor = None;

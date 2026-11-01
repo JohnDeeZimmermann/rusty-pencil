@@ -60,7 +60,7 @@ fn handles_remain_eight_screen_points_at_every_zoom() {
             factor,
         });
         overlay(&ed, &mut list);
-        assert_eq!(list.len(), 9);
+        assert_eq!(list.len(), 10);
         for handle in &list[1..] {
             assert!((handle.rect[2] - 8.0).abs() < f32::EPSILON);
             assert!((handle.rect[3] - 8.0).abs() < f32::EPSILON);

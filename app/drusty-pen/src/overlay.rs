@@ -66,6 +66,16 @@ impl Overlay {
                         .fill(c(d::ACCENT))
                         .radius(d::R_STATUS)
                         .cursor(Cursor::Crosshair),
+                    OverlayKind::Handle(Handle::Rotate) => rect
+                        .fill(c(d::PAPER))
+                        .radius(d::R_BUTTON)
+                        .cursor(Cursor::Crosshair)
+                        .child(
+                            el().absolute(3.5, 8.0)
+                                .size(d::OUTLINE, d::ROTATE_STEM)
+                                .fill(c(d::ON_ACCENT))
+                                .inert(),
+                        ),
                     OverlayKind::Handle(handle) => rect
                         .fill(c(d::PAPER))
                         .radius(d::R_HANDLE)

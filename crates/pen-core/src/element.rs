@@ -24,7 +24,7 @@ impl ElementId {
 
 /// One drawable thing on the canvas.
 ///
-/// Z-order is not stored here: it is the element's position in its [`crate::Document`].
+/// Geometry is unrotated; `angle` turns it clockwise about its bounds centre.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Element {
     id: ElementId,
@@ -32,6 +32,17 @@ pub struct Element {
     version: u32,
     /// The only source of randomness for this element's rendering (hand-drawn style, M4).
     seed: u32,
+    #[serde(default)]
+    /// Clockwise radians about `kind.bounds().centre()`.
+    pub angle: f32,
+    #[serde(default)]
+    /// Innermost first, outermost last.
+    pub group_ids: Vec<crate::GroupId>,
+    #[serde(default)]
+    pub locked: bool,
+    #[serde(default)]
+    /// Empty only on uncommitted elements; the document assigns it on insertion.
+    pub z_key: crate::ZKey,
     pub props: Props,
     pub kind: Kind,
 }
@@ -47,6 +58,10 @@ impl Element {
             seed: seed_for(id),
             props,
             kind,
+            angle: 0.0,
+            group_ids: Vec::new(),
+            locked: false,
+            z_key: crate::ZKey::default(),
         }
     }
 
@@ -58,16 +73,37 @@ impl Element {
         changed
     }
 
+    /// Fresh identity for a pasted element; geometry and deterministic appearance survive.
+    #[must_use]
+    pub fn copied(&self, id: ElementId) -> Self {
+        let mut out = self.clone();
+        out.id = id;
+        out.version = 1;
+        out.z_key = crate::ZKey::default();
+        out
+    }
+
+    // An unassigned key in a caller's pre-insertion snapshot means "keep the assigned key".
     pub(crate) fn same_content(&self, other: &Self) -> bool {
         self.id == other.id
             && self.kind == other.kind
             && self.props == other.props
             && self.seed == other.seed
+            && self.angle.to_bits() == other.angle.to_bits()
+            && self.group_ids == other.group_ids
+            && self.locked == other.locked
+            && (other.z_key.is_empty() || self.z_key == other.z_key)
     }
 
     pub(crate) fn replace(&mut self, after: &Self) {
         self.kind.clone_from(&after.kind);
         self.props = after.props;
+        self.angle = after.angle;
+        self.group_ids.clone_from(&after.group_ids);
+        self.locked = after.locked;
+        if !after.z_key.is_empty() {
+            self.z_key.clone_from(&after.z_key);
+        }
         self.version = self.version.wrapping_add(1);
     }
 
@@ -112,6 +148,13 @@ pub enum Kind {
 }
 
 impl Kind {
+    pub fn path_mut(&mut self) -> Option<&mut Path> {
+        match self {
+            Self::Line(p) | Self::Arrow(p) | Self::Freedraw(p) => Some(p),
+            _ => None,
+        }
+    }
+
     #[must_use]
     pub fn with_bounds(&self, bounds: WorldRect) -> Self {
         match self {

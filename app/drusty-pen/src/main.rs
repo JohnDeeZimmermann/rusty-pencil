@@ -1,6 +1,8 @@
 //! The drusty-pen window. The only crate that imports `rune`: it turns rune events into
 //! `pen_editor::InputEvent`s and presents editor state as rune elements.
 
+mod arrange;
+mod clipboard;
 mod design;
 mod events;
 mod files;
@@ -27,6 +29,7 @@ const WINDOW: (f32, f32) = (1024.0, 720.0);
 /// App state: the editor, plus everything rune needs to present it. Presentation state is
 /// written only by [`State::input`], from the editor; it is never read back into the editor.
 struct State {
+    context: Option<pen_editor::ScreenPt>,
     editor: Editor,
     text_edit: rune::TextEdit,
     hex: [rune::TextEdit; 3],
@@ -47,6 +50,7 @@ struct State {
 impl State {
     fn new(camera: Camera) -> Self {
         Self {
+            context: None,
             editor: Editor::new(camera),
             text_edit: rune::TextEdit::default(),
             hex: [
@@ -70,6 +74,11 @@ impl State {
     /// Feeds one event to the editor and presents what changed, rebuilding as little as
     /// possible. Returns what the editor reported.
     fn input(&mut self, event: InputEvent, tx: &mut Tx) -> Redraw {
+        let context_closed = self.context.is_some()
+            && matches!(&event, InputEvent::Action(_) | InputEvent::Paste(_));
+        if context_closed {
+            self.context = None;
+        }
         let event = if let InputEvent::Key {
             key: pen_editor::Key::Char(c),
             mods,
@@ -92,7 +101,12 @@ impl State {
         // Palette fields follow edits and membership changes, never camera or draft moves.
         let refresh_properties = matches!(
             &event,
-            InputEvent::Property(pen_core::Property::Stroke(_) | pen_core::Property::Background(_))
+            InputEvent::Action(_)
+                | InputEvent::Paste(_)
+                | InputEvent::Context { .. }
+                | InputEvent::Property(
+                    pen_core::Property::Stroke(_) | pen_core::Property::Background(_)
+                )
                 | InputEvent::PointerDown { .. }
                 | InputEvent::PointerUp { .. }
                 | InputEvent::DoubleClick { .. }
@@ -116,6 +130,11 @@ impl State {
                 .style_text(font, size, align, |content, font, size, wrap| {
                     text::measure(fonts, content, font, size, wrap)
                 })
+        } else if matches!(event, InputEvent::Action(pen_editor::Action::PasteStyle)) {
+            let fonts = &mut self.fonts;
+            self.editor.paste_style_with(|content, font, size, wrap| {
+                text::measure(fonts, content, font, size, wrap)
+            })
         } else {
             self.editor.handle(event)
         };
@@ -144,7 +163,8 @@ impl State {
         });
         match redraw {
             // Only live values changed: no view rebuild, no layout.
-            Redraw::Nothing | Redraw::Camera => tx.live_only(),
+            Redraw::Nothing | Redraw::Camera if !context_closed => tx.live_only(),
+            Redraw::Nothing | Redraw::Camera => {}
             Redraw::Draft | Redraw::Tool | Redraw::Scene => self.show_feedback(),
         }
         redraw
@@ -258,7 +278,8 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
             ))
             .child(properties::panel(s))
             .child(files::controls(s))
-            .child(files::confirmation(s)),
+            .child(files::confirmation(s))
+            .child(arrange::menu(s)),
     )
 }
 
@@ -268,6 +289,22 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
         return true;
     }
     let mods = mods(ev.mods);
+    let action_key = match &ev.key {
+        Key::Command(c) => Some(pen_editor::Key::Char(c.to_ascii_lowercase())),
+        Key::Text(t) if t.chars().count() == 1 => t
+            .chars()
+            .next()
+            .map(|c| pen_editor::Key::Char(c.to_ascii_lowercase())),
+        _ => None,
+    };
+    if let Some(action) = action_key.and_then(|key| pen_editor::Action::for_key(key, mods)) {
+        s.run_action(action, tx);
+        return true;
+    }
+    if ev.key == Key::Escape && s.context.take().is_some() {
+        return true;
+    }
+
     if matches!(&ev.key, Key::Text(t) if t == " ") && !mods.ctrl && !mods.alt {
         s.input(InputEvent::Space(true), tx);
         return true;

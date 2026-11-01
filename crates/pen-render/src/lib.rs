@@ -29,6 +29,7 @@ pub use pen_core::TOLERANCE;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Prim {
     Text {
+        angle: f32,
         content: String,
         font: pen_core::Font,
         size: f32,
@@ -124,6 +125,7 @@ fn draw_base(kind: &Kind, props: &Props, out: &mut DrawList) {
     {
         if !content.is_empty() {
             out.push(Prim::Text {
+                angle: 0.0,
                 content: content.clone(),
                 font: *font,
                 size: *size,

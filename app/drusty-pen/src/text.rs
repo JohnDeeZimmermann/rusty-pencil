@@ -121,6 +121,7 @@ pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
     let mut start = 0;
     for (i, prim) in prims.iter().enumerate() {
         if let Prim::Text {
+            angle,
             content,
             font,
             size,
@@ -138,18 +139,28 @@ pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
                 .font(display_style(*font, *size))
                 .align(alignment(*align))
                 .color(d::c(*color));
-            root = match fit {
-                TextFit::Free => root.child(placed(label, *bounds).key(format!("text-{i}"))),
-                TextFit::Wrap => root.child(
-                    placed(col(), *bounds)
+            let mut group = el()
+                .absolute(bounds.min().x, bounds.min().y)
+                .size(bounds.width(), bounds.height())
+                .rotate(*angle)
+                .instant_changes();
+            let local = WorldRect::from_corners(
+                WorldPt::ORIGIN,
+                WorldPt::new(bounds.width(), bounds.height()),
+            );
+            group = match fit {
+                TextFit::Free => group.child(placed(label, local).key(format!("text-{i}"))),
+                TextFit::Wrap => group.child(
+                    placed(col(), local)
                         .key(format!("text-{i}"))
                         .justify_center()
                         .child(label.w_full().wrap_anywhere()),
                 ),
-                TextFit::Label => root
-                    .child(backdrop(*bounds, settings).key(format!("backdrop-{i}")))
-                    .child(placed(label, *bounds).key(format!("text-{i}"))),
+                TextFit::Label => group
+                    .child(backdrop(local, settings).key(format!("backdrop-{i}")))
+                    .child(placed(label, local).key(format!("text-{i}"))),
             };
+            root = root.child(group);
             start = i + 1;
         }
     }
@@ -161,6 +172,26 @@ pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
 }
 
 pub(crate) fn editor(s: &State) -> El {
+    let Some(session) = s.editor.text_session() else {
+        return el().size(0.0, 0.0);
+    };
+    if session.element.angle == 0.0 {
+        return editor_inner(s);
+    }
+    let b = session.element.kind.bounds();
+    el().key("rotated-text-editor")
+        .absolute(b.min().x, b.min().y)
+        .size(b.width(), b.height())
+        .rotate(session.element.angle)
+        .instant_changes()
+        .child(
+            el().absolute(-b.min().x, -b.min().y)
+                .size(0.0, 0.0)
+                .child(editor_inner(s)),
+        )
+}
+
+fn editor_inner(s: &State) -> El {
     let Some(session) = s.editor.text_session() else {
         return el().size(0.0, 0.0);
     };

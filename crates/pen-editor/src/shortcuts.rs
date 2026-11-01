@@ -62,6 +62,9 @@ impl Editor {
                 return Redraw::Draft;
             }
         }
+        if let Some(action) = crate::Action::for_key(key, mods) {
+            return self.action(action);
+        }
         if mods.ctrl && !mods.alt {
             if let Key::Char(c) = key {
                 match c.to_ascii_lowercase() {
@@ -102,6 +105,9 @@ impl Editor {
             return self.select_tool(tool);
         }
         if self.gesture.is_some() || mods.ctrl || mods.alt {
+            return Redraw::Nothing;
+        }
+        if self.selection.elements(&self.document).any(|e| e.locked) {
             return Redraw::Nothing;
         }
         let before = self.selection.clone();

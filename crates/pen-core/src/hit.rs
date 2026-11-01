@@ -21,6 +21,7 @@ impl Element {
             return false;
         }
         let bounds = self.kind.bounds();
+        let point = crate::rotate(point, bounds.centre(), -self.angle);
         if matches!(self.kind, Kind::Text { .. }) {
             return bounds.contains(point);
         }
