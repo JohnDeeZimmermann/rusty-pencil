@@ -12,7 +12,7 @@ Work them in order. Each one ends with something you can see in the app.
 | M5 ✅ | [M5-properties.md](M5-properties.md) | Properties panel: colours, fills, strokes, arrowheads, dark mode, grid | 1–2 days |
 | M6 ✅ | [M6-arrange-and-edit.md](M6-arrange-and-edit.md) | Rotate, flip, groups, clipboard, z-order, align, eraser | 2 days |
 | M7 ✅ | [M7-binding-and-bound-text.md](M7-binding-and-bound-text.md) | Arrows stick to shapes, elbow arrows, text in shapes | 2 days |
-| M8 | [M8-images-and-export.md](M8-images-and-export.md) | Images, PNG/SVG export, `.excalidraw` import | 1–2 days |
+| M8 ✅ | [M8-images-and-export.md](M8-images-and-export.md) | Images, PNG/SVG export, `.excalidraw` import | 1–2 days |
 | M9 | [M9-frames-library-polish.md](M9-frames-library-polish.md) | Frames, library, zen/view mode, palette, snapping | 2–3 days |
 
 Estimates assume tests are written alongside. Add roughly 50% for the first time through rune's

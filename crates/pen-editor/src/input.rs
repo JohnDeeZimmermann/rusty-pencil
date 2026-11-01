@@ -4,11 +4,17 @@ use crate::{ScreenPt, ScreenVec};
 /// top-left.
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
+    InsertImage {
+        file: pen_core::BinaryFile,
+        at: ScreenPt,
+    },
+    CropImage(pen_core::Crop),
     Context {
         at: ScreenPt,
     },
     Action(crate::Action),
     Paste(Vec<pen_core::Element>),
+    PasteScene(pen_core::file::SceneFile),
     TextChanged {
         content: String,
         bounds: pen_core::WorldRect,

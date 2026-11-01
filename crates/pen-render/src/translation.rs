@@ -20,6 +20,18 @@ pub(crate) fn translation(before: &Element, after: &Element) -> Option<WorldPt> 
         return None;
     }
     let (a, b) = match (&before.kind, &after.kind) {
+        (
+            Kind::Image {
+                file_id: af,
+                crop: ac,
+                bounds: a,
+            },
+            Kind::Image {
+                file_id: bf,
+                crop: bc,
+                bounds: b,
+            },
+        ) if af == bf && ac == bc && same_size(*a, *b) => (a.min(), b.min()),
         (Kind::Rect(a), Kind::Rect(b))
         | (Kind::Diamond(a), Kind::Diamond(b))
         | (Kind::Ellipse(a), Kind::Ellipse(b))

@@ -8,11 +8,7 @@ const ZOOM_PER_POINT: f32 = 0.006;
 pub(crate) fn canvas_input(node: El) -> El {
     node.on_paste_content(|s: &mut State, content, tx| s.paste(content, tx))
         .on_secondary_press_local(crate::arrange::open)
-        .on_drop_files(|s: &mut State, paths, tx| {
-            if let Some(path) = paths.first() {
-                s.open_path(path, tx);
-            }
-        })
+        .on_drop_files(crate::images::drop_files)
         .pointer_buttons([PointerButton::Middle])
         .on_layout_tx(|s: &mut State, [_, _, w, h], tx| {
             s.input(InputEvent::Viewport(ScreenVec::new(w, h)), tx);

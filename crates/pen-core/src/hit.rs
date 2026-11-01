@@ -38,7 +38,7 @@ impl Element {
     fn hit_geometry(&self, point: WorldPt, tolerance: f32, interior: bool) -> bool {
         let bounds = self.kind.bounds();
         let point = crate::rotate(point, bounds.centre(), -self.angle);
-        if matches!(self.kind, Kind::Text { .. }) {
+        if matches!(self.kind, Kind::Text { .. } | Kind::Image { .. }) {
             return bounds.contains(point);
         }
         let radius = if matches!(self.kind, Kind::Freedraw(_)) {

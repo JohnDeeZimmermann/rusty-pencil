@@ -32,7 +32,8 @@ impl ShapeDrag {
         mods: Modifiers,
     ) -> Option<Self> {
         let tool = match tool {
-            Tool::Eraser
+            Tool::Image
+            | Tool::Eraser
             | Tool::Select
             | Tool::Arrow
             | Tool::Line

@@ -99,6 +99,10 @@ impl Element {
             && (other.z_key.is_empty() || self.z_key == other.z_key)
     }
 
+    pub(crate) fn set_seed(&mut self, seed: u32) {
+        self.seed = seed;
+    }
+
     pub(crate) fn replace(&mut self, after: &Self) {
         self.kind.clone_from(&after.kind);
         self.props = after.props;
@@ -131,6 +135,11 @@ impl Element {
 /// What an element is, with its geometry in world points.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum Kind {
+    Image {
+        file_id: crate::FileId,
+        crop: crate::Crop,
+        bounds: WorldRect,
+    },
     Text {
         content: String,
         font: Font,
@@ -191,6 +200,11 @@ impl Kind {
                     ),
                 }
             }
+            Self::Image { file_id, crop, .. } => Self::Image {
+                file_id: file_id.clone(),
+                crop: *crop,
+                bounds,
+            },
             Self::Rect(_) => Self::Rect(bounds),
             Self::Diamond(_) => Self::Diamond(bounds),
             Self::Ellipse(_) => Self::Ellipse(bounds),
@@ -203,9 +217,11 @@ impl Kind {
     #[must_use]
     pub fn bounds(&self) -> WorldRect {
         match self {
-            Kind::Text { bounds: r, .. } | Kind::Rect(r) | Kind::Diamond(r) | Kind::Ellipse(r) => {
-                *r
-            }
+            Kind::Image { bounds: r, .. }
+            | Kind::Text { bounds: r, .. }
+            | Kind::Rect(r)
+            | Kind::Diamond(r)
+            | Kind::Ellipse(r) => *r,
             Kind::Line(p) | Kind::Arrow(p) | Kind::Freedraw(p) => p.bounds(),
         }
     }

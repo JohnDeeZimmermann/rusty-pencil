@@ -19,7 +19,7 @@ cycles outline sloppiness. Undo uses Ctrl+Z
 
 ## Keep your canvas
 
-The top-left File menu contains Open, Save and Reset canvas. Save with Ctrl+S, Save as with
+The top-left File menu contains Open, Save, Export and Reset canvas. Save with Ctrl+S, Save as with
 Ctrl+Shift+S, and open with Ctrl+O. Scene files are versioned
 JSON with the `.drusty-pen` extension; dropping one on the window opens it. Autosave keeps a
 separate recovery scene in your platform's local application data directory and restores it
@@ -46,3 +46,18 @@ For isolated checks, use `cargo run -p drusty-pen -- --snap snaps/m5.png --scale
 --script app/drusty-pen/scripts/m5-properties.json --at 19.5`. Substitute `m5-dark.json` for dark
 mode and grid coverage. Snapshots do not read or write normal recovery. Add `--data-dir PATH`
 to test recovery in a separate directory, or `--open PATH` to load a scene directly.
+
+## Images and export
+
+Press 9 or the image button to insert a PNG/JPEG, paste an image, or drop image files on
+canvas. Select an image to trim any edge by 10% or reset its crop; cropping keeps the source
+pixels and supports undo. Images are embedded once per content hash in saved scenes.
+
+File → Export (Ctrl+Shift+E) saves PNG or SVG at 1×/2×/3× with background, dark-mode and
+selection-only choices. Copy the selection as PNG with Ctrl+Shift+C, or as SVG source with
+Ctrl+Alt+Shift+C. SVG text is outlined using the bundled fonts. Exported images do not embed
+an editable scene; save a `.drusty-pen` file to keep editing later.
+
+Open or drop `.excalidraw` files to import supported elements. A notice counts skipped
+unsupported types. Individual images are limited to 16 MiB / 16 megapixels; decoded previews
+are limited to 64 sources / 128 MiB, with placeholders beyond that imported-scene budget.

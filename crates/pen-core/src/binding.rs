@@ -165,6 +165,7 @@ pub fn follow(doc: &Document, command: Command) -> Command {
 
 fn collect(command: &Command, out: &mut BTreeMap<ElementId, Option<Element>>) {
     match command {
+        Command::File { .. } => {}
         Command::Group(cs) => cs.iter().for_each(|c| collect(c, out)),
         Command::Add { element, .. } => {
             out.insert(element.id(), Some(element.clone()));

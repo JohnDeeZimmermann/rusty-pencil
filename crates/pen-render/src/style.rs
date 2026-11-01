@@ -5,7 +5,12 @@ use pen_core::{FillStyle, Props, StrokeStyle, WorldPt};
 pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props) {
     let mut result = Vec::new();
     for mut prim in out.prims.drain(first..) {
+        if matches!(prim, Prim::Image { .. }) {
+            result.push(prim);
+            continue;
+        }
         let color = match &mut prim {
+            Prim::Image { .. } => unreachable!(),
             Prim::Fill { color, .. } | Prim::Stroke { color, .. } | Prim::Text { color, .. } => {
                 color
             }

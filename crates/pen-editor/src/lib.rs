@@ -6,6 +6,7 @@ mod actions;
 mod arrange;
 mod arrange_positions;
 mod binding;
+mod images;
 pub use actions::Action;
 mod camera;
 mod eraser;
@@ -210,6 +211,8 @@ impl Editor {
 
     fn dispatch(&mut self, event: InputEvent) -> Redraw {
         match event {
+            InputEvent::InsertImage { file, at } => self.insert_image(file, at),
+            InputEvent::CropImage(crop) => self.crop_image(crop),
             InputEvent::Context { at } => {
                 self.finish_text();
                 self.cancel();
@@ -232,6 +235,16 @@ impl Editor {
                 Redraw::Tool
             }
             InputEvent::Action(action) => self.action(action),
+            InputEvent::PasteScene(scene) => {
+                if scene.document().is_err() {
+                    return Redraw::Nothing;
+                }
+                self.paste_with_files(
+                    &scene.elements,
+                    pen_core::WorldPt::new(20.0, 20.0),
+                    &scene.files,
+                )
+            }
             InputEvent::Paste(elements) => {
                 self.paste_elements(&elements, pen_core::WorldPt::new(20.0, 20.0))
             }
@@ -500,3 +513,6 @@ mod arrange_tests;
 
 #[cfg(test)]
 mod binding_tests;
+
+#[cfg(test)]
+mod image_tests;

@@ -71,7 +71,11 @@ fn button(tool: Tool, active: bool, dark: bool) -> El {
             )
         })
         .on_press_tx(move |s: &mut State, tx| {
-            s.input(InputEvent::SelectTool(tool), tx);
+            if tool == Tool::Image {
+                crate::images::dialog(s, tx);
+            } else {
+                s.input(InputEvent::SelectTool(tool), tx);
+            }
         })
 }
 
@@ -91,6 +95,23 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
         WorldRect::from_corners(WorldPt::new(e, e), WorldPt::new(d::ICON - e, d::ICON - e))
     };
     let kind = match tool {
+        Tool::Image => {
+            return rune::Shape::new().stroke(
+                vec![
+                    [2.0, 17.0],
+                    [2.0, 3.0],
+                    [18.0, 3.0],
+                    [18.0, 17.0],
+                    [2.0, 17.0],
+                    [8.0, 9.0],
+                    [12.0, 13.0],
+                    [15.0, 10.0],
+                    [18.0, 13.0],
+                ],
+                d::ICON_STROKE,
+                c(ink),
+            );
+        }
         Tool::Eraser => {
             return rune::Shape::new().stroke(
                 vec![
@@ -180,6 +201,7 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
 
 fn hint(tool: Tool) -> String {
     let what = match tool {
+        Tool::Image => return "Choose an image · Paste or drop PNG / JPEG files".into(),
         Tool::Eraser => return "Drag to erase  ·  Hold Alt to restore this stroke  ·  Esc to cancel".into(),
         Tool::Text => return "Click to write  ·  Enter for a new line  ·  Esc to finish  ·  Double-click to edit".into(),
         Tool::Select => return "Drag to move  ·  Alt + drag to duplicate  ·  Shift snaps rotation  ·  Right-click to arrange".into(),

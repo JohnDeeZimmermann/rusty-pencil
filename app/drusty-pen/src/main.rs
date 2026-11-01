@@ -5,8 +5,10 @@ mod arrange;
 mod clipboard;
 mod design;
 mod events;
+mod export;
 mod files;
 mod grid;
+mod images;
 mod menu;
 mod navigation;
 mod overlay;
@@ -30,6 +32,7 @@ const WINDOW: (f32, f32) = (1024.0, 720.0);
 /// App state: the editor, plus everything rune needs to present it. Presentation state is
 /// written only by [`State::input`], from the editor; it is never read back into the editor.
 struct State {
+    export: export::Panel,
     context: Option<pen_editor::ScreenPt>,
     menu: Option<menu::Section>,
     editor: Editor,
@@ -52,6 +55,7 @@ struct State {
 impl State {
     fn new(camera: Camera) -> Self {
         Self {
+            export: export::Panel::default(),
             context: None,
             menu: None,
             editor: Editor::new(camera),
@@ -78,7 +82,13 @@ impl State {
     /// possible. Returns what the editor reported.
     fn input(&mut self, event: InputEvent, tx: &mut Tx) -> Redraw {
         let context_closed = self.context.is_some()
-            && matches!(&event, InputEvent::Action(_) | InputEvent::Paste(_));
+            && matches!(
+                &event,
+                InputEvent::Action(_)
+                    | InputEvent::Paste(_)
+                    | InputEvent::PasteScene(_)
+                    | InputEvent::InsertImage { .. }
+            );
         if context_closed {
             self.context = None;
         }
@@ -106,6 +116,8 @@ impl State {
             &event,
             InputEvent::Action(_)
                 | InputEvent::Paste(_)
+                | InputEvent::PasteScene(_)
+                | InputEvent::InsertImage { .. }
                 | InputEvent::Context { .. }
                 | InputEvent::Property(
                     pen_core::Property::Stroke(_) | pen_core::Property::Background(_)
@@ -295,6 +307,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
             .child(files::controls(s))
             .child(menu::view(s))
             .child(files::confirmation(s))
+            .child(export::view(s))
             .child(arrange::menu(s)),
     )
 }
@@ -303,6 +316,13 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
 fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
     if ev.key == Key::Escape && s.menu.take().is_some() {
         tx.blur();
+        return true;
+    }
+    if export::key(s, ev, tx) {
+        return true;
+    }
+    if !ev.mods.cmd && matches!(&ev.key, Key::Text(t) if t == "9") {
+        images::dialog(s, tx);
         return true;
     }
     if files::key(s, ev, tx) {
@@ -402,3 +422,6 @@ mod m5_tests;
 
 #[cfg(test)]
 mod drag_tests;
+
+#[cfg(test)]
+mod m8_tests;

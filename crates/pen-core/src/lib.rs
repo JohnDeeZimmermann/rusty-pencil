@@ -14,9 +14,12 @@ pub use arrowheads::{Head, arrowheads};
 mod color;
 mod document;
 mod element;
+mod images;
+pub use images::{BinaryFile, Crop, FileId};
 pub mod file;
 mod geometry;
 mod hit;
+pub mod import;
 mod outline;
 mod path;
 mod props;
@@ -53,3 +56,6 @@ mod bound_tests;
 
 #[cfg(test)]
 mod routing_tests;
+
+#[cfg(test)]
+mod import_tests;

@@ -16,7 +16,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Line (`L` / `6`) — M3
 - [x] Freedraw / pen (`P` / `7`) — M3
 - [x] Text (`T` / `8`) — M4
-- [ ] Image (`9`) — M8
+- [x] Image (`9`) — M8
 - [x] Eraser (`E` / `0`), hold Alt to un-erase — M6
 - [x] Hand / pan tool (`H`) — M3
 - [ ] Frame tool (`F`) — M9
@@ -122,10 +122,10 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Images
 
-- [ ] Insert from file — M8
-- [ ] Paste and drag-and-drop images — M8
-- [ ] Crop an image — M8
-- [ ] Images stored inside the scene file — M8
+- [x] Insert from file — M8
+- [x] Paste and drag-and-drop images — M8
+- [x] Crop an image — M8
+- [x] Images stored inside the scene file — M8
 
 ## History
 
@@ -141,11 +141,11 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Open scene file, also by drag-and-drop onto the window — M4
 - [x] Autosave and restore the last scene on launch — M4
 - [x] Reset canvas — M4
-- [ ] Import `.excalidraw` files — M8
-- [ ] Export PNG: scale 1×/2×/3×, background on/off, dark mode, selection only — M8
-- [ ] Export SVG — M8
+- [x] Import `.excalidraw` files — M8
+- [x] Export PNG: scale 1×/2×/3×, background on/off, dark mode, selection only — M8
+- [x] Export SVG — M8
 - [ ] Embed the scene in exported PNG/SVG, re-open it later — M8
-- [ ] Copy selection as PNG / SVG to the clipboard — M8
+- [x] Copy selection as PNG / SVG to the clipboard — M8
 
 ## Library
 

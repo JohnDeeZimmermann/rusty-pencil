@@ -26,17 +26,33 @@ pub(crate) fn panel(s: &State) -> El {
         || !matches!(editor.tool(), Tool::Select | Tool::Hand)
         || editor.text_session().is_some()
     {
-        if let Some(text) = text_controls::panel(editor) {
-            content = content.child(text);
+        if editor
+            .selection()
+            .ids()
+            .filter_map(|id| editor.document().get(id))
+            .any(|e| matches!(e.kind, pen_core::Kind::Image { .. }))
+        {
+            content = content.child(crate::images::crop_controls(s));
         }
-        if let Some(arrows) = arrows::group(editor) {
-            content = content.child(arrows);
+        let images_only = !editor.selection().is_empty()
+            && editor
+                .selection()
+                .ids()
+                .filter_map(|id| editor.document().get(id))
+                .all(|e| matches!(e.kind, pen_core::Kind::Image { .. }));
+        if !images_only {
+            if let Some(text) = text_controls::panel(editor) {
+                content = content.child(text);
+            }
+            if let Some(arrows) = arrows::group(editor) {
+                content = content.child(arrows);
+            }
+            content = content
+                .child(colors::group(s, colors::Target::Stroke))
+                .child(colors::group(s, colors::Target::Background))
+                .child(fill::group(editor))
+                .child(stroke::group(editor));
         }
-        content = content
-            .child(colors::group(s, colors::Target::Stroke))
-            .child(colors::group(s, colors::Target::Background))
-            .child(fill::group(editor))
-            .child(stroke::group(editor));
         content = content.child(opacity::group(editor));
     } else {
         return el().size(0.0, 0.0);

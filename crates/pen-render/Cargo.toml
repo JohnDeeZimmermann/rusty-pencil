@@ -13,5 +13,12 @@ pen-editor.workspace = true
 # Replaces the pressure, streamline, joins and cap geometry of a freehand outline.
 perfect_freehand = "=0.1.1"
 
+# One CPU SVG renderer replaces custom rasterization, image decoding and font shaping.
+resvg = "0.45.1"
+base64 = "0.22"
+# Uses the same bundled fonts for measured export line breaks.
+rustybuzz = "0.20"
+thiserror.workspace = true
+
 [lints]
 workspace = true

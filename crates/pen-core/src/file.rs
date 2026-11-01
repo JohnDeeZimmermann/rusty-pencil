@@ -2,7 +2,7 @@
 use crate::{Command, Document, Element, Kind, Props, WorldPt};
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AppState {
@@ -40,6 +40,10 @@ impl Default for AppState {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SceneFile {
+    #[serde(default)]
+    pub files: std::collections::BTreeMap<crate::FileId, crate::BinaryFile>,
+    #[serde(skip)]
+    pub skipped_elements: usize,
     #[serde(skip)]
     pub dropped_bindings: usize,
     pub format: String,
@@ -68,6 +72,20 @@ impl SceneFile {
     pub fn new(doc: &Document, app_state: AppState) -> Self {
         Self {
             dropped_bindings: 0,
+            skipped_elements: 0,
+            files: doc
+                .elements()
+                .iter()
+                .filter_map(|e| {
+                    if let Kind::Image { file_id, .. } = &e.kind {
+                        doc.files()
+                            .get(file_id)
+                            .map(|f| (file_id.clone(), f.clone()))
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
             format: "drusty-pen".into(),
             version: VERSION,
             elements: doc.elements().to_vec(),
@@ -78,7 +96,7 @@ impl SceneFile {
     pub fn document(&self) -> Result<Document, FileError> {
         self.validate()?;
         let mut doc = Document::new();
-        let commands = self
+        let commands: Vec<_> = self
             .elements
             .iter()
             .enumerate()
@@ -86,6 +104,15 @@ impl SceneFile {
                 element: e.clone(),
                 at,
             })
+            .collect();
+        let commands = self
+            .files
+            .iter()
+            .map(|(id, file)| Command::File {
+                id: id.clone(),
+                file: Some(file.clone()),
+            })
+            .chain(commands)
             .collect();
         doc.apply(Command::Group(commands))
             .map_err(|e| FileError::Invalid(e.to_string()))?;
@@ -109,7 +136,17 @@ impl SceneFile {
         {
             return Err(FileError::Invalid("invalid camera or defaults".into()));
         }
+        for (id, file) in &self.files {
+            if !file.valid() || &file.id() != id {
+                return Err(FileError::Invalid("invalid embedded image".into()));
+            }
+        }
         for e in &self.elements {
+            if let Kind::Image { file_id, crop, .. } = &e.kind
+                && (!crop.valid() || !self.files.contains_key(file_id))
+            {
+                return Err(FileError::Invalid("missing image or invalid crop".into()));
+            }
             let bounds = e.kind.bounds();
             if e.id().get() == 0
                 || e.id().get() == u64::MAX
@@ -159,6 +196,9 @@ pub fn load(bytes: &[u8]) -> Result<SceneFile, FileError> {
     // Check the envelope before decoding kinds, so future element kinds still report
     // a useful version error instead of a misleading malformed-JSON error.
     let value: serde_json::Value = serde_json::from_slice(bytes).map_err(json_error)?;
+    if value.get("type").and_then(serde_json::Value::as_str) == Some("excalidraw") {
+        return crate::import::excalidraw(&value);
+    }
     if value.get("format").and_then(serde_json::Value::as_str) != Some("drusty-pen") {
         return Err(FileError::Format);
     }

@@ -30,7 +30,7 @@ impl Default for Status {
     }
 }
 impl Status {
-    fn set(&self, value: impl Into<std::sync::Arc<str>>) {
+    pub(crate) fn set(&self, value: impl Into<std::sync::Arc<str>>) {
         self.0.set(value);
     }
 }
@@ -45,7 +45,7 @@ impl Files {
 }
 
 impl State {
-    fn snapshot(&self) -> SceneFile {
+    pub(crate) fn snapshot(&self) -> SceneFile {
         let mut scene = SceneFile::new(
             self.editor.document(),
             AppState {
@@ -129,6 +129,12 @@ impl State {
                 scene_file.dropped_bindings
             );
         }
+        if scene_file.skipped_elements > 0 {
+            self.files.status.set(format!(
+                "Skipped {} unsupported elements",
+                scene_file.skipped_elements
+            ));
+        }
         let app = &scene_file.app_state;
         self.editor
             .replace_document(doc, Camera::new(app.scroll, app.zoom), app.style);
@@ -155,7 +161,13 @@ impl State {
                 self.install(&scene);
                 self.files.path = Some(path.to_owned());
                 self.files.changed(tx);
-                self.files.status.set(if scene.dropped_bindings > 0 {
+                self.files.status.set(if scene.skipped_elements > 0 {
+                    format!(
+                        "Opened {} · skipped {} unsupported elements",
+                        name(path),
+                        scene.skipped_elements
+                    )
+                } else if scene.dropped_bindings > 0 {
                     format!(
                         "Opened {} · dropped {} invalid bindings",
                         name(path),
@@ -204,7 +216,7 @@ impl State {
                 .map(Path::to_owned),
             ..Default::default()
         }
-        .filter("drusty-pen scene", &["drusty-pen", "json"]);
+        .filter("drusty-pen scene", &["drusty-pen", "json", "excalidraw"]);
         tx.save_file(options, |s: &mut State, result, _| match result {
             Ok(Some(path)) => s.save_path(&path),
             Ok(None) => {}
@@ -222,7 +234,7 @@ impl State {
                 title: "Open canvas".into(),
                 ..Default::default()
             }
-            .filter("drusty-pen scene", &["drusty-pen", "json"]),
+            .filter("drusty-pen scene", &["drusty-pen", "json", "excalidraw"]),
             |s: &mut State, result, tx| match result {
                 Ok(Some(path)) => s.open_path(&path, tx),
                 Ok(None) => {}
@@ -365,6 +377,14 @@ pub(crate) fn menu(s: &State) -> El {
                     s.menu = None;
                     s.save_dialog(false, tx);
                 }),
+        )
+        .child(
+            menu_action("Export…", "export-file", "Ctrl+Shift+E", dark).on_press(
+                |s: &mut State| {
+                    s.menu = None;
+                    s.export.open = true;
+                },
+            ),
         )
         .child(el().w_full().h(d::OUTLINE).fill(d::themed(d::BORDER, dark)))
         .child(

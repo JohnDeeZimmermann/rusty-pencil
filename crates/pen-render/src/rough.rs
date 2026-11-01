@@ -16,7 +16,7 @@ pub fn draw_element(element: &Element, out: &mut DrawList) {
     let centre = element.kind.bounds().centre();
     for prim in &mut out.prims[first..] {
         match prim {
-            Prim::Text { angle, .. } => *angle = element.angle,
+            Prim::Image { angle, .. } | Prim::Text { angle, .. } => *angle = element.angle,
             Prim::Fill { points, .. } | Prim::Stroke { points, .. } => {
                 for point in points {
                     *point = pen_core::rotate(*point, centre, element.angle);

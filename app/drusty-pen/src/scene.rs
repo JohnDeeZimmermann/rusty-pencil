@@ -16,6 +16,8 @@ struct Part {
 #[derive(Debug, Default)]
 pub(crate) struct Scene {
     composition: pen_render::Scene,
+    images: crate::images::Cache,
+    document_revision: Option<u64>,
     parts: Vec<Part>,
     settings: pen_core::Settings,
 }
@@ -28,6 +30,10 @@ impl Scene {
         settings: pen_core::Settings,
     ) -> bool {
         let mut changed = false;
+        if self.document_revision != Some(doc.revision()) {
+            self.images.update(doc);
+            self.document_revision = Some(doc.revision());
+        }
         if self.settings.dark != settings.dark || self.settings.canvas != settings.canvas {
             self.parts.clear();
         }
@@ -54,7 +60,7 @@ impl Scene {
                 revision: part.revision(),
                 #[cfg(test)]
                 empty: part.prims().is_empty(),
-                node: crate::text::paint_themed(part.prims(), settings),
+                node: crate::text::paint_with_images(part.prims(), settings, &self.images),
             };
             if let Some(old) = self.parts.get_mut(i) {
                 *old = painted;

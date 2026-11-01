@@ -6,6 +6,7 @@ use crate::{Element, ElementId};
 #[derive(Debug, Clone, Default)]
 pub struct Document {
     elements: Vec<Element>,
+    files: BTreeMap<crate::FileId, crate::BinaryFile>,
     index: BTreeMap<ElementId, usize>,
     bound_arrows: BTreeMap<ElementId, Vec<ElementId>>,
     next_id: u64,
@@ -19,6 +20,10 @@ pub struct Document {
 )]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
+    File {
+        id: crate::FileId,
+        file: Option<crate::BinaryFile>,
+    },
     Add {
         element: Element,
         at: usize,
@@ -39,6 +44,8 @@ pub enum Command {
 pub enum DocError {
     #[error("no element with id {0:?}")]
     Missing(ElementId),
+    #[error("invalid embedded image, missing source or invalid crop")]
+    Image,
     #[error("an element with id {0:?} already exists")]
     Duplicate(ElementId),
     #[error("patch does not match element {0:?}")]
@@ -46,6 +53,11 @@ pub enum DocError {
 }
 
 impl Document {
+    #[must_use]
+    pub fn files(&self) -> &BTreeMap<crate::FileId, crate::BinaryFile> {
+        &self.files
+    }
+
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -86,10 +98,33 @@ impl Document {
         self.revision
     }
 
-    /// Returns the inverse. Validation touches only affected ids; errors leave all state,
-    /// including element versions and revision, unchanged.
+    /// Returns the inverse. Element validation touches affected ids; file removal checks
+    /// surviving references. Errors leave versions, revision and all contents unchanged.
     pub fn apply(&mut self, command: Command) -> Result<Command, DocError> {
-        self.validate(&command, &mut BTreeMap::new())?;
+        let mut staged = BTreeMap::new();
+        self.validate(&command, &mut staged)?;
+        let mut files = BTreeMap::new();
+        file_changes(&command, &mut files);
+        let valid_image = |e: &Element| match &e.kind {
+            crate::Kind::Image { file_id, crop, .. } => {
+                crop.valid()
+                    && files
+                        .get(file_id)
+                        .copied()
+                        .unwrap_or_else(|| self.files.contains_key(file_id))
+            }
+            _ => true,
+        };
+        if staged.values().flatten().any(|e| !valid_image(e))
+            || (files.values().any(|present| !present)
+                && self
+                    .elements
+                    .iter()
+                    .filter(|e| !staged.contains_key(&e.id()))
+                    .any(|e| !valid_image(e)))
+        {
+            return Err(DocError::Image);
+        }
         let order_changed = changes_order(&command);
         let inverse = self.apply_validated(command)?;
         if order_changed {
@@ -134,6 +169,14 @@ impl Document {
         staged: &mut BTreeMap<ElementId, Option<Element>>,
     ) -> Result<(), DocError> {
         match command {
+            Command::File { id, file } => {
+                if file
+                    .as_ref()
+                    .is_some_and(|file| !file.valid() || &file.id() != id)
+                {
+                    return Err(DocError::Image);
+                }
+            }
             Command::Group(commands) => {
                 for command in commands {
                     self.validate(command, staged)?;
@@ -168,6 +211,14 @@ impl Document {
 
     fn apply_validated(&mut self, command: Command) -> Result<Command, DocError> {
         Ok(match command {
+            Command::File { id, file } => {
+                let old = if let Some(file) = file {
+                    self.files.insert(id.clone(), file)
+                } else {
+                    self.files.remove(&id)
+                };
+                Command::File { id, file: old }
+            }
             Command::Group(commands) => {
                 let mut inverses = Vec::with_capacity(commands.len());
                 for command in commands {
@@ -224,10 +275,25 @@ impl Document {
 
 fn changes_order(command: &Command) -> bool {
     match command {
+        Command::File { .. } => false,
         Command::Group(commands) => commands.iter().any(changes_order),
         Command::Patch { before, after, .. } => {
             !after.z_key.is_empty() && before.z_key != after.z_key
         }
         Command::Add { .. } | Command::Remove { .. } => true,
+    }
+}
+
+fn file_changes(command: &Command, out: &mut BTreeMap<crate::FileId, bool>) {
+    match command {
+        Command::File { id, file } => {
+            out.insert(id.clone(), file.is_some());
+        }
+        Command::Group(commands) => {
+            for command in commands {
+                file_changes(command, out);
+            }
+        }
+        _ => {}
     }
 }

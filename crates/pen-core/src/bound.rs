@@ -27,7 +27,7 @@ impl Container {
         match element.kind {
             Kind::Rect(_) | Kind::Diamond(_) | Kind::Ellipse(_) => Some(Self::Shape(element.id())),
             Kind::Line(_) | Kind::Arrow(_) => Some(Self::Path(element.id())),
-            Kind::Text { .. } | Kind::Freedraw(_) => None,
+            Kind::Image { .. } | Kind::Text { .. } | Kind::Freedraw(_) => None,
         }
     }
 
@@ -202,6 +202,7 @@ pub fn follow(doc: &Document, command: Command) -> Command {
 /// Final state per touched id: `Some` after a patch, `None` once removed.
 fn collect<'a>(command: &'a Command, out: &mut BTreeMap<ElementId, Option<&'a Element>>) {
     match command {
+        Command::File { .. } => {}
         Command::Group(commands) => commands.iter().for_each(|c| collect(c, out)),
         Command::Add { element, .. } => {
             out.remove(&element.id());

@@ -7,6 +7,7 @@
 
 mod arrowheads;
 mod cache;
+pub mod export;
 mod overlay;
 mod path;
 mod rough;
@@ -29,6 +30,13 @@ pub use pen_core::TOLERANCE;
 /// One paint operation, in world points.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Prim {
+    Image {
+        file_id: pen_core::FileId,
+        crop: pen_core::Crop,
+        bounds: pen_core::WorldRect,
+        angle: f32,
+        opacity: u8,
+    },
     Text {
         angle: f32,
         content: String,
@@ -125,6 +133,21 @@ pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
 }
 
 fn draw_base(kind: &Kind, props: &Props, out: &mut DrawList) {
+    if let Kind::Image {
+        file_id,
+        crop,
+        bounds,
+    } = kind
+    {
+        out.push(Prim::Image {
+            file_id: file_id.clone(),
+            crop: *crop,
+            bounds: *bounds,
+            angle: 0.0,
+            opacity: props.opacity,
+        });
+        return;
+    }
     if let Kind::Text {
         content,
         font,
@@ -196,3 +219,6 @@ mod style_tests;
 
 #[cfg(test)]
 mod translation_tests;
+
+#[cfg(test)]
+mod export_tests;

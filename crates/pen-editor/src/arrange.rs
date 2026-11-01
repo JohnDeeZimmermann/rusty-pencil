@@ -212,6 +212,15 @@ impl Editor {
     }
 
     pub(crate) fn paste_elements(&mut self, elements: &[Element], offset: WorldPt) -> Redraw {
+        self.paste_with_files(elements, offset, &BTreeMap::new())
+    }
+
+    pub(crate) fn paste_with_files(
+        &mut self,
+        elements: &[Element],
+        offset: WorldPt,
+        files: &BTreeMap<pen_core::FileId, pen_core::BinaryFile>,
+    ) -> Redraw {
         if elements.is_empty() {
             return Redraw::Nothing;
         }
@@ -231,7 +240,7 @@ impl Editor {
         let mut groups = BTreeMap::new();
         self.selection.clear();
         let at = self.document.elements().len();
-        let commands = elements
+        let mut commands: Vec<_> = elements
             .iter()
             .enumerate()
             .map(|(i, e)| {
@@ -268,6 +277,14 @@ impl Editor {
                 }
             })
             .collect();
+        let file_commands = files
+            .iter()
+            .filter(|(id, _)| !self.document.files().contains_key(*id))
+            .map(|(id, file)| Command::File {
+                id: id.clone(),
+                file: Some(file.clone()),
+            });
+        commands.splice(0..0, file_commands);
         self.tool = Tool::Select;
         self.group_scope = None;
         self.finish_arrange(commands, before)

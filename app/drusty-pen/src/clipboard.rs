@@ -7,7 +7,10 @@ use rune::{ClipboardContent, Tx};
 
 const MIME: &str = "application/vnd.drusty-pen.elements+json";
 
-fn encode(elements: &[Element]) -> Option<ClipboardContent> {
+fn encode(
+    elements: &[Element],
+    files: &std::collections::BTreeMap<pen_core::FileId, pen_core::BinaryFile>,
+) -> Option<ClipboardContent> {
     let plain = elements
         .iter()
         .filter_map(|e| match &e.kind {
@@ -18,6 +21,17 @@ fn encode(elements: &[Element]) -> Option<ClipboardContent> {
         .join("\n");
     let scene = file::SceneFile {
         dropped_bindings: 0,
+        skipped_elements: 0,
+        files: elements
+            .iter()
+            .filter_map(|e| {
+                if let Kind::Image { file_id, .. } = &e.kind {
+                    files.get(file_id).map(|f| (file_id.clone(), f.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect(),
         format: "drusty-pen".into(),
         version: file::VERSION,
         elements: elements.to_vec(),
@@ -29,10 +43,11 @@ fn encode(elements: &[Element]) -> Option<ClipboardContent> {
         .replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;");
-    Some(ClipboardContent::new(plain).with_html(format!("<pre>{MIME}\n{escaped}</pre>")))
+    let content = ClipboardContent::new(plain).with_html(format!("<pre>{MIME}\n{escaped}</pre>"));
+    content.html().is_some().then_some(content)
 }
 
-fn decode(content: &ClipboardContent) -> Option<Vec<Element>> {
+fn decode(content: &ClipboardContent) -> Option<file::SceneFile> {
     let html = content.html()?;
     let (_, data) = html.split_once(MIME)?;
     let (data, _) = data.split_once("</pre>")?;
@@ -41,7 +56,7 @@ fn decode(content: &ClipboardContent) -> Option<Vec<Element>> {
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&amp;", "&");
-    file::load(json.as_bytes()).ok().map(|s| s.elements)
+    file::load(json.as_bytes()).ok()
 }
 
 impl State {
@@ -51,9 +66,15 @@ impl State {
         }
         match action {
             Action::Copy | Action::Cut => {
-                if let Some(content) = encode(&self.editor.copy_elements()) {
+                if let Some(content) =
+                    encode(&self.editor.copy_elements(), self.editor.document().files())
+                {
                     tx.copy_rich(content);
                     self.input(InputEvent::Action(action), tx);
+                } else {
+                    self.files
+                        .status
+                        .set("Selection is too large for the clipboard");
                 }
             }
             Action::Paste => {
@@ -68,7 +89,17 @@ impl State {
 
     pub(crate) fn paste(&mut self, content: &ClipboardContent, tx: &mut Tx) {
         if let Some(elements) = decode(content) {
-            self.input(InputEvent::Paste(elements), tx);
+            self.input(InputEvent::PasteScene(elements), tx);
+        } else if let Some(image) = content.image() {
+            crate::images::insert(
+                self,
+                image.png().to_vec(),
+                pen_editor::ScreenPt::new(
+                    self.editor.viewport().dx / 2.0,
+                    self.editor.viewport().dy / 2.0,
+                ),
+                tx,
+            );
         } else if !content.text().is_empty() {
             let (font, size, align) = self.editor.text_defaults();
             let (w, h) = text::measure(&mut self.fonts, content.text(), font, size, None);

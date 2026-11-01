@@ -1,0 +1,416 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "elements": [
+    {
+      "id": "e0",
+      "type": "rectangle",
+      "x": 280,
+      "y": 180,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e1",
+      "type": "diamond",
+      "x": 500,
+      "y": 180,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e2",
+      "type": "ellipse",
+      "x": 720,
+      "y": 180,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e3",
+      "type": "line",
+      "x": 280,
+      "y": 340,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e4",
+      "type": "arrow",
+      "x": 500,
+      "y": 340,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e5",
+      "type": "freedraw",
+      "x": 720,
+      "y": 340,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo",
+      "pressures": [
+        0.2,
+        0.9,
+        0.3
+      ]
+    },
+    {
+      "id": "e6",
+      "type": "text",
+      "x": 280,
+      "y": 500,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e7",
+      "type": "image",
+      "x": 500,
+      "y": 500,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e8",
+      "type": "frame",
+      "x": 720,
+      "y": 500,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e9",
+      "type": "embeddable",
+      "x": 280,
+      "y": 660,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e10",
+      "type": "iframe",
+      "x": 500,
+      "y": 660,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    },
+    {
+      "id": "e11",
+      "type": "magicframe",
+      "x": 720,
+      "y": 660,
+      "width": 160,
+      "height": 100,
+      "strokeColor": "#235e4d",
+      "backgroundColor": "#ddeee8",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          70
+        ],
+        [
+          160,
+          10
+        ]
+      ],
+      "text": "A quiet place",
+      "fontSize": 24,
+      "fontFamily": 1,
+      "fileId": "photo"
+    }
+  ],
+  "files": {
+    "photo": {
+      "mimeType": "image/png",
+      "dataURL": "data:image/png;base64,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"
+    }
+  },
+  "appState": {
+    "viewBackgroundColor": "#f8f9f7"
+  }
+}

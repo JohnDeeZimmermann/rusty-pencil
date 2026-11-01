@@ -44,7 +44,7 @@ fn alignment(align: TextAlign) -> Align {
 }
 
 /// Laid-out `(width, height)` in world points. With `wrap`, lines break at that width
-/// exactly as [`paint_themed`] and the editing overlay break them.
+/// exactly as [`paint_with_images`] and the editing overlay break them.
 pub(crate) fn measure(
     system: &mut TextSystem,
     content: &str,
@@ -105,7 +105,11 @@ fn backdrop(bounds: WorldRect, settings: pen_core::Settings) -> El {
 }
 
 /// Partition around text so filled shapes still occlude text below them in document order.
-pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
+pub(crate) fn paint_with_images(
+    prims: &[Prim],
+    settings: pen_core::Settings,
+    images: &crate::images::Cache,
+) -> El {
     let themed;
     let prims = if settings.dark {
         themed = crate::paint::themed(prims);
@@ -120,7 +124,14 @@ pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
         .inert();
     let mut start = 0;
     for (i, prim) in prims.iter().enumerate() {
-        if let Prim::Text {
+        if matches!(prim, Prim::Image { .. }) {
+            if start < i {
+                let (shape, bounds) = shapes::bounded(&prims[start..i]);
+                root = root.child(layer(shape, bounds, &format!("paint-{start}")));
+            }
+            root = root.child(images.view(prim).key(format!("image-{i}")));
+            start = i + 1;
+        } else if let Prim::Text {
             angle,
             content,
             font,
@@ -232,6 +243,9 @@ fn editor_inner(s: &State) -> El {
                 s.sync_text(tx);
                 s.input(InputEvent::FinishText, tx);
                 tx.blur();
+                return true;
+            }
+            if crate::export::key(s, event, tx) {
                 return true;
             }
             if crate::files::key(s, event, tx) {
