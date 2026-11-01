@@ -134,6 +134,8 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Files and export
 
+- [x] Top-left File and Preferences menus for file actions and canvas settings — M5 follow-up
+
 - [x] Save / Save as scene file (JSON) — M4
 - [x] Open scene file, also by drag-and-drop onto the window — M4
 - [x] Autosave and restore the last scene on launch — M4

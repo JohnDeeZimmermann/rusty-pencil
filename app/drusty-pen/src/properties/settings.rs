@@ -28,7 +28,7 @@ impl Toggle {
     }
 }
 
-pub(super) fn group(s: &State) -> El {
+pub(crate) fn group(s: &State) -> El {
     let settings = s.editor.settings();
     let dark = settings.dark;
     let mut toggles = col().w_full();
@@ -51,6 +51,7 @@ pub(super) fn group(s: &State) -> El {
         ));
     }
     col()
+        .w_full()
         .gap(d::S_SECTION)
         .child(
             col()

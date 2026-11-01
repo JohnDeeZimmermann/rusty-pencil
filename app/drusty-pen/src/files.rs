@@ -180,8 +180,10 @@ impl State {
     }
 
     fn save_dialog(&mut self, save_as: bool, tx: &mut Tx) {
-        self.sync_text(tx);
-        self.input(InputEvent::FinishText, tx);
+        if self.editor.text_session().is_some() {
+            self.sync_text(tx);
+            self.input(InputEvent::FinishText, tx);
+        }
         if !save_as && let Some(path) = self.files.path.clone() {
             self.save_path(&path);
             return;
@@ -211,8 +213,10 @@ impl State {
     }
 
     fn open_dialog(&mut self, tx: &mut Tx) {
-        self.sync_text(tx);
-        self.input(InputEvent::FinishText, tx);
+        if self.editor.text_session().is_some() {
+            self.sync_text(tx);
+            self.input(InputEvent::FinishText, tx);
+        }
         tx.open_file(
             FileDialogOptions {
                 title: "Open canvas".into(),
@@ -319,46 +323,79 @@ pub(crate) fn key(s: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
         _ => return false,
     };
     match c.to_ascii_lowercase() {
-        's' => s.save_dialog(event.mods.shift, tx),
-        'o' => s.open_dialog(tx),
+        's' => {
+            s.menu = None;
+            s.save_dialog(event.mods.shift, tx);
+        }
+        'o' => {
+            s.menu = None;
+            s.open_dialog(tx);
+        }
         _ => return false,
     }
     true
 }
 
 pub(crate) fn controls(s: &State) -> El {
+    text("")
+        .key("file-status")
+        .pin(None, None, Some(d::S4), Some(d::S4))
+        .live_text(&s.files.status.0)
+        .size(d::FILE_STATUS_WIDTH, d::S4)
+        .align(rune::Align::End)
+        .font(d::T_HINT)
+        .color(d::themed(d::MUTED, s.editor.settings().dark))
+}
+
+pub(crate) fn menu(s: &State) -> El {
     let dark = s.editor.settings().dark;
     col()
-        .key("file-controls")
-        .pin(None, None, Some(d::S4), Some(d::S4))
-        .gap(d::S3)
-        .items_end()
+        .w_full()
+        .gap(d::S1)
         .child(
-            text("")
-                .live_text(&s.files.status.0)
-                .size(d::FILE_STATUS_WIDTH, d::S4)
-                .align(rune::Align::End)
-                .font(d::T_HINT)
-                .color(d::themed(d::MUTED, dark)),
+            menu_action("Open", "open-file", "Ctrl+O", dark).on_press_tx(|s: &mut State, tx| {
+                s.menu = None;
+                s.open_dialog(tx);
+            }),
         )
         .child(
-            d::surface(row(), d::R_ISLAND, dark)
-                .padding(d::PADDING)
-                .gap(d::S1)
-                .child(
-                    button("Open", "open-file", dark)
-                        .help("Open canvas · Ctrl+O")
-                        .on_press_tx(|s: &mut State, tx| s.open_dialog(tx)),
-                )
-                .child(
-                    button("Save", "save-file", dark)
-                        .help("Save · Ctrl+S · Save as · Ctrl+Shift+S")
-                        .on_press_tx(|s: &mut State, tx| s.save_dialog(false, tx)),
-                )
-                .child(
-                    button("Reset canvas", "reset-canvas", dark)
-                        .on_press(|s: &mut State| s.files.confirm_reset = true),
-                ),
+            menu_action("Save", "save-file", "Ctrl+S", dark)
+                .help("Save · Ctrl+S · Save as · Ctrl+Shift+S")
+                .on_press_tx(|s: &mut State, tx| {
+                    s.menu = None;
+                    s.save_dialog(false, tx);
+                }),
+        )
+        .child(el().w_full().h(d::OUTLINE).fill(d::themed(d::BORDER, dark)))
+        .child(
+            menu_action("Reset canvas", "reset-canvas", "", dark).on_press(|s: &mut State| {
+                s.menu = None;
+                s.files.confirm_reset = true;
+            }),
+        )
+}
+
+fn menu_action(label: &str, key: &str, shortcut: &str, dark: bool) -> El {
+    row()
+        .key(key)
+        .w_full()
+        .h(d::CONTROL)
+        .px(d::S2)
+        .items_center()
+        .justify_between()
+        .role("menuitem")
+        .label(label)
+        .radius(d::R_CONTROL)
+        .hover(d::themed(d::ACCENT_SOFT, dark))
+        .child(
+            text(label)
+                .font(d::T_CONTROL)
+                .color(d::themed(d::INK, dark)),
+        )
+        .child(
+            text(shortcut)
+                .font(d::T_CAPTION)
+                .color(d::themed(d::MUTED, dark)),
         )
 }
 

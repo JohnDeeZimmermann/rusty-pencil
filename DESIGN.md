@@ -78,9 +78,13 @@ Outline sloppiness uses a small stroke icon after the toolbar's tools. Clicking 
 Architect, Artist and Cartoonist for the selection or future shapes. Its tooltip identifies
 the current style, keeping outline styling available without an always-open sidebar.
 
-File actions sit at the bottom right, with a muted status above them. Reset opens a compact
-modal with Cancel and Reset canvas actions. The status uses a fixed live-text box so camera
-updates can remain live-only.
+A compact File / Preferences menu bar sits 16 pt from the top-left corner, beside the
+centred drawing toolbar. Its dropdowns use the same paper surfaces, teal active state and
+compact controls as the inspector. File contains Open, Save and Reset canvas, with shortcut
+hints and a divider before Reset. Reset opens a compact confirmation modal. Muted file
+status remains at the bottom right in a fixed live-text box so camera updates stay live-only.
+Menus close on Escape, a second press of their tab, or an outside press. Dismissal consumes
+the pointer gesture so it cannot draw on the canvas.
 
 ## Properties and canvas settings
 
@@ -88,7 +92,8 @@ The left inspector is a compact 216-point floating surface (192-point inner colu
 padding) that hugs its content and scrolls once it reaches the window's height. It is denser
 than the toolbar on purpose: the toolbar stays the primary 44-point control, while the
 inspector reads as a quiet secondary column. It shows selection properties or drawing
-defaults, then a divider and the canvas preferences. Fields that differ across the selection
+defaults and hides when neither applies. Canvas preferences live in the top-left Preferences
+menu. Fields that differ across the selection
 say “Mixed”; changing one field preserves every other value.
 
 ### Inspector controls
@@ -107,7 +112,7 @@ say “Mixed”; changing one field preserves every other value.
 - **Preferences** (tool lock, grid snapping, dark mode) are switch rows with the shortcut in
   muted caption type beside the label.
 
-Text controls appear first when relevant. Canvas colour is the last field. Dark appearance
+Text controls appear first when relevant. Canvas colour is the last field in Preferences. Dark appearance
 reverses colour lightness without modifying the document. The grid has a 20-world-point pitch
 and follows camera changes through live scale and phase values.
 

@@ -7,6 +7,7 @@ mod design;
 mod events;
 mod files;
 mod grid;
+mod menu;
 mod navigation;
 mod overlay;
 mod paint;
@@ -30,6 +31,7 @@ const WINDOW: (f32, f32) = (1024.0, 720.0);
 /// written only by [`State::input`], from the editor; it is never read back into the editor.
 struct State {
     context: Option<pen_editor::ScreenPt>,
+    menu: Option<menu::Section>,
     editor: Editor,
     text_edit: rune::TextEdit,
     hex: [rune::TextEdit; 3],
@@ -51,6 +53,7 @@ impl State {
     fn new(camera: Camera) -> Self {
         Self {
             context: None,
+            menu: None,
             editor: Editor::new(camera),
             text_edit: rune::TextEdit::default(),
             hex: [
@@ -278,6 +281,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
             ))
             .child(properties::panel(s))
             .child(files::controls(s))
+            .child(menu::view(s))
             .child(files::confirmation(s))
             .child(arrange::menu(s)),
     )
@@ -285,6 +289,10 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
 
 /// Keys no focused control took. Tool shortcuts, Escape, and modifier changes mid-drag.
 fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    if ev.key == Key::Escape && s.menu.take().is_some() {
+        tx.blur();
+        return true;
+    }
     if files::key(s, ev, tx) {
         return true;
     }

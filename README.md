@@ -19,7 +19,8 @@ cycles outline sloppiness. Undo uses Ctrl+Z
 
 ## Keep your canvas
 
-Save with Ctrl+S, Save as with Ctrl+Shift+S, and open with Ctrl+O. Scene files are versioned
+The top-left File menu contains Open, Save and Reset canvas. Save with Ctrl+S, Save as with
+Ctrl+Shift+S, and open with Ctrl+O. Scene files are versioned
 JSON with the `.drusty-pen` extension; dropping one on the window opens it. Autosave keeps a
 separate recovery scene in your platform's local application data directory and restores it
 on the next launch. Reset canvas asks for confirmation; save a named copy before resetting
@@ -33,6 +34,7 @@ Transparent. Fill, stroke width and pattern, edges, opacity and arrowheads appea
 scrolling inspector. A mixed field says “Mixed”; each change updates the entire selection in
 one undo step. An opacity drag previews immediately and commits when released.
 
+The top-left Preferences menu contains Keep tool, Grid & snap, Dark mode and Canvas colour.
 Drawing returns to selection. Press Q (or Keep tool) to keep drawing with the same tool.
 Toggle dark mode with Alt+Shift+D and the grid with Ctrl+'. The grid snaps to 20 world points;
 canvas settings also change the background colour. Defaults and settings travel with saved

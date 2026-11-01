@@ -108,3 +108,8 @@ pub(crate) const MENU_ROW: f32 = 30.0;
 pub(crate) const MENU_WIDTH: f32 = 456.0;
 pub(crate) const MENU_HEIGHT: f32 = 436.0;
 pub(crate) const ROTATE_STEM: f32 = 19.0;
+
+// Top-left application menu, separate from the centred drawing toolbar.
+pub(crate) const APP_MENU_TOP: f32 = S4 + CONTROL + PADDING * 2.0 + S2;
+pub(crate) const FILE_TAB_WIDTH: f32 = 48.0;
+pub(crate) const PREFERENCES_TAB_WIDTH: f32 = 96.0;

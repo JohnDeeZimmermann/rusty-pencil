@@ -13,10 +13,10 @@ fn click(rt: &mut Runtime<State>, name: &str) {
 fn reveal(rt: &mut Runtime<State>, name: &str) {
     for _ in 0..8 {
         let (_, y) = rt.find(name).expect(name);
-        if (155.0..585.0).contains(&y) {
+        if (155.0..625.0).contains(&y) {
             return;
         }
-        let dy = if y > 585.0 { -180.0 } else { 180.0 };
+        let dy = if y > 625.0 { -180.0 } else { 180.0 };
         rt.wheel_event(WheelEvent::new(0.0, dy).at(210.0, 550.0));
         for _ in 0..60 {
             rt.frame(FRAME);
@@ -97,11 +97,11 @@ fn theme_grid_and_canvas_settings_keep_camera_updates_live_and_document_unchange
     drag(&mut rt, (300.0, 250.0), (500.0, 400.0));
     let stored = rt.state.editor.document().elements().to_vec();
     key(&mut rt, "v");
-    // The inspector scrolls independently; controls never pan the document.
+    // Preferences change settings without panning or editing the document.
     let camera = *rt.state.editor.camera();
-    reveal(&mut rt, "grid-toggle");
+    click(&mut rt, "menu-preferences");
     click(&mut rt, "grid-toggle");
-    reveal(&mut rt, "dark-toggle");
+
     click(&mut rt, "dark-toggle");
     assert_eq!(*rt.state.editor.camera(), camera);
     assert!(rt.state.editor.settings().dark && rt.state.editor.settings().grid);
@@ -112,7 +112,7 @@ fn theme_grid_and_canvas_settings_keep_camera_updates_live_and_document_unchange
     rt.magnify_event(rune::MagnifyEvent::new(0.2).at(700.0, 500.0));
     rt.frame(FRAME);
     assert_eq!(rt.stats.commits, commits);
-    reveal(&mut rt, "Canvas-color-2");
+
     click(&mut rt, "Canvas-color-2");
     assert_eq!(rt.state.editor.settings().canvas, Srgba::rgb(0xfff9db));
     assert_eq!(rt.state.editor.document().elements(), stored);

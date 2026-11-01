@@ -137,9 +137,11 @@ fn save_open_save_as_and_drop_use_real_dialog_callbacks() {
     assert_eq!(rt.file_dialog().unwrap().0, FileDialogKind::Save);
     rt.resolve_file_dialog(None).unwrap();
     rt.frame(FRAME);
+    click_key(&mut rt, "menu-file");
     click_key(&mut rt, "reset-canvas");
     click_key(&mut rt, "cancel-reset");
     assert_eq!(kinds(&rt).len(), 2);
+    click_key(&mut rt, "menu-file");
     click_key(&mut rt, "reset-canvas");
     click_key(&mut rt, "confirm-reset");
     assert!(kinds(&rt).is_empty());

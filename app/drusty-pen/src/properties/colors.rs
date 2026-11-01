@@ -142,6 +142,9 @@ pub(super) fn group(s: &State, target: Target) -> El {
         })
         .on_key(move |s: &mut State, event, tx| {
             if event.key == Key::Escape {
+                if matches!(target, Target::Canvas) {
+                    s.menu = None;
+                }
                 s.hex[target.index()].focused = false;
                 sync(s);
                 tx.blur();

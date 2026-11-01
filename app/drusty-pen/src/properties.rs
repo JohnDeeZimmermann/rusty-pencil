@@ -4,7 +4,7 @@ mod colors;
 pub(crate) use colors::sync;
 mod fill;
 mod opacity;
-mod settings;
+pub(crate) mod settings;
 mod stroke;
 #[path = "properties/text.rs"]
 mod text_controls;
@@ -33,9 +33,10 @@ pub(crate) fn panel(s: &State) -> El {
             .child(colors::group(s, colors::Target::Background))
             .child(fill::group(editor))
             .child(stroke::group(editor));
-        content = content.child(opacity::group(editor)).child(divider(dark));
+        content = content.child(opacity::group(editor));
+    } else {
+        return el().size(0.0, 0.0);
     }
-    content = content.child(settings::group(s));
     d::surface(col().key("shape-properties"), d::R_ISLAND, dark)
         .transition(rune::Transition::none())
         .absolute(d::S4, d::INSPECTOR_TOP)
@@ -63,10 +64,6 @@ fn group(label: &str, mixed: bool, controls: El, dark: bool) -> El {
         .gap(d::S_LABEL)
         .child(caption(label, mixed, dark))
         .child(controls)
-}
-
-fn divider(dark: bool) -> El {
-    el().w_full().h(d::OUTLINE).fill(d::themed(d::BORDER, dark))
 }
 
 /// Width of one segment when `n` share a full-width track.

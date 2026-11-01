@@ -15,6 +15,8 @@
 - [x] New elements use the last chosen properties. Tool lock (`Q`) keeps the tool after drawing.
 - [x] Dark mode (Alt+Shift+D), canvas background colour, grid (Ctrl+') with snap to grid.
 
+- [x] Top-left File / Preferences menu bar; canvas settings are separate from shape properties.
+
 ## Tasks
 
 1. [x] `pen-core`: complete `Props`; mixed values across a multi-selection show as "mixed".
@@ -54,3 +56,9 @@ inspector; the dark variant also enables the grid.
 Release visual run (19.5 seconds, 1171 frames, scale 1): light mean frame CPU 0.666 ms,
 p95 1.318 ms; dark with grid mean 0.646 ms, p95 1.245 ms. These are local headless
 measurements of the scripted scene, not a large-document benchmark.
+
+The menu bar follow-up moves file actions and canvas settings into top-left dropdowns,
+reusing their existing handlers and tokens. Outside presses dismiss without drawing; Escape
+and a second tab press close the menu. File actions close their dropdown before opening a
+dialog or reset confirmation. Visual checks use `scripts/menu-file.json` and
+`scripts/menu-preferences.json` at 2 seconds; theme shortcuts also cover the dark appearance.
