@@ -53,7 +53,9 @@ pub(crate) const R_HANDLE: f32 = 2.0;
 
 // M4 inspector, file status, and confirmation surfaces.
 pub(crate) const INSPECTOR_TOP: f32 = 128.0;
-pub(crate) const INSPECTOR_WIDTH: f32 = BUTTON * 5.0 + S1 * 4.0 + S3 * 2.0;
+/// Inner column is 192 pt: six 28 pt swatches with 4 pt gaps fit exactly.
+pub(crate) const INSPECTOR_WIDTH: f32 = INSPECTOR_INNER + S3 * 2.0;
+pub(crate) const INSPECTOR_INNER: f32 = 192.0;
 pub(crate) const FILE_STATUS_WIDTH: f32 = 440.0;
 pub(crate) const CONFIRM_WIDTH: f32 = 360.0;
 
@@ -79,6 +81,22 @@ pub(crate) fn kit(dark: bool) -> rune_kit::Kit {
     kit
 }
 pub(crate) const PANEL_HEIGHT_MARGIN: f32 = 220.0;
-pub(crate) const SWATCH: f32 = BUTTON;
-pub(crate) const CONTROL: f32 = BUTTON;
-pub(crate) const SLIDER_HEIGHT: f32 = 44.0;
+
+// Inspector controls: denser than the toolbar, which stays the primary 44 pt surface.
+/// Segmented-control track height; segments sit inside it with `SEGMENT_INSET`.
+pub(crate) const CONTROL: f32 = 32.0;
+pub(crate) const SEGMENT_INSET: f32 = 2.0;
+pub(crate) const R_CONTROL: f32 = 6.0;
+pub(crate) const SWATCH: f32 = 28.0;
+pub(crate) const SWATCH_CHIP: f32 = 18.0;
+pub(crate) const SLIDER_HEIGHT: f32 = 20.0;
+pub(crate) const SWITCH_W: f32 = 28.0;
+pub(crate) const SWITCH_H: f32 = 16.0;
+/// Gap between a field label and its control.
+pub(crate) const S_LABEL: f32 = 6.0;
+/// Gap between inspector sections.
+pub(crate) const S_SECTION: f32 = 14.0;
+pub(crate) const T_CAPTION: TextStyle = TextStyle::new(11.0, 500.0);
+pub(crate) const T_CONTROL: TextStyle = TextStyle::new(12.0, 450.0);
+/// Symbol labels (arrowheads) need more size than words to read at a glance.
+pub(crate) const T_GLYPH: TextStyle = TextStyle::new(16.0, 400.0);

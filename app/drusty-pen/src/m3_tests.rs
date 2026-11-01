@@ -58,7 +58,7 @@ fn line_hover_tail_finishes_on_enter_and_arrow_uses_shortcut_five() {
 fn middle_and_hand_drags_are_live_only_and_space_release_restores_drawing() {
     let mut rt = app();
     // Focusing the canvas is a UI change; subsequent navigation is entirely live-only.
-    click(&mut rt, 50.0, 200.0);
+    click(&mut rt, 600.0, 500.0);
     let commits = rt.stats.commits;
     let before = *rt.state.editor.camera();
     rt.button_down(300.0, 300.0, PointerButton::Middle);

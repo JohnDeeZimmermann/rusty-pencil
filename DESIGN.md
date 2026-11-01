@@ -50,6 +50,8 @@ Use rune's bundled interface font. Keep controls compact and avoid heavy weights
 | `T_HINT` | 12 / 450 | Unboxed hint |
 | `T_LABEL` | 12 / 500 | Zoom label |
 | `T_BADGE` | 9 / 500 | Plain shortcut digits |
+| `T_CAPTION` | 11 / 500 | Inspector field captions |
+| `T_CONTROL` | 12 / 450 | Inspector control labels |
 
 ## Icons and canvas
 
@@ -68,7 +70,7 @@ press and hover motion remains subtle.
 
 The type inspector appears only while the text tool is active or text is selected or being
 edited. Font family and alignment use compact outline icons with tooltips; size uses a single
-S/M/L/XL row. Controls keep 44-point targets and the toolbar's teal active state. Clicking away
+S/M/L/XL row. All three are segmented controls with the toolbar's teal active state. Clicking away
 or switching to another drawing tool hides the panel. Document text uses bundled Patrick Hand,
 Inter or Roboto Mono; interface labels continue to use Inter.
 
@@ -82,14 +84,29 @@ updates can remain live-only.
 
 ## Properties and canvas settings
 
-The left inspector is a 260-point floating surface with 44-point controls. It shows selection
-properties or drawing defaults, followed by canvas settings. A bounded inner column scrolls
-without panning the canvas. Fields that differ across the selection say “Mixed”; changing
-one field preserves every other value. Palette swatches preview the current appearance;
-hex inputs always show the stored sRGB value and apply on Enter. Transparent is explicit.
+The left inspector is a compact 216-point floating surface (192-point inner column, 12-point
+padding) that hugs its content and scrolls once it reaches the window's height. It is denser
+than the toolbar on purpose: the toolbar stays the primary 44-point control, while the
+inspector reads as a quiet secondary column. It shows selection properties or drawing
+defaults, then a divider and the canvas preferences. Fields that differ across the selection
+say “Mixed”; changing one field preserves every other value.
 
-Text controls appear first when relevant. Fill, stroke, edge and arrowhead choices use the
-same teal active state as the toolbar. Opacity follows the pointer immediately and commits
-on release. Canvas settings expose tool lock, grid snapping, dark mode and background colour.
-Dark appearance reverses colour lightness without modifying the document. The grid has a
-20-world-point pitch and follows camera changes through live scale and phase values.
+### Inspector controls
+
+- **Captions** use `T_CAPTION` (11 / 500) in `MUTED`, 6 pt above their control. Sections are
+  14 pt apart.
+- **Segmented controls** sit in a recessed `ACCENT_SOFT` track, 32 pt tall with 2 pt inset.
+  The active segment takes the toolbar's teal state; inactive ones only tint on hover.
+  Labels use `T_CONTROL` (12 / 450); arrowhead symbols use the larger `T_GLYPH`.
+- **Swatches** are 28-point targets around an 18-point chip. Transparent is the first swatch,
+  marked with a red slash. The active swatch gets the teal wash and a 1 pt teal ring.
+- **Hex inputs** are flat 32-point fields in the track colour; a teal border marks focus. They
+  always show the stored sRGB value and apply on Enter.
+- **Opacity** is a 20-point slider with a teal fill and a ringed knob; its value sits at the
+  right of the caption. It follows the pointer immediately and commits on release.
+- **Preferences** (tool lock, grid snapping, dark mode) are switch rows with the shortcut in
+  muted caption type beside the label.
+
+Text controls appear first when relevant. Canvas colour is the last field. Dark appearance
+reverses colour lightness without modifying the document. The grid has a 20-world-point pitch
+and follows camera changes through live scale and phase values.

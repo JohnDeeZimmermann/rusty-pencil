@@ -1,8 +1,12 @@
-use super::group as field;
+use super::caption;
 use crate::{State, design as d};
 use pen_core::{Property, Value};
 use pen_editor::{Editor, InputEvent};
-use rune::{El, Key, Phase, col, el, text};
+use rune::{El, Key, Phase, col, el, row, text};
+/// Slider knob diameter and ring width, in points.
+const KNOB: f32 = 14.0;
+const KNOB_RING: f32 = 2.0;
+
 pub(super) fn group(editor: &Editor) -> El {
     let dark = editor.settings().dark;
     let value = editor.property(|p| p.opacity);
@@ -28,13 +32,22 @@ pub(super) fn group(editor: &Editor) -> El {
                 .inert(),
         )
         .child(
+            el().absolute(0.0, (d::SLIDER_HEIGHT - d::S1) / 2.0)
+                .w((d::INSPECTOR_INNER - KNOB) * f32::from(amount) / 100.0 + KNOB / 2.0)
+                .h(d::S1)
+                .radius(d::S1 / 2.0)
+                .fill(d::themed(d::ON_ACCENT, dark))
+                .inert(),
+        )
+        .child(
             el().absolute(
-                (d::INSPECTOR_WIDTH - 2.0 * d::S3 - d::S4) * f32::from(amount) / 100.0,
-                (d::SLIDER_HEIGHT - d::S4) / 2.0,
+                (d::INSPECTOR_INNER - KNOB) * f32::from(amount) / 100.0,
+                (d::SLIDER_HEIGHT - KNOB) / 2.0,
             )
-            .size(d::S4, d::S4)
-            .radius(d::S4 / 2.0)
-            .fill(d::themed(d::ON_ACCENT, dark))
+            .size(KNOB, KNOB)
+            .radius(KNOB / 2.0)
+            .fill(d::themed(d::PAPER, dark))
+            .border(KNOB_RING, d::themed(d::ON_ACCENT, dark))
             .inert(),
         )
         .on_drag(|s: &mut State, drag, tx| {
@@ -42,7 +55,7 @@ pub(super) fn group(editor: &Editor) -> El {
                 s.input(InputEvent::BeginProperty, tx);
             }
             if !drag.cancelled() {
-                let value = ((drag.x - d::S4 / 2.0) / (drag.w - d::S4).max(1.0) * 100.0)
+                let value = ((drag.x - KNOB / 2.0) / (drag.w - KNOB).max(1.0) * 100.0)
                     .round()
                     .clamp(0.0, 100.0) as u8;
                 s.input(InputEvent::Property(Property::Opacity(value)), tx);
@@ -74,14 +87,19 @@ pub(super) fn group(editor: &Editor) -> El {
             );
             true
         });
-    field(
-        "Opacity",
-        value == Value::Mixed,
-        col().child(slider).child(
-            text(format!("{amount}%"))
-                .font(d::T_HINT)
-                .color(d::themed(d::MUTED, dark)),
-        ),
-        dark,
-    )
+    col()
+        .w_full()
+        .gap(d::S_LABEL)
+        .child(
+            row()
+                .w_full()
+                .justify_between()
+                .child(caption("Opacity", value == Value::Mixed, dark))
+                .child(
+                    text(format!("{amount}%"))
+                        .font(d::T_CAPTION)
+                        .color(d::themed(d::INK, dark)),
+                ),
+        )
+        .child(slider)
 }

@@ -6,7 +6,7 @@ use rune::{El, col};
 pub(super) fn group(editor: &Editor) -> El {
     let dark = editor.settings().dark;
     col()
-        .gap(d::S3)
+        .gap(d::S_SECTION)
         .child(choices(
             "Stroke width",
             "width",
