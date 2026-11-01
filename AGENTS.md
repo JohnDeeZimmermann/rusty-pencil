@@ -49,6 +49,7 @@ Run all three checks before calling work done. The toolchain is pinned in `rust-
 
 Screenshot without a window: `cargo run -p drusty-pen -- --snap out.png --scale 1`. Rune's
 `--script events.json --at SECONDS` drives real input first (see `app/drusty-pen/scripts/`).
+Always include a screenshot of the app in the final response when work is done.
 
 ## Rust guidelines
 
