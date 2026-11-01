@@ -19,9 +19,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Image (`9`) — M8
 - [x] Eraser (`E` / `0`), hold Alt to un-erase — M6
 - [x] Hand / pan tool (`H`) — M3
-- [ ] Frame tool (`F`) — M9
-- [ ] Laser pointer (`K`) — M9
-- [ ] Lasso selection — M9
+- [x] Frame tool (`F`) — M9
+- [x] Laser pointer (`K`) — M9
+- [x] Lasso selection (`S`, Shift adds) — M9
 - [x] Tool lock (`Q`): stay on the tool after drawing — M5
 - [x] Shift while drawing: square / circle / 45° snapping — M1
 - [x] Alt while drawing: draw from the centre — M1
@@ -65,8 +65,8 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Lock / unlock elements — M6
 - [x] Edit line/arrow points (Ctrl+Enter or Ctrl+double-click), add and delete points — M3
 - [x] Multi-point lines and arrows by clicking point to point — M3
-- [ ] Hyperlink on an element (Ctrl+K), opens in the system browser — M9
-- [ ] Link to another element in the scene — M9
+- [x] Hyperlink on an element (Ctrl+K), opens in the system browser — M9
+- [x] Link to another element in the scene — M9
 
 ## Text
 
@@ -92,7 +92,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Send backward / to back, bring forward / to front — M6
 - [x] Align left, centre, right, top, middle, bottom — M6
 - [x] Distribute horizontally / vertically — M6
-- [ ] Snap to objects (Alt+S) with guide lines — M9
+- [x] Snap to objects (Alt+S) with guide lines — M9
 - [x] Grid toggle (Ctrl+') and snap to grid — M5
 
 ## Canvas and view
@@ -104,21 +104,21 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] "Scroll back to content" button — M3
 - [x] Dark mode (Alt+Shift+D) — M5
 - [x] Canvas background colour — M5
-- [ ] Zen mode (Alt+Z): hide panels — M9
-- [ ] View mode (Alt+R): read only — M9
-- [ ] Stats panel (Alt+/): edit x, y, w, h, angle — M9
-- [ ] Find text on canvas (Ctrl+F) — M9
-- [ ] Command palette (Ctrl+/) — M9
+- [x] Zen mode (Alt+Z): hide panels — M9
+- [x] View mode (Alt+R): read only — M9
+- [x] Stats panel (Alt+/): edit x, y, w, h, angle — M9
+- [x] Find text on canvas (Ctrl+F) — M9
+- [x] Command palette (Ctrl+/) — M9
 - [x] Context menu (right-click) — M6
-- [ ] Keyboard shortcut help (`?`) — M9
-- [ ] Eye-dropper for colours (`I`) — M9
+- [x] Keyboard shortcut help (`?`) — M9
+- [x] Eye-dropper for colours (`I`) — M9
 
 ## Frames
 
-- [ ] Create and name frames — M9
-- [ ] Frames clip their children; moving a frame moves its children — M9
-- [ ] Add / remove elements from a frame by dragging — M9
-- [ ] Export a single frame — M9
+- [x] Create and name frames — M9
+- [x] Frames clip their children; moving a frame moves its children — M9
+- [x] Add / remove elements from a frame by dragging — M9
+- [x] Export a single frame — M9
 
 ## Images
 
@@ -152,6 +152,6 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Library
 
-- [ ] Add selection to personal library — M9
-- [ ] Drag library items onto the canvas — M9
-- [ ] Import / export library files — M9
+- [x] Add selection to personal library — M9
+- [x] Drag library items onto the canvas — M9
+- [x] Import / export library files — M9

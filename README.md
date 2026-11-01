@@ -76,3 +76,41 @@ an editable scene; save a `.drusty-pen` file to keep editing later.
 Open or drop `.excalidraw` files to import supported elements. A notice counts skipped
 unsupported types. Individual images are limited to 16 MiB / 16 megapixels; decoded previews
 are limited to 64 sources / 128 MiB, with placeholders beyond that imported-scene budget.
+
+## Frames and your library
+
+Press F and drag to create a frame. Select its edge or title, edit its name in the right
+panel and press Enter. Frames clip their children; dragging an element's centre into or
+out of a frame changes its ownership immediately. Moving a frame moves its children, while
+resizing changes the clipping window. Selecting a frame before Ctrl+Shift+E exports just
+that frame at its exact size. Frames are axis-aligned and cannot be nested.
+
+Open **Library** on the right and use **Add selection** to keep reusable drawings. Drag a
+thumbnail onto the canvas, or click it to place a copy in the viewport centre. Import and
+export `.drusty-library` files to move your collection between machines. The library stays
+in the platform's local app-data directory, alongside workspace recovery, and embeds its
+images. Placing an item creates fresh ids and one undo step.
+
+## Find, inspect and present
+
+Use Ctrl+F to find text or frame names, Ctrl+/ for the command palette and `?` for shortcut
+help. The palette includes arrangement actions, every tool and view modes; type to filter,
+use arrow keys to move through results and press Enter. The secondary F / S / K / I controls
+on the right expose frames, lasso, laser and eye-dropper.
+
+Lasso selection uses S; hold Shift to add to an existing selection. The K laser leaves a
+short fading trail without changing the drawing. Press I and click to sample a colour from
+a shape, image or canvas; Shift applies the sampled colour to the fill. Alt+S enables object
+snapping with alignment guides; holding Ctrl temporarily bypasses it during a drag.
+
+Preferences and keyboard shortcuts provide Zen (Alt+Z), read-only View (Alt+R), and Stats
+(Alt+/). Stats shows an element's id and editable x/y/width/height in world points, plus its
+angle in degrees. Select one element, change a field and press Enter to apply an undoable edit.
+
+Select an element and press Ctrl+K to add an HTTP(S) link or a local `#element-id` destination.
+An empty value removes the link. Use **Open link** or Ctrl+click the element to follow it;
+web links open in your system browser and local links focus the destination on the canvas.
+
+For M9 visual coverage, run the snapshot command with
+`--script app/drusty-pen/scripts/m9-frames.json --at 8.4` to inspect dark-mode frames and
+the personal library. Other review times are recorded in the M9 milestone file.

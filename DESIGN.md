@@ -138,3 +138,22 @@ two compact action columns, 30-point rows, shortcut labels in muted badge type, 
 vertical divider. Selection and clipboard actions sit on the left; ordering, alignment and
 distribution sit on the right. Disabled actions stay muted. The menu clamps within an
 8-point viewport margin and dismisses on Escape or an outside click without drawing.
+
+
+## Frames and secondary tools
+
+Frame outlines stay clean and axis-aligned, with a muted 14-point name above the top edge.
+Their children share the frame clip in both canvas and export. Selected frames keep the
+standard selection handles and omit rotation. A separate right-hand details surface holds
+the name, local/web link controls and optional geometry fields.
+
+The right-hand secondary island uses 32-point controls for frames, lasso, laser, eye-dropper,
+library, search and help. Its surfaces use the same paper, border, teal active state and
+spacing tokens as the inspector. Library thumbnails are centred, clipped, memoized previews;
+dragging shows a translucent copy under the pointer.
+
+Search, commands, links and shortcut help use a centred 480-point modal surface. Search
+fields take focus immediately, Escape dismisses, and keyboard navigation reveals the active
+result. Disabled actions remain muted. Zen hides chrome and leaves a small exit control.
+Laser and lasso feedback remain world-space paint under the live camera transform, so they
+follow pan and zoom without rebuilding the document scene.
