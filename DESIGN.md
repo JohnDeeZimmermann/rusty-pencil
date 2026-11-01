@@ -69,7 +69,7 @@ press and hover motion remains subtle.
 The type inspector appears only while the text tool is active or text is selected or being
 edited. Font family and alignment use compact outline icons with tooltips; size uses a single
 S/M/L/XL row. Controls keep 44-point targets and the toolbar's teal active state. Clicking away
-or switching to another drawing tool hides the panel. Document text uses bundled Caveat,
+or switching to another drawing tool hides the panel. Document text uses bundled Patrick Hand,
 Inter or Roboto Mono; interface labels continue to use Inter.
 
 Outline sloppiness uses a small stroke icon after the toolbar's tools. Clicking cycles

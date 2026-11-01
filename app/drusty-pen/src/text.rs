@@ -8,7 +8,7 @@ use rune::{Align, El, Family, Key, TextEdit, Tx, col, el, text, text_input, tok:
 
 pub(crate) static FONTS: &[&[u8]] = &[
     include_bytes!("../../../assets/fonts/Inter.ttf"),
-    include_bytes!("../../../assets/fonts/Caveat.ttf"),
+    include_bytes!("../../../assets/fonts/PatrickHand.ttf"),
     include_bytes!("../../../assets/fonts/RobotoMono.ttf"),
 ];
 // Rune bounds inherited glyph raster scale to 1/16..=4. Give document text an
@@ -30,7 +30,7 @@ pub(crate) fn style(font: Font, size: f32) -> TextStyle {
     TextStyle::new(size, 400.0)
         .lh(size * 1.25)
         .family(Family::Named(match font {
-            Font::HandDrawn => "Caveat",
+            Font::HandDrawn => "Patrick Hand",
             Font::Normal => "Inter",
             Font::Code => "Roboto Mono",
         }))
@@ -63,9 +63,13 @@ pub(crate) fn measure(
             RichLayoutOptions::new().wrap_anywhere(),
         );
         let height = rune::text::layout_height(&layout, style, 1.0);
-        let full = layout.full_width();
+        // `width()` leaves out hanging trailing spaces, which may overhang the wrap width.
+        let visible = layout.width();
         system.end_commit();
-        return (full.ceil() / TEXT_LAYOUT_SCALE, height / TEXT_LAYOUT_SCALE);
+        return (
+            visible.ceil() / TEXT_LAYOUT_SCALE,
+            height / TEXT_LAYOUT_SCALE,
+        );
     }
     let width = content
         .split('\n')
