@@ -266,6 +266,7 @@ pub(crate) fn view(s: &State) -> El {
                         .h_full()
                         .px(d::S3)
                         .items_center()
+                        .justify_center()
                         .role("tab")
                         .focus_selected(active)
                         .label(files.title())
@@ -284,7 +285,7 @@ pub(crate) fn view(s: &State) -> El {
                                     if active { d::ON_ACCENT } else { d::MUTED },
                                     dark,
                                 ))
-                                .size(d::TAB_WIDTH - d::CONTROL - d::S3 * 2.0, d::CONTROL)
+                                .size(d::TAB_WIDTH - d::CONTROL - d::S3 * 2.0, d::S4)
                                 .truncate_fade(),
                         )
                         .on_press_tx(move |s: &mut State, tx| s.switch_tab(id, tx)),
