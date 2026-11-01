@@ -4,6 +4,7 @@
 //! points: y down, unbounded in every direction.
 #![forbid(unsafe_code)]
 
+pub mod bound;
 mod color;
 mod document;
 mod element;
@@ -14,6 +15,7 @@ mod outline;
 mod path;
 mod text;
 
+pub use bound::Container;
 pub use color::Srgba;
 pub use document::{Command, DocError, Document};
 pub use element::{Edges, Element, ElementId, Kind, Props};
@@ -33,3 +35,6 @@ mod hit_tests;
 mod path_tests;
 
 pub use text::{Font, Roughness, TextAlign};
+
+#[cfg(test)]
+mod bound_tests;

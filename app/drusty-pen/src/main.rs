@@ -89,8 +89,8 @@ impl State {
         let redraw = if let InputEvent::TextStyle { font, size, align } = event {
             let fonts = &mut self.fonts;
             self.editor
-                .style_text(font, size, align, |content, font, size| {
-                    text::measure(fonts, content, font, size)
+                .style_text(font, size, align, |content, font, size, wrap| {
+                    text::measure(fonts, content, font, size, wrap)
                 })
         } else {
             self.editor.handle(event)

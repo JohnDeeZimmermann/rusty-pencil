@@ -18,6 +18,7 @@ fn scene() -> SceneFile {
             size: 28.0,
             align: TextAlign::Centre,
             bounds: r,
+            container: None,
         },
     ];
     for kind in kinds {

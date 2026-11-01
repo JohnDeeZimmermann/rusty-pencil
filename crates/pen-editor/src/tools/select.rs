@@ -59,7 +59,7 @@ impl SelectionDrag {
             .iter()
             .rev()
             .find(|e| e.hit_test(origin, 5.0 / camera.zoom()))
-            .map(Element::id);
+            .map(|e| pen_core::bound::owner(doc, e.id()));
         let action = if let Some(handle) = handle {
             selection
                 .elements(doc)
@@ -205,7 +205,9 @@ impl SelectionDrag {
                 Selection::default()
             };
             for element in doc.elements() {
-                if bounds.contains_rect(element.kind.bounds()) {
+                // Bound text is reached through its container.
+                if element.kind.container().is_none() && bounds.contains_rect(element.kind.bounds())
+                {
                     selection.insert(element.id());
                 }
             }

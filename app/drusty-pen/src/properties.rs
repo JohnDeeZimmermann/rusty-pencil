@@ -1,17 +1,13 @@
 //! Contextual text controls. Icon buttons preserve the active field's typing focus.
 use crate::{State, design as d, property_icons as icons};
-use pen_core::{Font, Kind, TextAlign};
+use pen_core::{Font, TextAlign};
 use pen_editor::{Editor, InputEvent, Tool};
 use rune::{El, Shape, Tx, canvas, col, el, row, text};
 
 pub(crate) fn panel(editor: &Editor) -> El {
     let has_text = editor.tool() == Tool::Text
         || editor.text_session().is_some()
-        || editor
-            .selection()
-            .ids()
-            .filter_map(|id| editor.document().get(id))
-            .any(|e| matches!(e.kind, Kind::Text { .. }));
+        || editor.styled_texts().next().is_some();
     if !has_text {
         return el().size(0.0, 0.0);
     }

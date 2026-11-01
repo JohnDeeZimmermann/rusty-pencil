@@ -1,7 +1,8 @@
 //! Text drafts stay outside the document until one reversible commit.
 use crate::{Editor, History, Redraw, ScreenPt, Selection, Tool};
 use pen_core::{
-    Command, Document, Element, ElementId, Font, Kind, Roughness, TextAlign, WorldPt, WorldRect,
+    Command, Container, Document, Element, ElementId, Font, Kind, TextAlign, WorldPt, WorldRect,
+    bound,
 };
 
 #[derive(Debug, Clone)]
@@ -9,14 +10,36 @@ pub struct TextSession {
     pub element: Element,
     before: Option<Element>,
     selection: Selection,
+    /// The container as committed when the session began; growth is measured from it.
+    container: Option<Element>,
+    /// The container grown to fit the text so far, committed with the text.
+    grown: Option<Element>,
     pub(crate) hidden: Vec<Element>,
 }
 
+impl TextSession {
+    /// The element this text belongs to, with any growth from typing applied.
+    #[must_use]
+    pub fn container(&self) -> Option<&Element> {
+        self.grown.as_ref().or(self.container.as_ref())
+    }
+}
+
+/// What a new text session edits.
 #[derive(Debug, Clone, Copy)]
+pub(crate) enum TextTarget {
+    /// New free text with its top-left at this screen point.
+    At(ScreenPt),
+    Existing(ElementId),
+    /// The container's text, created if it has none.
+    Into(Container),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct TextDefaults {
-    font: Font,
-    size: f32,
-    align: TextAlign,
+    pub(crate) font: Font,
+    pub(crate) size: f32,
+    pub(crate) align: TextAlign,
 }
 impl Default for TextDefaults {
     fn default() -> Self {
@@ -28,61 +51,35 @@ impl Default for TextDefaults {
     }
 }
 
+/// Places bound `text` of measured `(width, height)` on `container`, in world points. A shape
+/// grows to fit and the grown container is returned; a label is re-centred at its new size.
+pub(crate) fn place(text: &mut Element, container: &Element, size: (f32, f32)) -> Option<Element> {
+    let (w, h) = size;
+    if !w.is_finite() || !h.is_finite() {
+        return None;
+    }
+    match text.kind.container() {
+        Some(Container::Shape(_)) => {
+            let grown = bound::grown_to_fit(&container.kind, h).map(|r| container.with_bounds(r));
+            *text = bound::fit(text, grown.as_ref().unwrap_or(container));
+            grown
+        }
+        Some(Container::Path(_)) => {
+            if let Kind::Text { bounds, .. } = &mut text.kind {
+                let p = bounds.min();
+                *bounds = WorldRect::from_corners(p, WorldPt::new(p.x + w.max(1.0), p.y + h));
+            }
+            *text = bound::fit(text, container);
+            None
+        }
+        None => None,
+    }
+}
+
 impl Editor {
-    #[must_use]
-    pub fn text_defaults(&self) -> (Font, f32, TextAlign) {
-        (
-            self.text_defaults.font,
-            self.text_defaults.size,
-            self.text_defaults.align,
-        )
-    }
-
-    /// Restores validated defaults at a scene-file boundary without editing existing text.
-    pub fn restore_text_defaults(&mut self, font: Font, size: f32, align: TextAlign) {
-        self.text_defaults = TextDefaults { font, size, align };
-    }
-
     #[must_use]
     pub fn text_session(&self) -> Option<&TextSession> {
         self.text_session.as_ref()
-    }
-
-    #[must_use]
-    pub fn text_style(&self) -> (Font, f32, TextAlign) {
-        let element = self.text_session.as_ref().map(|s| &s.element).or_else(|| {
-            self.selection
-                .elements(&self.document)
-                .find(|e| matches!(e.kind, Kind::Text { .. }))
-        });
-        if let Some(Element {
-            kind: Kind::Text {
-                font, size, align, ..
-            },
-            ..
-        }) = element
-        {
-            (*font, *size, *align)
-        } else {
-            (
-                self.text_defaults.font,
-                self.text_defaults.size,
-                self.text_defaults.align,
-            )
-        }
-    }
-
-    #[must_use]
-    pub fn roughness(&self) -> Roughness {
-        self.selection
-            .elements(&self.document)
-            .next()
-            .map_or(self.style.roughness, |e| e.props.roughness)
-    }
-
-    #[must_use]
-    pub fn style(&self) -> pen_core::Props {
-        self.style
     }
 
     /// Replaces the scene at a file boundary; old history and drafts cannot reach into it.
@@ -101,63 +98,89 @@ impl Editor {
         self.point_editor = None;
         self.text_session = None;
         self.navigation.refresh(&self.document);
+        self.refresh_followers();
     }
 
-    pub(crate) fn begin_text(&mut self, at: ScreenPt, id: Option<ElementId>) -> Redraw {
+    pub(crate) fn begin_text(&mut self, target: TextTarget) -> Redraw {
         self.finish_text();
         self.cancel();
         self.point_editor = None;
-        let before = id.and_then(|id| self.document.get(id)).cloned();
-        let element = before.clone().unwrap_or_else(|| {
-            let p = self.camera.screen_to_world(at);
-            let d = self.text_defaults;
+        let target = match target {
+            TextTarget::Into(link) => bound::bound_text(&self.document, link.id())
+                .map_or(target, |text| TextTarget::Existing(text.id())),
+            other => other,
+        };
+        let d = self.text_defaults;
+        let new_text = |id, p: WorldPt, align, container| {
             Element::new(
-                self.document.alloc_id(),
+                id,
                 Kind::Text {
                     content: String::new(),
                     font: d.font,
                     size: d.size,
-                    align: d.align,
+                    align,
                     bounds: WorldRect::from_corners(
                         p,
                         WorldPt::new(p.x + 1.0, p.y + d.size * 1.25),
                     ),
+                    container,
                 },
                 self.style,
             )
-        });
-        let mut hidden = Vec::new();
-        if let Some(old) = &before {
-            let mut e = old.clone();
-            if let Kind::Text { content, .. } = &mut e.kind {
-                content.clear();
+        };
+        let (before, element) = match target {
+            TextTarget::At(at) => {
+                let p = self.camera.screen_to_world(at);
+                let id = self.document.alloc_id();
+                (None, new_text(id, p, d.align, None))
             }
-            hidden.push(e);
+            TextTarget::Existing(id) => {
+                let Some(e) = self.document.get(id) else {
+                    return Redraw::Nothing;
+                };
+                (Some(e.clone()), e.clone())
+            }
+            TextTarget::Into(link) => {
+                let id = self.document.alloc_id();
+                (
+                    None,
+                    new_text(id, WorldPt::ORIGIN, TextAlign::Centre, Some(link)),
+                )
+            }
+        };
+        let container = element
+            .kind
+            .container()
+            .and_then(|c| self.document.get(c.id()))
+            .cloned();
+        let mut element = element;
+        if let Some(container) = &container {
+            element = bound::fit(&element, container);
         }
         let selection = self.selection.clone();
         self.selection.clear();
-        self.text_session = Some(TextSession {
+        let mut session = TextSession {
             element,
             before,
             selection,
-            hidden,
-        });
+            container,
+            grown: None,
+            hidden: Vec::new(),
+        };
+        session.refresh_hidden();
+        self.text_session = Some(session);
         Redraw::Tool
     }
 
+    /// `measured` is the text's laid-out size; free text also takes its position from it.
     pub(crate) fn update_text(&mut self, value: String, measured: WorldRect) -> Redraw {
         let Some(session) = &mut self.text_session else {
             return Redraw::Nothing;
         };
-        if let Kind::Text {
-            content, bounds, ..
-        } = &mut session.element.kind
-        {
+        if let Kind::Text { content, .. } = &mut session.element.kind {
             *content = value;
-            if measured.min().is_finite() && measured.max().is_finite() {
-                *bounds = measured;
-            }
         }
+        session.resize(measured);
         Redraw::Draft
     }
 
@@ -169,124 +192,81 @@ impl Editor {
             return Redraw::Nothing;
         };
         let empty = content.trim().is_empty();
+        let owner = session.container.as_ref().map(Element::id);
         self.tool = Tool::Select;
-        self.selection = if empty {
-            Selection::default()
-        } else {
-            Selection::only(session.element.id())
+        // Bound text hands selection back to its container, even when left empty.
+        self.selection = match owner {
+            Some(owner) => Selection::only(owner),
+            None if empty => Selection::default(),
+            None => Selection::only(session.element.id()),
         };
-        let command = match session.before {
-            Some(before) if empty => Command::Remove { id: before.id() },
+        let mut commands = Vec::new();
+        match &session.before {
+            Some(before) if empty => commands.push(Command::Remove { id: before.id() }),
             Some(before)
-                if before.kind == session.element.kind && before.props == session.element.props =>
-            {
-                return Redraw::Tool;
+                if before.kind == session.element.kind && before.props == session.element.props => {
             }
-            Some(before) => Command::Patch {
+            Some(before) => commands.push(Command::Patch {
                 id: before.id(),
-                before,
-                after: session.element,
-            },
-            None if empty => return Redraw::Tool,
-            None => Command::Add {
-                element: session.element,
-                at: self.document.elements().len(),
-            },
-        };
-        self.execute(command, session.selection);
-        Redraw::Scene
-    }
-
-    pub(crate) fn set_text_style(&mut self, font: Font, size: f32, align: TextAlign) -> Redraw {
-        self.style_text(font, size, align, |content, _, size| {
-            let width = content
-                .split('\n')
-                .map(|s| s.chars().count())
-                .max()
-                .unwrap_or(1) as f32
-                * size
-                * 0.6;
-            (
-                width.max(1.0),
-                content.split('\n').count() as f32 * size * 1.25,
-            )
-        })
-    }
-
-    /// Measurement belongs to the app's font engine; the resulting size joins the same command.
-    pub fn style_text(
-        &mut self,
-        font: Font,
-        size: f32,
-        align: TextAlign,
-        mut measure: impl FnMut(&str, Font, f32) -> (f32, f32),
-    ) -> Redraw {
-        if !size.is_finite() || !(1.0..=1000.0).contains(&size) {
-            return Redraw::Nothing;
-        }
-        self.text_defaults = TextDefaults { font, size, align };
-        let change = |element: &mut Element,
-                      measure: &mut dyn FnMut(&str, Font, f32) -> (f32, f32)| {
-            if let Kind::Text {
-                content,
-                font: f,
-                size: s,
-                align: a,
-                bounds,
-            } = &mut element.kind
-            {
-                let (w, h) = measure(content, font, size);
-                let p = bounds.min();
-                *bounds = WorldRect::from_corners(p, WorldPt::new(p.x + w, p.y + h));
-                *f = font;
-                *s = size;
-                *a = align;
+                before: before.clone(),
+                after: session.element.clone(),
+            }),
+            None if empty => {}
+            None => {
+                // Bound text sits just above its container, so nothing can come between.
+                let at = owner
+                    .and_then(|id| self.document.elements().iter().position(|e| e.id() == id))
+                    .map_or(self.document.elements().len(), |i| i + 1);
+                commands.push(Command::Add {
+                    element: session.element.clone(),
+                    at,
+                });
             }
-        };
-        if let Some(session) = &mut self.text_session {
-            change(&mut session.element, &mut measure);
-            return Redraw::Draft;
         }
-        let commands = self
-            .selection
-            .elements(&self.document)
-            .filter(|e| matches!(e.kind, Kind::Text { .. }))
-            .filter_map(|before| {
-                let mut after = before.clone();
-                change(&mut after, &mut measure);
-                (after != *before).then(|| Command::Patch {
-                    id: before.id(),
-                    before: before.clone(),
-                    after,
-                })
-            })
-            .collect::<Vec<_>>();
-        if !commands.is_empty() {
-            self.execute(Command::Group(commands), self.selection.clone());
+        if !empty && let (Some(before), Some(after)) = (&session.container, &session.grown) {
+            commands.push(Command::Patch {
+                id: before.id(),
+                before: before.clone(),
+                after: after.clone(),
+            });
         }
+        if commands.is_empty() {
+            return Redraw::Tool;
+        }
+        self.execute(Command::Group(commands), session.selection);
         Redraw::Scene
     }
+}
 
-    pub(crate) fn set_roughness(&mut self, roughness: Roughness) -> Redraw {
-        self.style.roughness = roughness;
-        let commands = self
-            .selection
-            .elements(&self.document)
-            .filter(|e| e.props.roughness != roughness)
-            .map(|before| {
-                let mut after = before.clone();
-                after.props.roughness = roughness;
-                Command::Patch {
-                    id: before.id(),
-                    before: before.clone(),
-                    after,
-                }
-            })
-            .collect::<Vec<_>>();
-        if !commands.is_empty() {
-            self.execute(Command::Group(commands), self.selection.clone());
+impl TextSession {
+    /// Applies a newly measured size: free text takes the rect as is, bound text is placed on
+    /// its container (which may grow).
+    pub(crate) fn resize(&mut self, measured: WorldRect) {
+        if !measured.min().is_finite() || !measured.max().is_finite() {
+            return;
         }
-        Redraw::Scene
+        if let Some(container) = &self.container {
+            let size = (measured.width(), measured.height());
+            self.grown = place(&mut self.element, container, size);
+        } else if let Kind::Text { bounds, .. } = &mut self.element.kind {
+            *bounds = measured;
+        }
+        self.refresh_hidden();
+    }
+
+    /// The committed text is hidden under the editor; a grown container replaces its paint.
+    fn refresh_hidden(&mut self) {
+        self.hidden.clear();
+        if let Some(old) = &self.before {
+            let mut e = old.clone();
+            if let Kind::Text { content, .. } = &mut e.kind {
+                content.clear();
+            }
+            self.hidden.push(e);
+        }
+        if let Some(grown) = &self.grown {
+            self.hidden.push(grown.clone());
+        }
     }
 }
 

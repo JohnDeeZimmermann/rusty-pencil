@@ -90,6 +90,7 @@ fn property_buttons_keep_typing_focus_and_measured_geometry() {
         size,
         align,
         bounds,
+        ..
     } = &rt.state.editor.document().elements()[0].kind
     else {
         panic!("text")
@@ -98,7 +99,7 @@ fn property_buttons_keep_typing_focus_and_measured_geometry() {
     assert_eq!(*align, TextAlign::Right);
     assert!((*size - 28.0).abs() < 0.01);
     assert_eq!(content, "One\nTwo!");
-    let measured = text::measure(&mut text::system(), content, *font, *size);
+    let measured = text::measure(&mut text::system(), content, *font, *size, None);
     assert!((bounds.width() - measured.0).abs() < 0.01);
     command(&mut rt, '>', true);
     assert!((rt.state.editor.text_style().1 - 36.0).abs() < 0.01);
@@ -224,7 +225,7 @@ fn resizing_text_preserves_its_aspect_and_a_valid_font_size() {
     else {
         panic!("text")
     };
-    let measured = text::measure(&mut text::system(), content, *font, *size);
+    let measured = text::measure(&mut text::system(), content, *font, *size, None);
     assert!((bounds.width() - measured.0).abs() < 0.01);
 }
 

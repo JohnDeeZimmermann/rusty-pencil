@@ -62,7 +62,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Group / ungroup (Ctrl+G / Ctrl+Shift+G), nested groups — M6
 - [ ] Double-click into a group to edit one member — M6
 - [ ] Lock / unlock elements — M6
-- [x] Edit line/arrow points (double-click or Ctrl+Enter), add and delete points — M3
+- [x] Edit line/arrow points (Ctrl+Enter or Ctrl+double-click), add and delete points — M3
 - [x] Multi-point lines and arrows by clicking point to point — M3
 - [ ] Hyperlink on an element (Ctrl+K), opens in the system browser — M9
 - [ ] Link to another element in the scene — M9
@@ -71,10 +71,10 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 - [x] Click to place, type, Esc or click away to finish — M4
 - [x] Multi-line text, auto-sizing box — M4
-- [x] Double-click text to edit it — M4
+- [x] Double-click text to edit it; double-click empty canvas to write — M4
 - [x] IME / non-Latin input — M4
-- [ ] Text inside shapes (double-click a shape), wraps to the container — M7
-- [ ] Labels on arrows — M7
+- [x] Text inside shapes (double-click a shape), wraps to the container — M7
+- [x] Labels on arrows (and lines) — M7
 - [ ] "Wrap text in container" action — M7
 
 ## Arrows and binding

@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod camera;
+mod follow;
 mod history;
 mod input;
 mod navigation;
@@ -10,6 +11,7 @@ mod pointer;
 mod selection;
 mod shortcuts;
 mod text;
+mod text_style;
 mod tool;
 pub use text::TextSession;
 mod tools;
@@ -48,6 +50,8 @@ pub struct Editor {
     point_editor: Option<PointEditor>,
     text_session: Option<TextSession>,
     text_defaults: text::TextDefaults,
+    followers: follow::Followers,
+    text_focus: text_style::TextFocus,
 }
 
 /// Uncommitted shape geometry, in world points.
@@ -92,9 +96,16 @@ impl Editor {
     pub fn selection(&self) -> &Selection {
         &self.selection
     }
-    /// Only touched elements, replacing their committed paint during a transform.
+    /// Only touched elements, replacing their committed paint during a transform. Includes
+    /// bound text following a previewed container.
     #[must_use]
     pub fn preview(&self) -> &[Element] {
+        self.followers
+            .composed()
+            .unwrap_or_else(|| self.base_preview())
+    }
+
+    fn base_preview(&self) -> &[Element] {
         if let Some(edit) = &self.text_session {
             return &edit.hidden;
         }
@@ -108,7 +119,15 @@ impl Editor {
     }
     #[must_use]
     pub fn selection_bounds(&self) -> Option<WorldRect> {
-        let preview = self.preview();
+        // Writing inside a container frames nothing: the container itself is the frame.
+        if self
+            .text_session
+            .as_ref()
+            .is_some_and(|s| s.element.kind.container().is_some())
+        {
+            return None;
+        }
+        let preview = self.base_preview();
         if preview.is_empty() {
             self.selection.bounds(&self.document)
         } else {
@@ -143,6 +162,20 @@ impl Editor {
     }
 
     pub fn handle(&mut self, event: InputEvent) -> Redraw {
+        let redraw = self.dispatch(event);
+        self.refresh_followers();
+        redraw
+    }
+
+    /// Call after any change to the document or the preview.
+    fn refresh_followers(&mut self) {
+        let mut followers = std::mem::take(&mut self.followers);
+        followers.update(&self.document, self.base_preview());
+        self.followers = followers;
+        self.text_focus.update(&self.document, &self.selection);
+    }
+
+    fn dispatch(&mut self, event: InputEvent) -> Redraw {
         match event {
             InputEvent::TextChanged { content, bounds } => self.update_text(content, bounds),
             InputEvent::FinishText => self.finish_text(),
@@ -315,7 +348,10 @@ impl Editor {
         }
     }
 
+    /// The only way edits reach the document. Bound text follows inside the same history
+    /// entry, so one undo restores a container and its text together.
     fn execute(&mut self, command: Command, before: Selection) -> bool {
+        let command = pen_core::bound::follow(&self.document, command);
         let success = self
             .history
             .execute(&mut self.document, command, before, self.selection.clone())
@@ -367,3 +403,6 @@ mod path_tests;
 
 #[cfg(test)]
 mod navigation_tests;
+
+#[cfg(test)]
+mod bound_text_tests;

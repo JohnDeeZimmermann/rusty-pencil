@@ -1,7 +1,8 @@
 //! Pointer routing between selection, point editing, path drawing and navigation.
+use crate::text::TextTarget;
 use crate::tools::{path::PathDraw, points::PointEditor, select::SelectionDrag, shape::ShapeDrag};
 use crate::{Editor, Gesture, Modifiers, Redraw, ScreenPt, Selection, Tool};
-use pen_core::{Command, Element, Path};
+use pen_core::{Command, Container, Element, Kind, Path, bound};
 
 impl Editor {
     pub(crate) fn pointer_down(&mut self, at: ScreenPt, mods: Modifiers) -> Redraw {
@@ -15,7 +16,7 @@ impl Editor {
         let finished_text = self.text_session.is_some();
         self.finish_text();
         if self.tool == Tool::Text {
-            return self.begin_text(at, None);
+            return self.begin_text(TextTarget::At(at));
         }
         if let Some(edit) = &mut self.point_editor {
             if edit.press(&self.document, at, &self.camera) {
@@ -129,13 +130,23 @@ impl Editor {
             .elements()
             .iter()
             .rev()
-            .find(|e| e.hit_test(point, 5.0 / self.camera.zoom()));
-        if let Some(element) = hit.filter(|e| matches!(e.kind, pen_core::Kind::Text { .. })) {
-            return self.begin_text(at, Some(element.id()));
+            .find(|e| e.hit_test_interior(point, 5.0 / self.camera.zoom()))
+            .map(|e| bound::owner(&self.document, e.id()))
+            .and_then(|id| self.document.get(id));
+        let Some(element) = hit else {
+            // Like Excalidraw: double-click on empty canvas starts writing there.
+            return self.begin_text(TextTarget::At(at));
+        };
+        if matches!(element.kind, Kind::Text { .. }) {
+            return self.begin_text(TextTarget::Existing(element.id()));
         }
-        if let Some(element) = hit.filter(|e| e.kind.is_linear()) {
+        // Ctrl keeps the M3 shortcut for editing a line's points.
+        if mods.ctrl && element.kind.is_linear() {
             self.selection = Selection::only(element.id());
             return self.begin_point_edit();
+        }
+        if let Some(container) = Container::for_element(element) {
+            return self.begin_text(TextTarget::Into(container));
         }
         Redraw::Draft
     }

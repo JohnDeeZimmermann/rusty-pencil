@@ -1,10 +1,10 @@
 //! The font engine measures world geometry; Rune's field owns caret, selection and IME.
 use crate::{State, design as d, layer, paint as shapes};
-use pen_core::{Font, Kind, TextAlign, WorldPt, WorldRect};
+use pen_core::{Container, Font, Kind, TextAlign, WorldPt, WorldRect};
 use pen_editor::InputEvent;
-use pen_render::Prim;
-use rune::text::TextSystem;
-use rune::{Align, El, Family, Key, TextEdit, Tx, el, text, text_input, tok::TextStyle};
+use pen_render::{Prim, TextFit};
+use rune::text::{RichLayoutOptions, TextSystem};
+use rune::{Align, El, Family, Key, TextEdit, Tx, col, el, text, text_input, tok::TextStyle};
 
 pub(crate) static FONTS: &[&[u8]] = &[
     include_bytes!("../../../assets/fonts/Inter.ttf"),
@@ -43,7 +43,30 @@ fn alignment(align: TextAlign) -> Align {
     }
 }
 
-pub(crate) fn measure(system: &mut TextSystem, content: &str, font: Font, size: f32) -> (f32, f32) {
+/// Laid-out `(width, height)` in world points. With `wrap`, lines break at that width
+/// exactly as [`paint`] and the editing overlay break them.
+pub(crate) fn measure(
+    system: &mut TextSystem,
+    content: &str,
+    font: Font,
+    size: f32,
+    wrap: Option<f32>,
+) -> (f32, f32) {
+    if let Some(width) = wrap {
+        let style = display_style(font, size);
+        let layout = system.layout_rich_with(
+            content,
+            &[],
+            style,
+            1.0,
+            Some(width.max(1.0) * TEXT_LAYOUT_SCALE),
+            RichLayoutOptions::new().wrap_anywhere(),
+        );
+        let height = rune::text::layout_height(&layout, style, 1.0);
+        let full = layout.full_width();
+        system.end_commit();
+        return (full.ceil() / TEXT_LAYOUT_SCALE, height / TEXT_LAYOUT_SCALE);
+    }
     let width = content
         .split('\n')
         .map(|line| system.measure(line, style(font, size), 1.0).0)
@@ -53,6 +76,28 @@ pub(crate) fn measure(system: &mut TextSystem, content: &str, font: Font, size: 
         width + 2.0,
         content.split('\n').count() as f32 * size * 1.25,
     )
+}
+
+/// Room around a label's backdrop, in world points.
+const LABEL_MARGIN: f32 = 4.0;
+
+/// A text element at 8x layout scale with a compensating transform; see [`TEXT_LAYOUT_SCALE`].
+fn placed(base: El, bounds: WorldRect) -> El {
+    base.absolute(bounds.min().x, bounds.min().y)
+        .size(
+            bounds.width() * TEXT_LAYOUT_SCALE,
+            bounds.height() * TEXT_LAYOUT_SCALE,
+        )
+        .scale(1.0 / TEXT_LAYOUT_SCALE)
+        .origin(0.0, 0.0)
+}
+
+fn backdrop(bounds: WorldRect) -> El {
+    let m = LABEL_MARGIN;
+    el().absolute(bounds.min().x - m, bounds.min().y - m)
+        .size(bounds.width() + 2.0 * m, bounds.height() + 2.0 * m)
+        .radius(LABEL_MARGIN)
+        .fill(d::c(d::CANVAS))
 }
 
 /// Partition around text so filled shapes still occlude text below them in document order.
@@ -71,26 +116,29 @@ pub(crate) fn paint(prims: &[Prim]) -> El {
             align,
             bounds,
             color,
+            fit,
         } = prim
         {
             if start < i {
                 let (shape, bounds) = shapes::bounded(&prims[start..i]);
                 root = root.child(layer(shape, bounds, &format!("paint-{start}")));
             }
-            root = root.child(
-                text(content.clone())
-                    .key(format!("text-{i}"))
-                    .absolute(bounds.min().x, bounds.min().y)
-                    .size(
-                        bounds.width() * TEXT_LAYOUT_SCALE,
-                        bounds.height() * TEXT_LAYOUT_SCALE,
-                    )
-                    .scale(1.0 / TEXT_LAYOUT_SCALE)
-                    .origin(0.0, 0.0)
-                    .font(display_style(*font, *size))
-                    .align(alignment(*align))
-                    .color(d::c(*color)),
-            );
+            let label = text(content.clone())
+                .font(display_style(*font, *size))
+                .align(alignment(*align))
+                .color(d::c(*color));
+            root = match fit {
+                TextFit::Free => root.child(placed(label, *bounds).key(format!("text-{i}"))),
+                TextFit::Wrap => root.child(
+                    placed(col(), *bounds)
+                        .key(format!("text-{i}"))
+                        .justify_center()
+                        .child(label.w_full().wrap_anywhere()),
+                ),
+                TextFit::Label => root
+                    .child(backdrop(*bounds).key(format!("backdrop-{i}")))
+                    .child(placed(label, *bounds).key(format!("text-{i}"))),
+            };
             start = i + 1;
         }
     }
@@ -110,12 +158,14 @@ pub(crate) fn editor(s: &State) -> El {
         size,
         align,
         bounds,
+        container,
         ..
     } = &session.element.kind
     else {
         return el();
     };
-    let field = text_input(&s.text_edit, display_style(*font, *size))
+    let style = display_style(*font, *size);
+    let field = text_input(&s.text_edit, style)
         .key("canvas-text-editor")
         .absolute(0.0, 0.0)
         .w_full()
@@ -153,20 +203,44 @@ pub(crate) fn editor(s: &State) -> El {
         });
     // The invisible label lets Rune lay out the full IME preedit in this frame, before it
     // becomes committed content. The overlay field shares its intrinsic size and position.
-    el().key("text-edit-layout")
+    let sizer = text(s.text_edit.display().0)
+        .font(style)
+        .align(alignment(*align))
+        .color(rune::Color::TRANSPARENT)
+        .inert();
+    if matches!(container, Some(Container::Shape(_))) {
+        // Wrapped at the container's text box and centred in it, as it will be painted.
+        return placed(col(), *bounds)
+            .key("text-edit-layout")
+            .justify_center()
+            .instant_changes()
+            .child(
+                el().w_full()
+                    .child(sizer.w_full().wrap_anywhere())
+                    .child(field.wrap_anywhere()),
+            );
+    }
+    let layout = el()
+        .key("text-edit-layout")
         .absolute(bounds.min().x, bounds.min().y)
         .min_w(bounds.width().max(3.0) * TEXT_LAYOUT_SCALE)
         .min_h(bounds.height().max(*size * 1.25) * TEXT_LAYOUT_SCALE)
         .scale(1.0 / TEXT_LAYOUT_SCALE)
         .origin(0.0, 0.0)
         .instant_changes()
-        .child(
-            text(s.text_edit.display().0)
-                .font(display_style(*font, *size))
-                .color(rune::Color::TRANSPARENT)
-                .inert(),
-        )
-        .child(field)
+        .child(sizer)
+        .child(field);
+    if matches!(container, Some(Container::Path(_))) {
+        // Mask the labelled line while typing, as the committed label will.
+        return el()
+            .key("text-edit-label")
+            .absolute(0.0, 0.0)
+            .size(0.0, 0.0)
+            .instant_changes()
+            .child(backdrop(*bounds).key("text-edit-backdrop"))
+            .child(layout);
+    }
+    layout
 }
 
 impl State {
@@ -180,8 +254,12 @@ impl State {
         else {
             return;
         };
+        let wrap = session
+            .container()
+            .and_then(|c| pen_core::bound::text_box(&c.kind))
+            .map(|r| r.width());
         // Composition remains in TextEdit until committed by the platform IME.
-        let (w, h) = measure(&mut self.fonts, &self.text_edit.text, font, size);
+        let (w, h) = measure(&mut self.fonts, &self.text_edit.text, font, size, wrap);
         let p = bounds.min();
         self.input(
             InputEvent::TextChanged {

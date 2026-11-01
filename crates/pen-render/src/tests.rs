@@ -144,3 +144,34 @@ fn same_document_same_paint() {
         );
     }
 }
+
+#[test]
+fn bound_text_wraps_in_shapes_and_labels_lines() {
+    let id = |n| {
+        let mut doc = Document::new();
+        (0..n).map(|_| doc.alloc_id()).last().expect("allocated")
+    };
+    let fit_of = |container| {
+        let kind = Kind::Text {
+            content: "Hi".into(),
+            font: pen_core::Font::Normal,
+            size: 20.0,
+            align: pen_core::TextAlign::Centre,
+            bounds: rect(0.0, 0.0, 10.0, 10.0),
+            container,
+        };
+        match paint(&kind, Props::default()).prims() {
+            [Prim::Text { fit, .. }] => *fit,
+            other => panic!("expected text, got {other:?}"),
+        }
+    };
+    assert_eq!(fit_of(None), TextFit::Free);
+    assert_eq!(
+        fit_of(Some(pen_core::Container::Shape(id(1)))),
+        TextFit::Wrap
+    );
+    assert_eq!(
+        fit_of(Some(pen_core::Container::Path(id(2)))),
+        TextFit::Label
+    );
+}

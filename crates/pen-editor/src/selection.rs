@@ -37,7 +37,13 @@ impl Selection {
         Self(BTreeSet::from([id]))
     }
     pub(crate) fn all(doc: &Document) -> Self {
-        Self(doc.elements().iter().map(pen_core::Element::id).collect())
+        Self(
+            doc.elements()
+                .iter()
+                .filter(|e| e.kind.container().is_none())
+                .map(pen_core::Element::id)
+                .collect(),
+        )
     }
     pub(crate) fn elements<'a>(
         &'a self,

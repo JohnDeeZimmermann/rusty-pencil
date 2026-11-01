@@ -6,6 +6,17 @@ impl Element {
     /// by camera zoom. Paths never hit an implicit closing edge or their empty interior.
     #[must_use]
     pub fn hit_test(&self, point: WorldPt, tolerance: f32) -> bool {
+        self.hit(point, tolerance, false)
+    }
+
+    /// [`Self::hit_test`], but a closed shape's interior counts even without a fill: where a
+    /// double-click lands to write inside a shape.
+    #[must_use]
+    pub fn hit_test_interior(&self, point: WorldPt, tolerance: f32) -> bool {
+        self.hit(point, tolerance, true)
+    }
+
+    fn hit(&self, point: WorldPt, tolerance: f32, interior: bool) -> bool {
         if !point.is_finite() || !tolerance.is_finite() {
             return false;
         }
@@ -59,7 +70,7 @@ impl Element {
                 inside = !inside;
             }
         }
-        self.props.background.is_some_and(|color| color.a > 0) && inside
+        (interior || self.props.background.is_some_and(|color| color.a > 0)) && inside
     }
 }
 

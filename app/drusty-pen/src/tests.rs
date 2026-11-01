@@ -322,3 +322,6 @@ mod m3;
 
 #[path = "m4_tests.rs"]
 mod m4;
+
+#[path = "m7_tests.rs"]
+mod m7;

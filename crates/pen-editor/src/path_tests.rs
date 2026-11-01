@@ -48,9 +48,10 @@ fn editing() -> Editor {
     click(&mut ed, p(100.0, 100.0));
     key(&mut ed, Key::Escape, NONE);
     ed.handle(InputEvent::SelectTool(Tool::Select));
+    // Plain double-click labels a line; Ctrl opens its points.
     ed.handle(InputEvent::DoubleClick {
         at: p(50.0, 10.0),
-        mods: NONE,
+        mods: Modifiers { ctrl: true, ..NONE },
     });
     assert!(ed.editable_points().is_some());
     ed

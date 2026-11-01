@@ -33,6 +33,7 @@ pub enum Prim {
         align: pen_core::TextAlign,
         bounds: pen_core::WorldRect,
         color: Srgba,
+        fit: TextFit,
     },
     /// A simple polygon filled with `color`.
     Fill { points: Vec<WorldPt>, color: Srgba },
@@ -44,6 +45,18 @@ pub enum Prim {
         width: f32,
         color: Srgba,
     },
+}
+
+/// How a text primitive sits in its bounds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TextFit {
+    /// The bounds are the measured text.
+    Free,
+    /// Wraps at the bounds' width and is centred vertically in them (text inside a shape).
+    Wrap,
+    /// The bounds are the measured text, on a canvas-coloured backdrop that masks the line
+    /// it labels.
+    Label,
 }
 
 /// Paint operations in order: later ones draw on top. Reuse one across frames with
@@ -86,6 +99,7 @@ pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
         size,
         align,
         bounds,
+        container,
     } = kind
     {
         if !content.is_empty() {
@@ -96,6 +110,11 @@ pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
                 align: *align,
                 bounds: *bounds,
                 color: props.stroke,
+                fit: match container {
+                    None => TextFit::Free,
+                    Some(pen_core::Container::Shape(_)) => TextFit::Wrap,
+                    Some(pen_core::Container::Path(_)) => TextFit::Label,
+                },
             });
         }
         return;

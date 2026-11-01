@@ -9,6 +9,9 @@ Created in [T3 Code](https://t3.codes).
 Run `cargo run -p drusty-pen` with the pinned Rust toolchain. Use the toolbar or letter shortcuts
 for shapes, paths, pen, selection and text (`T`). Click to place text, press Enter for another
 line, and finish with Escape or a click away. Double-click a text element to edit it again.
+Double-click inside a rectangle, diamond or ellipse to write text that wraps inside it (the
+shape grows to fit), or on a line or arrow to label it. That text moves, resizes and deletes
+with its shape. Ctrl+Enter or Ctrl+double-click edits a line's points.
 Text controls appear when creating, editing or selecting text. Use their icons to change
 font family and alignment, or S/M/L/XL for size. The stroke icon at the end of the toolbar
 cycles outline sloppiness. Undo uses Ctrl+Z

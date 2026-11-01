@@ -1,4 +1,4 @@
-use crate::{Font, Path, Roughness, Srgba, TextAlign, WorldRect};
+use crate::{Container, Font, Path, Roughness, Srgba, TextAlign, WorldRect};
 use serde::{Deserialize, Serialize};
 
 /// Identifies one element for the life of its document. Ids are handed out in increasing
@@ -96,6 +96,10 @@ pub enum Kind {
         size: f32,
         align: TextAlign,
         bounds: WorldRect,
+        /// Set for text inside a shape or labelling a line; such text moves, re-fits and is
+        /// deleted with its container.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        container: Option<Container>,
     },
     Rect(WorldRect),
     /// The rhombus inscribed in the rect: its corners are the rect's edge midpoints.
@@ -117,6 +121,7 @@ impl Kind {
                 size,
                 align,
                 bounds: old,
+                container,
             } => {
                 let next_size = if old.height() > 0.0 {
                     size * bounds.height() / old.height()
@@ -131,6 +136,7 @@ impl Kind {
                     font: *font,
                     size: next_size,
                     align: *align,
+                    container: *container,
                     bounds: WorldRect::from_corners(
                         p,
                         crate::WorldPt::new(p.x + old.width() * scale, p.y + old.height() * scale),
@@ -160,6 +166,15 @@ impl Kind {
     pub fn path(&self) -> Option<&Path> {
         match self {
             Self::Line(p) | Self::Arrow(p) | Self::Freedraw(p) => Some(p),
+            _ => None,
+        }
+    }
+
+    /// The element this text belongs to, if it is bound text.
+    #[must_use]
+    pub fn container(&self) -> Option<Container> {
+        match self {
+            Self::Text { container, .. } => *container,
             _ => None,
         }
     }

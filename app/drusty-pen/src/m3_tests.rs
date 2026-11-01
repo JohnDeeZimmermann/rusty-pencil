@@ -84,7 +84,7 @@ fn middle_and_hand_drags_are_live_only_and_space_release_restores_drawing() {
 }
 
 #[test]
-fn double_click_and_ctrl_enter_edit_line_points_through_rune() {
+fn ctrl_enter_edits_line_points_and_double_click_labels_through_rune() {
     let mut rt = app();
     key(&mut rt, "l");
     drag(&mut rt, (300.0, 300.0), (600.0, 400.0));
@@ -92,8 +92,27 @@ fn double_click_and_ctrl_enter_edit_line_points_through_rune() {
     click(&mut rt, 450.0, 350.0);
     click(&mut rt, 450.0, 350.0);
     assert!(
+        rt.state.editor.text_session().is_some(),
+        "double-click starts a label"
+    );
+    rt.key(KeyEvent {
+        key: Key::Escape,
+        mods: Mods::default(),
+    });
+    rt.frame(FRAME);
+    assert_eq!(kinds(&rt).len(), 1, "an empty label adds nothing");
+    rt.key(KeyEvent {
+        key: Key::Enter,
+        mods: Mods {
+            cmd: true,
+            ctrl: true,
+            ..Mods::default()
+        },
+    });
+    rt.frame(FRAME);
+    assert!(
         rt.state.editor.editable_points().is_some(),
-        "double-click opens points"
+        "Ctrl+Enter opens points"
     );
     drag(&mut rt, (600.0, 400.0), (650.0, 450.0));
     let path = kinds(&rt)[0].path().expect("line").clone();

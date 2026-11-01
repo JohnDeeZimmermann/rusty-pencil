@@ -163,6 +163,9 @@ pub fn load(bytes: &[u8]) -> Result<SceneFile, FileError> {
     }
     let mut scene: SceneFile = serde_json::from_value(value).map_err(json_error)?;
     scene.version = VERSION;
+    // A dangling text binding is damage, not a reason to lose the scene: the text stays,
+    // unbound, where it was last drawn.
+    crate::bound::repair(&mut scene.elements);
     scene.document()?;
     Ok(scene)
 }
