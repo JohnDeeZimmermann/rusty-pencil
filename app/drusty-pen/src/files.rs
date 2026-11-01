@@ -127,6 +127,7 @@ impl State {
             .as_ref()
             .and_then(|p| p.parent())
             .map(|p| p.join("workspace.json"));
+        self.restore_preferences();
         let restored_workspace = self.restore_workspace();
         if !restored_workspace
             && let Some(path) = self.files.recovery.clone().filter(|p| p.exists())

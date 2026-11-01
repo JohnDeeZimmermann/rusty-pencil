@@ -29,7 +29,10 @@ pub(crate) fn snapshot(editor: &Editor) -> SceneFile {
     SceneFile::new(
         editor.document(),
         AppState {
-            settings: editor.settings(),
+            settings: pen_core::Settings {
+                dark: false,
+                ..editor.settings()
+            },
             scroll: editor.camera().scroll(),
             zoom: editor.camera().zoom(),
             style: editor.style(),

@@ -93,7 +93,7 @@ fn m5_styles_and_settings_round_trip_and_older_styles_supply_defaults() {
     use crate::{Arrowhead, FillStyle, Settings, StrokeStyle};
     let mut scene = scene();
     scene.app_state.settings = Settings {
-        dark: true,
+        dark: false,
         grid: true,
         tool_lock: true,
         canvas: crate::Srgba::rgb(0xfff9db),
@@ -204,4 +204,16 @@ fn arrow_bindings_and_new_properties_round_trip_with_derived_back_references() {
     let loaded = load(&save(&scene).unwrap()).unwrap();
     assert_eq!(loaded, scene);
     assert_eq!(loaded.document().unwrap().bound_arrows(shape), &[arrow]);
+}
+
+#[test]
+fn scene_files_neither_store_nor_restore_dark_appearance() {
+    let mut scene = scene();
+    scene.app_state.settings.dark = true;
+    let bytes = save(&scene).unwrap();
+    let mut value: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert!(value["app_state"]["settings"].get("dark").is_none());
+    value["app_state"]["settings"]["dark"] = true.into();
+    let loaded = load(&serde_json::to_vec(&value).unwrap()).unwrap();
+    assert!(!loaded.app_state.settings.dark);
 }

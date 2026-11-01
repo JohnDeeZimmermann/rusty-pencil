@@ -20,7 +20,8 @@ cycles outline sloppiness. Undo uses Ctrl+Z
 ## Keep your canvas
 
 Use **+**, File → New tab, Ctrl+T or Ctrl+N to open another canvas. Each tab keeps its own
-undo history, selection, camera, tools and settings. Click a tab to switch; Ctrl+Tab and
+undo history, selection, camera, tools and canvas settings. Appearance stays global. Click a
+tab to switch; Ctrl+Tab and
 Ctrl+Shift+Tab cycle through them. Ctrl+1…8 selects a tab by position, and Ctrl+9 selects the
 last tab. Use Cmd for command shortcuts on macOS (Ctrl+Tab also works there).
 
@@ -47,8 +48,10 @@ one undo step. An opacity drag previews immediately and commits when released.
 The top-left Preferences menu contains Keep tool, Grid & snap, Dark mode and Canvas colour.
 Drawing returns to selection. Press Q (or Keep tool) to keep drawing with the same tool.
 Toggle dark mode with Alt+Shift+D and the grid with Ctrl+'. The grid snaps to 20 world points;
-canvas settings also change the background colour. Defaults and settings travel with saved
-scenes and autosave recovery.
+canvas settings also change the background colour. Drawing defaults and canvas settings
+travel with saved scenes and autosave recovery. Light/dark mode is an editor-wide preference
+stored separately in `preferences.json`: switching tabs, opening files or resetting a canvas
+keeps the same appearance. Changing appearance does not mark a canvas as unsaved.
 
 ## Visual checks
 

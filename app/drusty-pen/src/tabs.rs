@@ -134,6 +134,7 @@ impl State {
     }
 
     pub(crate) fn refresh_canvas(&mut self) {
+        self.sync_appearance();
         self.text_edit = rune::TextEdit::default();
         self.camera.show(self.editor.camera());
         self.grid.show(self.editor.camera());

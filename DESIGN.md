@@ -121,7 +121,8 @@ say “Mixed”; changing one field preserves every other value.
   muted caption type beside the label.
 
 Text controls appear first when relevant. Canvas colour is the last field in Preferences. Dark appearance
-reverses colour lightness without modifying the document. The grid has a 20-world-point pitch
+reverses colour lightness without modifying the document. Appearance is global across tabs
+and persists as an editor preference, separately from canvas files and recovery. The grid has a 20-world-point pitch
 and follows camera changes through live scale and phase values.
 
 

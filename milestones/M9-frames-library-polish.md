@@ -33,6 +33,7 @@
 - [x] Recover all open canvases, file paths and the active tab across restarts.
 - [x] Exercise real input, dialog callbacks and recovery through headless app tests.
 - [x] Review light/dark screenshots and the unsaved-tab close prompt.
+- [x] Persist light/dark appearance globally, without storing it in or dirtying canvases.
 
 ## Notes
 

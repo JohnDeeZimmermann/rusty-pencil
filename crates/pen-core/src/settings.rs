@@ -1,10 +1,12 @@
 use crate::Srgba;
 use serde::{Deserialize, Serialize};
 
-/// Persisted editor preferences. Grid spacing is 20 world points.
+/// Canvas settings and transient render appearance. Grid spacing is 20 world points.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(default)]
 pub struct Settings {
+    /// Supplied by the app's global preferences; legacy scene values are ignored.
+    #[serde(skip)]
     pub dark: bool,
     pub grid: bool,
     pub tool_lock: bool,

@@ -142,6 +142,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Autosave and restore open canvases on launch — M4, multi-tab follow-up
 - [x] Multiple canvas tabs: new, switch, close, independent history and camera — multi-tab follow-up
 - [x] Unsaved tab indicators, Save / Discard / Cancel, workspace recovery — multi-tab follow-up
+- [x] Global light/dark appearance, independent of canvas files and tab switching — multi-tab follow-up
 - [x] Reset canvas — M4
 - [x] Import `.excalidraw` files — M8
 - [x] Export PNG: scale 1×/2×/3×, background on/off, dark mode, selection only — M8

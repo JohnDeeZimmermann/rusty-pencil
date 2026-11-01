@@ -14,6 +14,7 @@ mod navigation;
 mod overlay;
 mod paint;
 mod palette;
+mod preferences;
 mod present;
 mod properties;
 mod property_icons;
@@ -37,6 +38,7 @@ struct State {
     export: export::Panel,
     context: Option<pen_editor::ScreenPt>,
     menu: Option<menu::Section>,
+    preferences: preferences::Preferences,
     tabs: tabs::Tabs,
     editor: Editor,
     text_edit: rune::TextEdit,
@@ -61,6 +63,7 @@ impl State {
             export: export::Panel::default(),
             context: None,
             menu: None,
+            preferences: preferences::Preferences::default(),
             tabs: tabs::Tabs::default(),
             editor: Editor::new(camera),
             text_edit: rune::TextEdit::default(),
@@ -138,7 +141,7 @@ impl State {
         );
         let camera = *self.editor.camera();
         let revision = self.editor.document().revision();
-        let settings = self.editor.settings();
+        let mut settings = self.editor.settings();
         let style = self.editor.style();
         let text_defaults = self.editor.text_defaults();
         let text_changed = matches!(&event, InputEvent::TextChanged { content, .. } if self.editor.text_session().is_some_and(|s| matches!(&s.element.kind, pen_core::Kind::Text { content: old, .. } if content != old)));
@@ -157,6 +160,12 @@ impl State {
         } else {
             self.editor.handle(event)
         };
+        if self.editor.settings().dark != self.preferences.dark {
+            self.preferences.dark = self.editor.settings().dark;
+            self.save_preferences();
+        }
+        // Appearance changes repaint the editor without dirtying or autosaving the canvas.
+        settings.dark = self.preferences.dark;
         self.text_session_changed(old_text);
         if refresh_properties {
             properties::sync(self);
