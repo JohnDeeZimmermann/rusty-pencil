@@ -312,6 +312,13 @@ impl Editor {
                     return self.finish_path(false);
                 }
                 if self.point_editor.as_mut().is_some_and(PointEditor::cancel) {
+                    if self
+                        .point_editor
+                        .as_ref()
+                        .is_some_and(|edit| edit.endpoint_only)
+                    {
+                        self.point_editor = None;
+                    }
                     return Redraw::Draft;
                 }
                 if self.point_editor.take().is_some() {

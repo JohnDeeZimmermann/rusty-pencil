@@ -8,6 +8,7 @@
 
 - [x] Arrow ends near a shape highlight it and bind on release; Ctrl disables binding.
 - [x] Moving, resizing or rotating a shape updates bound arrows.
+- [x] Select a placed arrow and drag either endpoint to bind or rebind it; Ctrl detaches.
 - [x] Arrow type: sharp, curved, elbow. Elbow arrows route orthogonally around their endpoints'
       shapes.
 - [x] Double-click a shape to type text inside it; text wraps to the container; vertical align
@@ -84,3 +85,8 @@
   `m7-bound-text.json` (wrapping and shape text), and `m7-vertical-align.json` (all vertical
   placements). Release scripted rendering: frame CPU p50 0.437 ms, p95 1.131 ms across 877
   forced frames; pan/zoom still only updates live presentation values.
+
+- **Rebinding follow-up.** Selected arrows expose endpoint handles directly, without a point-edit
+  shortcut. Dragging one previews its new target and commits on release; Ctrl detaches, Escape
+  cancels, and undo restores the prior link. The body still moves the arrow and the rotation
+  handle remains available. `m7-rebind.json` exercises this through real app input.

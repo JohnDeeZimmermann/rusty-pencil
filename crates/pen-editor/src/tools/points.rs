@@ -16,6 +16,7 @@ struct PointDrag {
 pub(crate) struct PointEditor {
     pub(crate) id: ElementId,
     pub(crate) active: Option<usize>,
+    pub(crate) endpoint_only: bool,
     drag: Option<PointDrag>,
     preview: Vec<Element>,
 }
@@ -25,6 +26,7 @@ impl PointEditor {
         Self {
             id,
             active: None,
+            endpoint_only: false,
             drag: None,
             preview: Vec::new(),
         }

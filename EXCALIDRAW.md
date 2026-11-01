@@ -79,6 +79,8 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Arrows and binding
 
+- [x] Rebind placed arrows by dragging selected endpoint handles — M7
+
 - [x] Arrow ends snap to and bind to shapes — M7
 - [x] Bound arrows follow when shapes move or resize — M7
 - [x] Hold Ctrl to draw without binding — M7

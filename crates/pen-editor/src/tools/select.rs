@@ -59,7 +59,15 @@ impl SelectionDrag {
                 .bounds(doc)
                 .and_then(|r| Handle::hit(r, origin, camera.zoom()))
         };
-        let handle = handle.filter(|_| {
+        let handle = handle.filter(|handle| {
+            if selection.len() == 1
+                && selection
+                    .elements(doc)
+                    .any(|e| matches!(e.kind, pen_core::Kind::Arrow(_)))
+                && *handle != Handle::Rotate
+            {
+                return false;
+            }
             selection.len() == 1 || !selection.bounds(doc).is_some_and(|b| b.contains(origin))
         });
         let hit = doc

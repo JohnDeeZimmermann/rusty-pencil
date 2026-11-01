@@ -85,7 +85,25 @@ pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
             && editor.marquee().is_none()
             && !editor.selection_locked()
         {
+            let endpoints = editor.arrow_endpoints();
+            if let Some(points) = endpoints {
+                for point in points {
+                    let p = camera.world_to_screen(point);
+                    out.push(OverlayRect {
+                        kind: OverlayKind::Vertex { active: false },
+                        rect: [
+                            p.x - HANDLE_SIZE / 2.0,
+                            p.y - HANDLE_SIZE / 2.0,
+                            HANDLE_SIZE,
+                            HANDLE_SIZE,
+                        ],
+                    });
+                }
+            }
             for handle in Handle::ALL.into_iter().chain([Handle::Rotate]) {
+                if endpoints.is_some() && handle != Handle::Rotate {
+                    continue;
+                }
                 let p = camera.world_to_screen(handle.position(bounds, camera.zoom()));
                 out.push(OverlayRect {
                     kind: OverlayKind::Handle(handle),

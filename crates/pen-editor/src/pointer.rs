@@ -23,6 +23,21 @@ impl Editor {
         if self.tool == Tool::Text {
             return self.begin_text(TextTarget::At(at));
         }
+        if self.tool == Tool::Select
+            && self.point_editor.is_none()
+            && !mods.alt
+            && self.arrow_endpoints().is_some_and(|points| {
+                let p = self.camera.screen_to_world(at);
+                points
+                    .iter()
+                    .any(|v| (v.x - p.x).hypot(v.y - p.y) <= 8.0 / self.camera.zoom())
+            })
+        {
+            self.begin_point_edit();
+            if let Some(edit) = &mut self.point_editor {
+                edit.endpoint_only = true;
+            }
+        }
         if let Some(edit) = &mut self.point_editor {
             if edit.press(&self.document, at, &self.camera) {
                 return Redraw::Draft;
@@ -79,6 +94,9 @@ impl Editor {
         }
         if let Some(edit) = &mut self.point_editor {
             let command = edit.finish();
+            if edit.endpoint_only {
+                self.point_editor = None;
+            }
             return if command.is_some_and(|c| self.execute(c, self.selection.clone())) {
                 Redraw::Scene
             } else {
@@ -201,6 +219,32 @@ impl Editor {
         self.tool = Tool::Select;
         self.point_editor = Some(PointEditor::new(id));
         Redraw::Tool
+    }
+
+    /// Selected, unlocked arrow endpoints in world points, including live previews.
+    #[must_use]
+    pub fn arrow_endpoints(&self) -> Option<[pen_core::WorldPt; 2]> {
+        if self.selection.len() != 1 {
+            return None;
+        }
+        let selected = self.selection.elements(&self.document).next()?;
+        if selected.locked || !matches!(selected.kind, Kind::Arrow(_)) {
+            return None;
+        }
+        let element = self
+            .preview()
+            .iter()
+            .find(|e| e.id() == selected.id())
+            .unwrap_or(selected);
+        let path = element.kind.path()?;
+        let centre = element.kind.bounds().centre();
+        Some([0, path.points.len().checked_sub(1)?].map(|i| {
+            pen_core::rotate(
+                path.world_point(i).unwrap_or(path.origin),
+                centre,
+                element.angle,
+            )
+        }))
     }
 
     /// Rotation applied to point-editing geometry, in world points and clockwise radians.

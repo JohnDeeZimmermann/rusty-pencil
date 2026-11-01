@@ -31,7 +31,7 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
             .child(el().size(d::S1, d::BUTTON).items_center().justify_center().child(el().size(d::OUTLINE, d::ICON).fill(c(d::BORDER))))
             .child(roughness_button(editor.roughness(), dark)))
         .child(
-            text(if editor.selection_locked() { "Selection is locked  ·  Right-click to unlock  ·  Ctrl + Shift + L toggles the lock".into() } else if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else { hint(active) })
+            text(if editor.selection_locked() { "Selection is locked  ·  Right-click to unlock  ·  Ctrl + Shift + L toggles the lock".into() } else if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else if editor.arrow_endpoints().is_some() { "Drag an endpoint to rebind  ·  Ctrl disables binding  ·  Ctrl + Enter edits points".into() } else { hint(active) })
                 .key("hint")
                 .font(d::T_HINT)
                 .color(c(d::MUTED)),

@@ -258,3 +258,85 @@ fn bound_arrow_label_follows_the_shape_through_both_dependency_levels() {
     undo(&mut e);
     assert_eq!(e.document.get(label.id()).unwrap().kind, label.kind);
 }
+
+#[test]
+fn selected_arrow_endpoint_rebinds_without_a_point_edit_shortcut() {
+    let mut e = scene();
+    let arrow = e.document.elements()[1].id();
+    let old_target = e.document.elements()[0].id();
+    e.handle(InputEvent::SelectTool(Tool::Rectangle));
+    drag(&mut e, (600.0, 200.0), (800.0, 300.0));
+    let target = e.document.elements().last().unwrap().id();
+    e.handle(InputEvent::SelectTool(Tool::Select));
+    drag(&mut e, (400.0, 150.0), (400.0, 150.0));
+    assert_eq!(e.selection, Selection::only(arrow));
+    let before = e.document.get(arrow).unwrap().clone();
+    event(&mut e, true, 308.0, 150.0, NONE);
+    e.handle(InputEvent::PointerMove {
+        at: ScreenPt::new(592.0, 250.0),
+        mods: NONE,
+    });
+    assert_eq!(e.preview()[0].bindings[0].unwrap().element, target);
+    assert_eq!(e.document.get(arrow).unwrap(), &before);
+    event(&mut e, false, 592.0, 250.0, NONE);
+    assert!(e.document.bound_arrows(old_target).is_empty());
+    assert_eq!(e.document.bound_arrows(target), &[arrow]);
+    undo(&mut e);
+    assert_eq!(e.document.get(arrow).unwrap().kind, before.kind);
+    assert_eq!(e.document.get(arrow).unwrap().bindings, before.bindings);
+    assert_eq!(e.document.bound_arrows(old_target), &[arrow]);
+    assert!(e.document.bound_arrows(target).is_empty());
+}
+
+#[test]
+fn selected_arrow_body_moves_and_endpoint_cancel_restores_the_binding() {
+    let mut e = scene();
+    let arrow = e.document.elements()[1].clone();
+    // A horizontal arrow's centre used to overlap its bounding-box resize handles.
+    drag(&mut e, (400.0, 150.0), (400.0, 200.0));
+    let moved = e.document.get(arrow.id()).unwrap();
+    assert_eq!(
+        moved.kind.path().unwrap().world_point(1),
+        Some(WorldPt::new(500.0, 200.0))
+    );
+    undo(&mut e);
+    event(&mut e, true, 308.0, 150.0, NONE);
+    e.handle(InputEvent::PointerMove {
+        at: ScreenPt::new(350.0, 350.0),
+        mods: NONE,
+    });
+    assert!(e.preview()[0].bindings[0].is_none());
+    e.handle(InputEvent::Key {
+        key: Key::Escape,
+        mods: NONE,
+    });
+    assert!(e.preview().is_empty());
+    assert_eq!(e.document.get(arrow.id()).unwrap().kind, arrow.kind);
+    assert_eq!(e.document.get(arrow.id()).unwrap().bindings, arrow.bindings);
+}
+
+#[test]
+fn direct_endpoint_drag_ctrl_detaches_and_release_keeps_normal_delete() {
+    let mut e = scene();
+    let arrow = e.document.elements()[1].id();
+    event(&mut e, true, 308.0, 150.0, NONE);
+    e.handle(InputEvent::Modifiers(Modifiers { ctrl: true, ..NONE }));
+    assert!(e.preview()[0].bindings[0].is_none());
+    event(
+        &mut e,
+        false,
+        308.0,
+        150.0,
+        Modifiers { ctrl: true, ..NONE },
+    );
+    assert!(e.document.get(arrow).unwrap().bindings[0].is_none());
+    assert!(e.editable_points().is_none());
+    e.handle(InputEvent::Key {
+        key: Key::Delete,
+        mods: NONE,
+    });
+    assert!(e.document.get(arrow).is_none());
+    undo(&mut e);
+    undo(&mut e);
+    assert!(e.document.get(arrow).unwrap().bindings[0].is_some());
+}

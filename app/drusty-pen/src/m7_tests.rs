@@ -155,3 +155,23 @@ fn vertical_alignment_controls_style_the_bound_text_and_the_active_edit() {
         pen_core::VerticalAlign::Bottom
     );
 }
+
+#[test]
+fn placed_arrow_rebinds_by_dragging_its_visible_endpoint() {
+    let mut rt = app();
+    key(&mut rt, "r");
+    drag(&mut rt, (300.0, 200.0), (480.0, 300.0));
+    key(&mut rt, "r");
+    drag(&mut rt, (700.0, 400.0), (880.0, 500.0));
+    key(&mut rt, "a");
+    drag(&mut rt, (488.0, 250.0), (600.0, 250.0));
+    let arrow = rt.state.editor.document().elements()[2].clone();
+    let target = rt.state.editor.document().elements()[1].id();
+    key(&mut rt, "v");
+    // Select the placed arrow, then use its endpoint without entering point-edit mode.
+    click(&mut rt, 550.0, 250.0);
+    drag(&mut rt, (600.0, 250.0), (692.0, 450.0));
+    let after = rt.state.editor.document().get(arrow.id()).unwrap();
+    assert_eq!(after.bindings[1].unwrap().element, target);
+    assert_eq!(after.bindings[0], arrow.bindings[0]);
+}
