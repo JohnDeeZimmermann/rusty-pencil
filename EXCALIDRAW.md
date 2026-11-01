@@ -4,7 +4,7 @@ Everything Excalidraw does locally. Left out on purpose: live collaboration, sha
 Excalidraw+ cloud, the public library browser, web embeds and AI features ("magic frame",
 text-to-diagram).
 
-Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it works in the app.
+Tags say which milestone ships the item: `M1` … `M10`. Tick the box when it works in the app.
 
 ## Tools
 
@@ -155,3 +155,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Add selection to personal library — M9
 - [x] Drag library items onto the canvas — M9
 - [x] Import / export library files — M9
+
+## Web build
+
+- [ ] Runs in a WebGPU browser as a static WebAssembly page — M10
+- [ ] Autosave, workspace, preferences and library persist in browser storage — M10
+- [ ] Open files from disk, save and export as downloads, drag-and-drop files — M10
