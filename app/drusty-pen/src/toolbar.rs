@@ -24,7 +24,7 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
     );
     col()
         .key("toolbar")
-        .pin(Some(0.0), Some(d::S4), Some(0.0), None)
+        .pin(Some(0.0), Some(d::CHROME_TOP), Some(0.0), None)
         .items_center()
         .gap(d::S3)
         .child(island

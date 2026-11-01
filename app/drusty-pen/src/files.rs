@@ -13,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(crate) struct Files {
     pub(crate) path: Option<PathBuf>,
     pub(crate) recovery: Option<PathBuf>,
@@ -21,6 +21,24 @@ pub(crate) struct Files {
     deadline: Option<f64>,
     pub(crate) status: Status,
     confirm_reset: bool,
+    pub(crate) dirty: bool,
+    pub(crate) untitled: String,
+    pub(crate) label: rune::LiveText,
+}
+impl Default for Files {
+    fn default() -> Self {
+        Self {
+            path: None,
+            recovery: None,
+            pending: false,
+            deadline: None,
+            status: Status::default(),
+            confirm_reset: false,
+            dirty: false,
+            untitled: "Untitled 1".into(),
+            label: rune::LiveText::new("Untitled 1"),
+        }
+    }
 }
 #[derive(Debug)]
 pub(crate) struct Status(rune::LiveText);
@@ -36,6 +54,25 @@ impl Status {
 }
 
 impl Files {
+    pub(crate) fn title(&self) -> String {
+        self.path
+            .as_deref()
+            .map_or_else(|| self.untitled.clone(), name)
+    }
+    pub(crate) fn refresh_label(&self) {
+        self.label.set(format!(
+            "{}{}",
+            if self.dirty { "•  " } else { "" },
+            self.title()
+        ));
+    }
+    pub(crate) fn mark_dirty(&mut self) {
+        if !self.dirty {
+            self.dirty = true;
+            self.refresh_label();
+        }
+    }
+
     pub(crate) fn changed(&mut self, tx: &mut Tx) {
         self.pending = true;
         self.deadline = None;
@@ -46,18 +83,7 @@ impl Files {
 
 impl State {
     pub(crate) fn snapshot(&self) -> SceneFile {
-        let mut scene = SceneFile::new(
-            self.editor.document(),
-            AppState {
-                settings: self.editor.settings(),
-                scroll: self.editor.camera().scroll(),
-                zoom: self.editor.camera().zoom(),
-                style: self.editor.style(),
-                font: self.editor.text_defaults().0,
-                font_size: self.editor.text_defaults().1,
-                text_align: self.editor.text_defaults().2,
-            },
-        );
+        let mut scene = crate::workspace::snapshot(&self.editor);
         if let Some(session) = self.editor.text_session() {
             let element = &session.element;
             let empty = matches!(&element.kind, pen_core::Kind::Text { content, .. } if content.trim().is_empty());
@@ -95,10 +121,20 @@ impl State {
             })
             .map(|p| p.join("autosave.drusty-pen"));
         self.files.status.set("Local canvas");
-        if let Some(path) = self.files.recovery.clone().filter(|p| p.exists()) {
+        self.tabs.workspace = self
+            .files
+            .recovery
+            .as_ref()
+            .and_then(|p| p.parent())
+            .map(|p| p.join("workspace.json"));
+        let restored_workspace = self.restore_workspace();
+        if !restored_workspace
+            && let Some(path) = self.files.recovery.clone().filter(|p| p.exists())
+        {
             match read(&path) {
                 Ok(scene) => {
                     self.install(&scene);
+                    self.files.mark_dirty();
                     self.files.status.set("Restored last canvas");
                 }
                 Err(error) => self.files.status.set(format!("Could not restore: {error}")),
@@ -109,17 +145,11 @@ impl State {
             .position(|a| a == "--open")
             .and_then(|i| args.get(i + 1))
         {
-            match read(Path::new(path)) {
-                Ok(scene) => {
-                    self.install(&scene);
-                    self.files.path = Some(path.into());
-                }
-                Err(error) => self.files.status.set(format!("Could not open: {error}")),
-            }
+            self.open_path(Path::new(path), &mut Tx::default());
         }
     }
 
-    fn install(&mut self, scene_file: &SceneFile) {
+    pub(crate) fn install(&mut self, scene_file: &SceneFile) {
         let Ok(doc) = scene_file.document() else {
             return;
         };
@@ -142,62 +172,118 @@ impl State {
         self.editor
             .restore_text_defaults(app.font, app.font_size, app.text_align);
         self.scene = scene::Scene::default();
-        self.text_edit = rune::TextEdit::default();
-        self.camera.show(self.editor.camera());
-        self.grid.show(self.editor.camera());
-        crate::properties::sync(self);
-        self.overlay.show(&self.editor);
-        self.show_feedback();
-        self.content_button.set(if self.editor.content_offscreen() {
-            1.0
-        } else {
-            0.0
-        });
+        self.refresh_canvas();
     }
 
     pub(crate) fn open_path(&mut self, path: &Path, tx: &mut Tx) {
-        match read(path) {
+        if self.tabs.closing.is_some() {
+            return;
+        }
+        let path = identity(path);
+        if let Some(id) = self.tabs.entries.iter().find_map(|t| {
+            let files = t.parked.as_ref().map_or(&self.files, |c| &c.files);
+            (files.path.as_deref() == Some(path.as_path())).then_some(t.id)
+        }) {
+            self.switch_tab(id, tx);
+            return;
+        }
+        match read(&path) {
             Ok(scene) => {
+                self.new_tab(tx);
                 self.install(&scene);
                 self.files.path = Some(path.to_owned());
+                self.files.dirty = false;
+                self.files.refresh_label();
                 self.files.changed(tx);
+                self.autosave();
                 self.files.status.set(if scene.skipped_elements > 0 {
                     format!(
                         "Opened {} · skipped {} unsupported elements",
-                        name(path),
+                        name(&path),
                         scene.skipped_elements
                     )
                 } else if scene.dropped_bindings > 0 {
                     format!(
                         "Opened {} · dropped {} invalid bindings",
-                        name(path),
+                        name(&path),
                         scene.dropped_bindings
                     )
                 } else {
-                    format!("Opened {}", name(path))
+                    format!("Opened {}", name(&path))
                 });
             }
             Err(error) => self.files.status.set(format!("Could not open: {error}")),
         }
     }
 
-    fn save_path(&mut self, path: &Path) {
-        match write(path, &self.snapshot()) {
+    fn save_tab_path(&mut self, id: crate::tabs::TabId, path: &Path, tx: &mut Tx) {
+        let path = identity(path);
+        if self.tabs.entries.iter().any(|t| {
+            let files = t.parked.as_ref().map_or(&self.files, |c| &c.files);
+            t.id != id && files.path.as_deref() == Some(path.as_path())
+        }) {
+            self.files
+                .status
+                .set("This file is already open in another tab");
+            return;
+        }
+        let snapshot = if id == self.tabs.active {
+            self.snapshot()
+        } else if let Some(c) = self
+            .tabs
+            .entries
+            .iter()
+            .find(|t| t.id == id)
+            .and_then(|t| t.parked.as_ref())
+        {
+            crate::workspace::snapshot(&c.editor)
+        } else {
+            return;
+        };
+        match write(&path, &snapshot) {
             Ok(()) => {
-                self.files.path = Some(path.to_owned());
-                self.files.status.set(format!("Saved {}", name(path)));
+                let files = if id == self.tabs.active {
+                    &mut self.files
+                } else if let Some(c) = self
+                    .tabs
+                    .entries
+                    .iter_mut()
+                    .find(|t| t.id == id)
+                    .and_then(|t| t.parked.as_mut())
+                {
+                    &mut c.files
+                } else {
+                    return;
+                };
+                files.path = Some(path.to_owned());
+                files.dirty = false;
+                files.refresh_label();
+                files.status.set(format!("Saved {}", name(&path)));
+                if let Some(recovery) = &files.recovery {
+                    match write(recovery, &snapshot) {
+                        Ok(()) => files.pending = false,
+                        Err(error) => files
+                            .status
+                            .set(format!("File saved; could not update recovery: {error}")),
+                    }
+                }
+                self.persist_workspace();
+                if self.tabs.closing == Some(id) {
+                    self.close_tab(id, tx);
+                }
             }
             Err(error) => self.files.status.set(format!("Could not save: {error}")),
         }
     }
 
-    fn save_dialog(&mut self, save_as: bool, tx: &mut Tx) {
+    pub(crate) fn save_dialog(&mut self, save_as: bool, tx: &mut Tx) {
         if self.editor.text_session().is_some() {
             self.sync_text(tx);
             self.input(InputEvent::FinishText, tx);
         }
+        let id = self.tabs.active;
         if !save_as && let Some(path) = self.files.path.clone() {
-            self.save_path(&path);
+            self.save_tab_path(id, &path, tx);
             return;
         }
         let options = FileDialogOptions {
@@ -217,9 +303,11 @@ impl State {
             ..Default::default()
         }
         .filter("drusty-pen scene", &["drusty-pen", "json", "excalidraw"]);
-        tx.save_file(options, |s: &mut State, result, _| match result {
-            Ok(Some(path)) => s.save_path(&path),
-            Ok(None) => {}
+        tx.save_file(options, move |s: &mut State, result, tx| match result {
+            Ok(Some(path)) => s.save_tab_path(id, &path, tx),
+            Ok(None) => {
+                s.tabs.closing = None;
+            }
             Err(e) => s.files.status.set(format!("Could not save: {e}")),
         });
     }
@@ -243,7 +331,10 @@ impl State {
         );
     }
 
-    fn autosave(&mut self) -> bool {
+    pub(crate) fn autosave(&mut self) -> bool {
+        if !self.files.pending {
+            return false;
+        }
         let Some(path) = &self.files.recovery else {
             self.files.pending = false;
             return false;
@@ -257,6 +348,7 @@ impl State {
                         || "Saved locally".into(),
                         |p| format!("{} · saved locally", name(p)),
                     ));
+                self.persist_workspace();
             }
             Err(error) => {
                 // Keep the pending scene so closing can retry. Avoid a hot retry loop.
@@ -269,27 +361,44 @@ impl State {
     }
 }
 
-fn name(path: &Path) -> String {
+fn identity(path: &Path) -> PathBuf {
+    path.canonicalize().unwrap_or_else(|_| {
+        let parent = path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        match (parent.canonicalize(), path.file_name()) {
+            (Ok(parent), Some(name)) => parent.join(name),
+            _ => path.to_owned(),
+        }
+    })
+}
+
+pub(crate) fn name(path: &Path) -> String {
     path.file_name()
         .unwrap_or(path.as_os_str())
         .to_string_lossy()
         .into_owned()
 }
 
-fn read(path: &Path) -> Result<SceneFile, String> {
+pub(crate) fn read(path: &Path) -> Result<SceneFile, String> {
     let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
     file::load(&bytes).map_err(|e| e.to_string())
 }
 
-fn write(path: &Path, scene: &SceneFile) -> Result<(), String> {
+pub(crate) fn write(path: &Path, scene: &SceneFile) -> Result<(), String> {
     let bytes = file::save(scene).map_err(|e| e.to_string())?;
+    atomic_write(path, &bytes)
+}
+
+pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
     std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
-    temp.write_all(&bytes).map_err(|e| e.to_string())?;
+    temp.write_all(bytes).map_err(|e| e.to_string())?;
     temp.as_file().sync_all().map_err(|e| e.to_string())?;
     temp.persist(path).map_err(|e| e.to_string())?;
     Ok(())
@@ -323,6 +432,21 @@ pub(crate) fn close(s: &mut State, tx: &mut Tx) {
     if s.files.pending {
         s.autosave();
     }
+    for tab in &mut s.tabs.entries {
+        if let Some(canvas) = &mut tab.parked
+            && canvas.files.pending
+            && let Some(path) = &canvas.files.recovery
+        {
+            match write(path, &crate::workspace::snapshot(&canvas.editor)) {
+                Ok(()) => canvas.files.pending = false,
+                Err(error) => s.files.status.set(format!(
+                    "Could not autosave {}: {error}",
+                    canvas.files.title()
+                )),
+            }
+        }
+    }
+    s.persist_workspace();
 }
 
 pub(crate) fn key(s: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
@@ -363,6 +487,10 @@ pub(crate) fn menu(s: &State) -> El {
     let dark = s.editor.settings().dark;
     col()
         .w_full()
+        .child(
+            menu_action("New tab", "new-canvas-tab", "Ctrl+T", dark)
+                .on_press_tx(|s: &mut State, tx| s.new_tab(tx)),
+        )
         .gap(d::S1)
         .child(
             menu_action("Open", "open-file", "Ctrl+O", dark).on_press_tx(|s: &mut State, tx| {
@@ -419,7 +547,7 @@ fn menu_action(label: &str, key: &str, shortcut: &str, dark: bool) -> El {
         )
 }
 
-fn button(label: &str, key: &str, dark: bool) -> El {
+pub(crate) fn button(label: &str, key: &str, dark: bool) -> El {
     el().key(key)
         .h(d::BUTTON)
         .padding(d::S3)
@@ -447,7 +575,7 @@ pub(crate) fn confirmation(s: &State) -> El {
                     let camera = Camera::centred_on(WorldPt::ORIGIN, s.editor.viewport(), 1.0);
                     let scene = SceneFile::new(&Document::new(), AppState { scroll: camera.scroll(), ..AppState::default() });
                     s.install(&scene);
-                    s.files.path = None; s.files.confirm_reset = false; s.files.changed(tx); s.autosave();
+                    s.files.path = None; s.files.mark_dirty(); s.files.refresh_label(); s.files.confirm_reset = false; s.files.changed(tx); s.autosave();
                 }))))
 }
 

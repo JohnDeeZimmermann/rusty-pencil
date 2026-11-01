@@ -1,0 +1,138 @@
+[
+  {
+    "t": 0.1,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 0.2,
+    "type": "click",
+    "x": 300,
+    "y": 215
+  },
+  {
+    "t": 0.3,
+    "type": "type",
+    "text": "A little room to think",
+    "every": 0.012
+  },
+  {
+    "t": 0.8,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 1,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 1.1,
+    "type": "click",
+    "key": "Background-color-1"
+  },
+  {
+    "t": 1.3,
+    "type": "drag",
+    "x": 320,
+    "y": 330,
+    "dx": 185,
+    "dy": 125,
+    "dur": 0.25
+  },
+  {
+    "t": 1.8,
+    "type": "key",
+    "name": "o"
+  },
+  {
+    "t": 1.9,
+    "type": "click",
+    "key": "Background-color-3"
+  },
+  {
+    "t": 2.1,
+    "type": "drag",
+    "x": 650,
+    "y": 330,
+    "dx": 185,
+    "dy": 125,
+    "dur": 0.25
+  },
+  {
+    "t": 2.6,
+    "type": "key",
+    "name": "a"
+  },
+  {
+    "t": 2.8,
+    "type": "drag",
+    "x": 510,
+    "y": 390,
+    "dx": 135,
+    "dy": 0,
+    "dur": 0.25
+  },
+  {
+    "t": 3.3,
+    "type": "click",
+    "key": "new-tab"
+  },
+  {
+    "t": 3.5,
+    "type": "key",
+    "name": "d"
+  },
+  {
+    "t": 3.7,
+    "type": "drag",
+    "x": 400,
+    "y": 300,
+    "dx": 170,
+    "dy": 150,
+    "dur": 0.25
+  },
+  {
+    "t": 4.2,
+    "type": "click",
+    "key": "new-tab"
+  },
+  {
+    "t": 4.4,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 4.6,
+    "type": "click",
+    "x": 350,
+    "y": 300
+  },
+  {
+    "t": 4.8,
+    "type": "type",
+    "text": "Another canvas. Another idea.",
+    "every": 0.01
+  },
+  {
+    "t": 5.4,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 5.7,
+    "type": "click",
+    "key": "select-tab-1"
+  },
+  {
+    "t": 5.9,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 6.1,
+    "type": "move",
+    "x": 900,
+    "y": 610
+  }
+]

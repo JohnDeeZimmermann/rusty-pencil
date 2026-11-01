@@ -19,12 +19,22 @@ cycles outline sloppiness. Undo uses Ctrl+Z
 
 ## Keep your canvas
 
-The top-left File menu contains Open, Save, Export and Reset canvas. Save with Ctrl+S, Save as with
-Ctrl+Shift+S, and open with Ctrl+O. Scene files are versioned
-JSON with the `.drusty-pen` extension; dropping one on the window opens it. Autosave keeps a
-separate recovery scene in your platform's local application data directory and restores it
-on the next launch. Reset canvas asks for confirmation; save a named copy before resetting
-if you want to retain the current work.
+Use **+**, File → New tab, Ctrl+T or Ctrl+N to open another canvas. Each tab keeps its own
+undo history, selection, camera, tools and settings. Click a tab to switch; Ctrl+Tab and
+Ctrl+Shift+Tab cycle through them. Ctrl+1…8 selects a tab by position, and Ctrl+9 selects the
+last tab. Use Cmd for command shortcuts on macOS (Ctrl+Tab also works there).
+
+The top-left File menu contains Open, Save, Export and Reset canvas. Save the active tab with
+Ctrl+S, use Ctrl+Shift+S for Save as, and open with Ctrl+O. Opening or dropping scene files
+creates tabs; opening a file already in a tab focuses it. Scene files are versioned JSON
+with the `.drusty-pen` extension. A dot beside a tab name means it has changes to save to a
+file. Closing with **×** or Ctrl+W offers Save, Discard and Cancel when needed. Closing the
+last tab leaves a fresh canvas.
+
+Autosave keeps a separate recovery scene for each tab and an atomic workspace manifest in
+your platform's local application data directory. On launch, open tabs, their file paths and
+the active tab are restored, including unsaved work. Recovery does not overwrite named
+files. Reset canvas only clears the active tab and asks for confirmation first.
 
 ## Style and view
 
@@ -46,6 +56,8 @@ For isolated checks, use `cargo run -p drusty-pen -- --snap snaps/m5.png --scale
 --script app/drusty-pen/scripts/m5-properties.json --at 19.5`. Substitute `m5-dark.json` for dark
 mode and grid coverage. Snapshots do not read or write normal recovery. Add `--data-dir PATH`
 to test recovery in a separate directory, or `--open PATH` to load a scene directly.
+Use `tabs.json` under the same script directory with `--at 6.5` to check three
+independent canvases and the tab bar.
 
 ## Images and export
 

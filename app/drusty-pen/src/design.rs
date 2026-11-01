@@ -53,7 +53,7 @@ pub(crate) const SELECTION_WASH: Srgba = Srgba { a: 24, ..ON_ACCENT };
 pub(crate) const R_HANDLE: f32 = 2.0;
 
 // M4 inspector, file status, and confirmation surfaces.
-pub(crate) const INSPECTOR_TOP: f32 = 128.0;
+pub(crate) const INSPECTOR_TOP: f32 = 128.0 + TAB_BAR_HEIGHT;
 /// Inner column is 192 pt: six 28 pt swatches with 4 pt gaps fit exactly.
 pub(crate) const INSPECTOR_WIDTH: f32 = INSPECTOR_INNER + S3 * 2.0;
 pub(crate) const INSPECTOR_INNER: f32 = 192.0;
@@ -81,7 +81,7 @@ pub(crate) fn kit(dark: bool) -> rune_kit::Kit {
     kit.ty.ui_medium = T_LABEL;
     kit
 }
-pub(crate) const PANEL_HEIGHT_MARGIN: f32 = 220.0;
+pub(crate) const PANEL_HEIGHT_MARGIN: f32 = 220.0 + TAB_BAR_HEIGHT;
 
 // Inspector controls: denser than the toolbar, which stays the primary 44 pt surface.
 /// Segmented-control track height; segments sit inside it with `SEGMENT_INSET`.
@@ -110,6 +110,11 @@ pub(crate) const MENU_HEIGHT: f32 = 436.0;
 pub(crate) const ROTATE_STEM: f32 = 19.0;
 
 // Top-left application menu, separate from the centred drawing toolbar.
-pub(crate) const APP_MENU_TOP: f32 = S4 + CONTROL + PADDING * 2.0 + S2;
+pub(crate) const APP_MENU_TOP: f32 = CHROME_TOP + CONTROL + PADDING * 2.0 + S2;
 pub(crate) const FILE_TAB_WIDTH: f32 = 48.0;
 pub(crate) const PREFERENCES_TAB_WIDTH: f32 = 96.0;
+
+// Document tabs reserve a quiet strip above the floating drawing controls.
+pub(crate) const TAB_BAR_HEIGHT: f32 = 48.0;
+pub(crate) const TAB_WIDTH: f32 = 196.0;
+pub(crate) const CHROME_TOP: f32 = TAB_BAR_HEIGHT + S4;

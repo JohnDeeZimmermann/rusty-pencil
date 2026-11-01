@@ -14,6 +14,9 @@ pen-render.workspace = true
 rune = { workspace = true, features = ["native-file-dialog"] }
 rune-kit = { git = "https://github.com/anomalyco/rune", rev = "791971423cf6614aff061491e1f82e283dfc9f0e" }
 # Rune-kit supplies accessible inspector fields and controls using the pinned GUI revision.
+# Serialize the local workspace manifest without inventing another file format.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 directories = "6"
 tempfile = "3"
 # Decode bounded PNG/JPEG sources into Rune pixel surfaces.

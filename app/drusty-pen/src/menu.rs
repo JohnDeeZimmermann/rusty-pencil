@@ -33,7 +33,7 @@ pub(crate) fn view(s: &State) -> El {
     }
     layer.child(
         d::surface(row().key("app-menu"), d::R_ISLAND, dark)
-            .absolute(d::S4, d::S4)
+            .absolute(d::S4, d::CHROME_TOP)
             .padding(d::PADDING)
             .gap(d::S1)
             .cursor(Cursor::Default)

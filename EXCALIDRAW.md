@@ -139,7 +139,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 - [x] Save / Save as scene file (JSON) — M4
 - [x] Open scene file, also by drag-and-drop onto the window — M4
-- [x] Autosave and restore the last scene on launch — M4
+- [x] Autosave and restore open canvases on launch — M4, multi-tab follow-up
+- [x] Multiple canvas tabs: new, switch, close, independent history and camera — multi-tab follow-up
+- [x] Unsaved tab indicators, Save / Discard / Cancel, workspace recovery — multi-tab follow-up
 - [x] Reset canvas — M4
 - [x] Import `.excalidraw` files — M8
 - [x] Export PNG: scale 1×/2×/3×, background on/off, dark mode, selection only — M8

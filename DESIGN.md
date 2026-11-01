@@ -78,10 +78,16 @@ Outline sloppiness uses a small stroke icon after the toolbar's tools. Clicking 
 Architect, Artist and Cartoonist for the selection or future shapes. Its tooltip identifies
 the current style, keeping outline styling available without an always-open sidebar.
 
-A compact File / Preferences menu bar sits 16 pt from the top-left corner, beside the
+A 48-point document strip sits at the top edge. Tabs are 196 × 32 pt with 8-point corners;
+the active tab uses the pale teal wash, inactive labels use muted ink. Each has a close
+button and a live unsaved dot; long names fade, with the full path in a tooltip. The strip
+scrolls horizontally and brings the active tab into view. A fixed plus button stays accessible
+at the right edge. Switching tabs lands immediately, including the canvas and selection.
+
+A compact File / Preferences menu bar sits 16 pt below the document strip, beside the
 centred drawing toolbar. Its dropdowns use the same paper surfaces, teal active state and
-compact controls as the inspector. File contains Open, Save and Reset canvas, with shortcut
-hints and a divider before Reset. Reset opens a compact confirmation modal. Muted file
+compact controls as the inspector. File contains New tab, Open, Save, Export and Reset canvas,
+with shortcut hints and a divider before Reset. Reset opens a compact confirmation modal. Muted file
 status remains at the bottom right in a fixed live-text box so camera updates stay live-only.
 An open menu temporarily replaces the shape inspector in the left column, keeping their
 surfaces from overlapping. Closing the menu restores the inspector in place with the current

@@ -76,7 +76,7 @@ impl Scene {
         self.parts.iter().all(|p| p.empty)
     }
 
-    pub(crate) fn view(&self) -> El {
+    pub(crate) fn view(&self, canvas: crate::tabs::TabId) -> El {
         self.parts.iter().enumerate().fold(
             el().key("scene-parts").absolute(0.0, 0.0).size(0.0, 0.0),
             |node, (i, part)| {
@@ -89,7 +89,12 @@ impl Scene {
                         .pixel_snap(false)
                         .child(memo(
                             format!("scene-paint-{i}"),
-                            (part.revision, self.settings.dark, self.settings.canvas),
+                            (
+                                canvas,
+                                part.revision,
+                                self.settings.dark,
+                                self.settings.canvas,
+                            ),
                             || part.node.clone(),
                         )),
                 )

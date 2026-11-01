@@ -18,8 +18,10 @@ mod present;
 mod properties;
 mod property_icons;
 mod scene;
+mod tabs;
 mod text;
 mod toolbar;
+mod workspace;
 
 use pen_core::{WorldPt, WorldRect};
 use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenVec};
@@ -35,6 +37,7 @@ struct State {
     export: export::Panel,
     context: Option<pen_editor::ScreenPt>,
     menu: Option<menu::Section>,
+    tabs: tabs::Tabs,
     editor: Editor,
     text_edit: rune::TextEdit,
     hex: [rune::TextEdit; 3],
@@ -58,6 +61,7 @@ impl State {
             export: export::Panel::default(),
             context: None,
             menu: None,
+            tabs: tabs::Tabs::default(),
             editor: Editor::new(camera),
             text_edit: rune::TextEdit::default(),
             hex: [
@@ -156,6 +160,14 @@ impl State {
         self.text_session_changed(old_text);
         if refresh_properties {
             properties::sync(self);
+        }
+        if self.editor.document().revision() != revision
+            || self.editor.style() != style
+            || self.editor.text_defaults() != text_defaults
+            || self.editor.settings() != settings
+            || text_changed
+        {
+            self.files.mark_dirty();
         }
         if self.editor.document().revision() != revision
             || *self.editor.camera() != camera
@@ -268,7 +280,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         // edges; draw them at their exact sub-pixel positions on every frame instead.
         .pixel_snap(false)
         // Rigid selection previews move retained paint through live offsets.
-        .child(s.scene.view())
+        .child(s.scene.view(s.tabs.active))
         .child(layer(s.draft.clone(), s.draft_bounds, "draft"))
         .child(text::editor(s));
 
@@ -306,7 +318,9 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
             .child(properties::panel(s))
             .child(files::controls(s))
             .child(menu::view(s))
+            .child(tabs::view(s))
             .child(files::confirmation(s))
+            .child(tabs::confirmation(s))
             .child(export::view(s))
             .child(arrange::menu(s)),
     )
@@ -314,6 +328,9 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
 
 /// Keys no focused control took. Tool shortcuts, Escape, and modifier changes mid-drag.
 fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    if tabs::key(s, ev, tx) {
+        return true;
+    }
     if ev.key == Key::Escape && s.menu.take().is_some() {
         tx.blur();
         return true;

@@ -24,4 +24,20 @@
 4. [ ] Snapping: spatial index (evaluate `rstar`) shared with hit testing once scenes grow past
        ~1 000 elements.
 
+## Multi-tab follow-up (user-requested priority)
+
+- [x] Add a tab strip with new/close controls, overflow scrolling and keyboard navigation.
+- [x] Keep document, history, selection, camera and drawing defaults independent per tab.
+- [x] Open files in new tabs and focus files already open; bind save dialogs to their tab.
+- [x] Show unsaved changes and offer Save, Discard and Cancel when closing.
+- [x] Recover all open canvases, file paths and the active tab across restarts.
+- [x] Exercise real input, dialog callbacks and recovery through headless app tests.
+- [x] Review light/dark screenshots and the unsaved-tab close prompt.
+
 ## Notes
+
+Multi-tab work was explicitly prioritized before the remaining M9 tools. Inactive tabs own
+their editor and retained scene; switching moves that state without cloning documents.
+Recovery uses per-tab scene files plus an atomic JSON manifest. Existing single-canvas
+recovery migrates on first use. `serde` and `serde_json`, already in the workspace dependency
+graph, serialize the manifest instead of maintaining a custom metadata parser.

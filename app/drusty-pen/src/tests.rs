@@ -243,7 +243,11 @@ fn a_drag_starting_on_the_toolbar_draws_nothing() {
 fn a_drag_starting_beside_the_toolbar_still_draws() {
     let mut rt = app();
     // The toolbar row spans the window's width; only the island blocks the canvas.
-    drag(&mut rt, (960.0, 30.0), (1000.0, 130.0));
+    drag(
+        &mut rt,
+        (960.0, 30.0 + design::TAB_BAR_HEIGHT),
+        (1000.0, 130.0 + design::TAB_BAR_HEIGHT),
+    );
     assert_eq!(kinds(&rt).len(), 1);
 }
 
