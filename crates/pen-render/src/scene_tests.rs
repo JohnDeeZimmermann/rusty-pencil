@@ -11,6 +11,7 @@ fn document() -> Document {
             20.0,
         ));
         let props = Props {
+            roughness: pen_core::Roughness::Architect,
             background: Some(Srgba::rgb(0xff_0000 >> (i * 8))),
             ..Props::default()
         };
@@ -33,8 +34,21 @@ fn composed(scene: &Scene) -> Vec<Prim> {
     scene
         .parts()
         .iter()
-        .flat_map(ScenePart::prims)
-        .cloned()
+        .flat_map(|part| {
+            part.prims().iter().cloned().map(|mut prim| {
+                let delta = part.offset();
+                match &mut prim {
+                    Prim::Text { bounds, .. } => *bounds = bounds.translated(delta.x, delta.y),
+                    Prim::Fill { points, .. } | Prim::Stroke { points, .. } => {
+                        for p in points {
+                            p.x += delta.x;
+                            p.y += delta.y;
+                        }
+                    }
+                }
+                prim
+            })
+        })
         .collect()
 }
 
@@ -61,7 +75,8 @@ fn pointer_updates_keep_static_part_revisions_and_paint() {
     scene.update(&doc, &[moved]);
     assert_eq!(scene.parts()[0].revision(), revisions[0]);
     assert_eq!(scene.parts()[2].revision(), revisions[2]);
-    assert!(scene.parts()[1].revision() > revisions[1]);
+    assert_eq!(scene.parts()[1].revision(), revisions[1]);
+    assert_eq!(scene.parts()[1].offset(), WorldPt::new(5.0, 10.0));
     assert_eq!(scene.parts()[0].prims(), static_paint);
 }
 
@@ -106,4 +121,69 @@ fn commit_undo_and_removal_refresh_without_manual_invalidation() {
         .expect("remove");
     scene.update(&doc, &[]);
     assert_eq!(composed(&scene), paint(doc.elements()));
+}
+
+#[test]
+fn deforming_one_preview_rebuilds_only_its_paint_and_resets_its_offset() {
+    let doc = document();
+    let mut scene = Scene::default();
+    let mut previews = doc.elements()[..2].to_vec();
+    scene.update(&doc, &previews);
+    let revisions: Vec<_> = scene.parts().iter().map(ScenePart::revision).collect();
+    for e in &mut previews {
+        *e = e.with_bounds(e.kind.bounds().translated(10.0, 20.0));
+    }
+    scene.update(&doc, &previews);
+    assert_eq!(
+        scene
+            .parts()
+            .iter()
+            .map(ScenePart::revision)
+            .collect::<Vec<_>>(),
+        revisions
+    );
+    let bounds = previews[1].kind.bounds();
+    previews[1] = previews[1].with_bounds(WorldRect::from_centre(bounds.centre(), 40.0, 30.0));
+    scene.update(&doc, &previews);
+    assert_eq!(scene.parts()[1].revision(), revisions[1]);
+    assert!(scene.parts()[3].revision() > revisions[3]);
+    assert_eq!(scene.parts()[3].offset(), WorldPt::ORIGIN);
+    let mut expected = doc.elements().to_vec();
+    expected[..2].clone_from_slice(&previews);
+    assert_eq!(composed(&scene), paint(&expected));
+}
+
+#[test]
+fn moving_hatched_shapes_keeps_the_pattern_attached_after_commit() {
+    let mut doc = document();
+    let mut element = doc.elements()[0].clone();
+    element.props.fill = pen_core::FillStyle::CrossHatch;
+    element.props.roughness = pen_core::Roughness::Artist;
+    doc.apply(Command::Patch {
+        id: element.id(),
+        before: doc.elements()[0].clone(),
+        after: element.clone(),
+    })
+    .expect("patch");
+    let mut scene = Scene::default();
+    let after = element.with_bounds(element.kind.bounds().translated(17.25, -9.5));
+    scene.update(&doc, std::slice::from_ref(&after));
+    let mut expected = doc.elements().to_vec();
+    expected[0] = after;
+    let actual = composed(&scene);
+    let expected = paint(&expected);
+    assert_eq!(actual.len(), expected.len());
+    for (a, b) in actual.iter().zip(&expected) {
+        match (a, b) {
+            (Prim::Stroke { points: a, .. }, Prim::Stroke { points: b, .. }) => {
+                assert_eq!(a.len(), b.len());
+                assert!(
+                    a.iter()
+                        .zip(b)
+                        .all(|(a, b)| (a.x - b.x).abs() < 0.001 && (a.y - b.y).abs() < 0.001)
+                );
+            }
+            _ => assert_eq!(a, b),
+        }
+    }
 }

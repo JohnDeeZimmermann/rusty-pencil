@@ -51,6 +51,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Drag a box to select overlapping elements, including partially enclosed paths — M2
 - [x] Select all (Ctrl+A) — M2
 - [x] Move by dragging; arrow keys nudge 1 px, Shift+arrow 10 px — M2
+- [x] Rigid multiselect drags retain geometry and update live transforms, including bound arrows/text — M7 follow-up
 - [x] Resize with 8 handles; Shift keeps aspect ratio; Alt resizes from centre — M2
 - [x] Rotate with the handle; Shift snaps to 15° — M6
 - [x] Multi-element resize and rotate — M6

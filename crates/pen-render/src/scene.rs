@@ -1,6 +1,6 @@
 //! Cached document paint and live replacements, composed in document z-order.
 use crate::{DrawList, Prim, SceneCache, draw_element};
-use pen_core::{Document, Element, ElementId};
+use pen_core::{Document, Element, ElementId, WorldPt};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A contiguous portion of scene paint. Its revision changes only when its paint changes;
@@ -9,12 +9,19 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct ScenePart {
     revision: u64,
     paint: DrawList,
+    snapshot: Option<Element>,
+    offset: WorldPt,
 }
 
 impl ScenePart {
     #[must_use]
     pub fn revision(&self) -> u64 {
         self.revision
+    }
+    /// World-point translation applied to the retained paint by the backend.
+    #[must_use]
+    pub fn offset(&self) -> WorldPt {
+        self.offset
     }
     #[must_use]
     pub fn prims(&self) -> &[Prim] {
@@ -37,7 +44,7 @@ pub struct Scene {
 impl Scene {
     /// Previews replace committed elements at their original z-position. A change to the
     /// document or preview membership rebuilds static partitions; pointer updates repaint
-    /// only previews. Unknown preview ids are ignored.
+    /// only deformed previews; rigid previews update offsets without repainting.
     pub fn update(&mut self, doc: &Document, preview: &[Element]) {
         let changed = self.document_revision != Some(doc.revision());
         if changed {
@@ -54,11 +61,22 @@ impl Scene {
         }
         for element in preview {
             if let Some(at) = self.preview_parts.get(&element.id()).copied() {
+                let part = &mut self.parts[at];
+                if let Some(offset) = part
+                    .snapshot
+                    .as_ref()
+                    .and_then(|before| crate::translation::translation(before, element))
+                {
+                    part.offset = offset;
+                    continue;
+                }
                 self.revision = self.revision.wrapping_add(1);
                 let part = &mut self.parts[at];
                 part.paint.clear();
                 draw_element(element, &mut part.paint);
                 part.revision = self.revision;
+                part.snapshot = Some(element.clone());
+                part.offset = WorldPt::ORIGIN;
             }
         }
     }
@@ -80,7 +98,16 @@ impl Scene {
             if ids.contains(&element.id()) {
                 self.push_part(std::mem::take(&mut paint));
                 self.preview_parts.insert(element.id(), self.parts.len());
-                self.push_part(DrawList::new());
+                let mut retained = DrawList::new();
+                if let Some(prims) = self.cache.element_prims(element.id()) {
+                    for prim in prims {
+                        retained.push(prim.clone());
+                    }
+                }
+                self.push_part(retained);
+                if let Some(part) = self.parts.last_mut() {
+                    part.snapshot = Some(element.clone());
+                }
             } else if let Some(prims) = self.cache.element_prims(element.id()) {
                 for prim in prims {
                     paint.push(prim.clone());
@@ -99,6 +126,8 @@ impl Scene {
         self.parts.push(ScenePart {
             revision: self.revision,
             paint,
+            snapshot: None,
+            offset: WorldPt::ORIGIN,
         });
     }
 }

@@ -158,7 +158,7 @@ impl State {
             self.camera.show(self.editor.camera());
             self.grid.show(self.editor.camera());
         }
-        self.overlay.show(&self.editor);
+        let overlay_changed = self.overlay.show(&self.editor);
         self.content_button.set(if self.editor.content_offscreen() {
             1.0
         } else {
@@ -168,13 +168,25 @@ impl State {
             // Only live values changed: no view rebuild, no layout.
             Redraw::Nothing | Redraw::Camera if !context_closed => tx.live_only(),
             Redraw::Nothing | Redraw::Camera => {}
-            Redraw::Draft | Redraw::Tool | Redraw::Scene => self.show_feedback(),
+            Redraw::Draft | Redraw::Tool | Redraw::Scene => {
+                let scene_changed = self.show_feedback();
+                if redraw == Redraw::Draft
+                    && !scene_changed
+                    && !overlay_changed
+                    && !refresh_properties
+                    && !context_closed
+                    && self.editor.draft().is_none()
+                    && self.editor.text_session().is_none()
+                {
+                    tx.live_only();
+                }
+            }
         }
         redraw
     }
 
-    fn show_feedback(&mut self) {
-        self.scene.show_with_settings(
+    fn show_feedback(&mut self) -> bool {
+        let changed = self.scene.show_with_settings(
             self.editor.document(),
             self.editor.preview(),
             self.editor.settings(),
@@ -191,6 +203,7 @@ impl State {
             self.draft_paint.prims()
         };
         (self.draft, self.draft_bounds) = paint::bounded(prims);
+        changed
     }
 }
 
@@ -242,8 +255,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         // pan or zoom frame and drift back after. Free-form drawings don't need hard pixel
         // edges; draw them at their exact sub-pixel positions on every frame instead.
         .pixel_snap(false)
-        // A drag rebuilds the view on every move; the committed scene is reused unless the
-        // document changed.
+        // Rigid selection previews move retained paint through live offsets.
         .child(s.scene.view())
         .child(layer(s.draft.clone(), s.draft_bounds, "draft"))
         .child(text::editor(s));
@@ -387,3 +399,6 @@ mod tests;
 
 #[cfg(test)]
 mod m5_tests;
+
+#[cfg(test)]
+mod drag_tests;

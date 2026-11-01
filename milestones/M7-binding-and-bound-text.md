@@ -90,3 +90,15 @@
   shortcut. Dragging one previews its new target and commits on release; Ctrl detaches, Escape
   cancels, and undo restores the prior link. The body still moves the arrow and the rotation
   handle remains available. `m7-rebind.json` exercises this through real app input.
+
+- [x] **Multiselect performance follow-up.** Rigid previews retain cached contours, Rune
+  shapes and laid-out text; only live world offsets change after the first drag frame. Arrows
+  that deform still repaint individually in document z-order. Hatch phase follows its shape
+  so releasing a move preserves the pattern. Rune input tests assert no view commits during
+  connected multiselect motion, immediate subpixel presentation, cancellation and one-step
+  undo; renderer tests cover deformation, every element kind and hatch continuity.
+  Release timing harness: `cargo test --release -p drusty-pen multiselect_drag_timing --
+  --ignored --nocapture` (7 elements, 360 pointer+frame samples). Before: mean 0.775 ms,
+  p95 0.844 ms; after: mean 0.214 ms, p95 0.239 ms. These are headless CPU timings, excluding
+  GPU work. `app/drusty-pen/scripts/multiselect-drag.json` reproduces the connected selection
+  and holds a six-second drag for screenshots and rendered traces.

@@ -95,10 +95,17 @@ pub(crate) fn pattern(points: &[WorldPt], closed: bool, dash: f32, gap: f32) -> 
 fn hatch(points: &[WorldPt], color: pen_core::Srgba, cross: bool, out: &mut Vec<Prim>) {
     // Rotate by 45°: clipping a horizontal scanline against the polygon is exact even at
     // rounded corners, and a half-open edge rule avoids duplicate vertex intersections.
+    // Keep the hatch phase attached to the shape, so retained drag paint matches the
+    // committed geometry instead of changing its pattern when the pointer is released.
+    let origin = points.first().copied().unwrap_or_default();
     let sign = if cross { -1.0 } else { 1.0 };
     let k = std::f32::consts::FRAC_1_SQRT_2;
-    let rotate = |p: WorldPt| WorldPt::new((p.x + sign * p.y) * k, (p.y - sign * p.x) * k);
-    let inverse = |x: f32, y: f32| WorldPt::new((x - sign * y) * k, (y + sign * x) * k);
+    let rotate = |p: WorldPt| {
+        let (x, y) = (p.x - origin.x, p.y - origin.y);
+        WorldPt::new((x + sign * y) * k, (y - sign * x) * k)
+    };
+    let inverse =
+        |x: f32, y: f32| WorldPt::new(origin.x + (x - sign * y) * k, origin.y + (y + sign * x) * k);
     let polygon: Vec<_> = points.iter().copied().map(rotate).collect();
     let min = polygon.iter().map(|p| p.y).fold(f32::INFINITY, f32::min);
     let max = polygon

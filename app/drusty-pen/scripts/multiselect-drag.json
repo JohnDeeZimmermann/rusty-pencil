@@ -1,0 +1,22 @@
+[
+  {"t":0.1,"type":"key","name":"q"},
+  {"t":0.3,"type":"key","name":"r"},
+  {"t":0.4,"type":"drag","x":310,"y":300,"dx":80,"dy":80,"dur":0.25},
+  {"t":0.8,"type":"key","name":"r"},
+  {"t":0.9,"type":"drag","x":470,"y":320,"dx":120,"dy":140,"dur":0.25},
+  {"t":1.3,"type":"key","name":"r"},
+  {"t":1.4,"type":"drag","x":760,"y":330,"dx":180,"dy":200,"dur":0.25},
+  {"t":1.8,"type":"key","name":"r"},
+  {"t":1.9,"type":"drag","x":470,"y":130,"dx":210,"dy":120,"dur":0.25},
+  {"t":2.3,"type":"key","name":"v"},
+  {"t":2.5,"type":"double-click","x":575,"y":190},
+  {"t":2.7,"type":"type","text":"Das ist ein Text","every":0.025},
+  {"t":3.3,"type":"key","name":"Escape"},
+  {"t":3.6,"type":"key","name":"a"},
+  {"t":3.7,"type":"drag","x":398,"y":340,"dx":64,"dy":50,"dur":0.25},
+  {"t":4.1,"type":"key","name":"a"},
+  {"t":4.2,"type":"drag","x":598,"y":390,"dx":154,"dy":40,"dur":0.25},
+  {"t":4.6,"type":"key","name":"v"},
+  {"t":4.8,"type":"key","name":"a","cmd":true,"ctrl":true},
+  {"t":6,"type":"drag","x":650,"y":300,"dx":60,"dy":54,"dur":6}
+]

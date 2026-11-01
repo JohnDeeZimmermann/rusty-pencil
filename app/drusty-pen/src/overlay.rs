@@ -17,15 +17,15 @@ pub(crate) struct Overlay {
 }
 
 impl Overlay {
-    pub(crate) fn show(&mut self, editor: &Editor) {
+    pub(crate) fn show(&mut self, editor: &Editor) -> bool {
         pen_render::overlay(editor, &mut self.scratch);
-        if self.items.len() != self.scratch.len()
+        let changed = self.items.len() != self.scratch.len()
             || self
                 .items
                 .iter()
                 .zip(&self.scratch)
-                .any(|(a, b)| a.kind != b.kind)
-        {
+                .any(|(a, b)| a.kind != b.kind);
+        if changed {
             self.items = self
                 .scratch
                 .iter()
@@ -39,6 +39,7 @@ impl Overlay {
                 item.rect.set(rect.rect);
             }
         }
+        changed
     }
 
     pub(crate) fn view(&self, dark: bool) -> El {

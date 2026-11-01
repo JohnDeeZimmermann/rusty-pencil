@@ -12,6 +12,7 @@ mod path;
 mod rough;
 mod scene;
 mod style;
+mod translation;
 pub use rough::{draw_element, draw_seeded};
 
 use pen_core::{Kind, Props, Srgba, WorldPt};
@@ -192,3 +193,6 @@ mod path_tests;
 
 #[cfg(test)]
 mod style_tests;
+
+#[cfg(test)]
+mod translation_tests;
