@@ -41,6 +41,14 @@ impl Element {
         if matches!(self.kind, Kind::Text { .. } | Kind::Image { .. }) {
             return bounds.contains(point);
         }
+        if matches!(self.kind, Kind::Frame { .. })
+            && point.x >= bounds.min().x
+            && point.x <= bounds.max().x
+            && point.y >= bounds.min().y - 24.0
+            && point.y <= bounds.min().y
+        {
+            return true;
+        }
         let radius = if matches!(self.kind, Kind::Freedraw(_)) {
             self.props.stroke_width * 1.6
         } else {
@@ -129,4 +137,60 @@ fn inside_polygon(point: WorldPt, polygon: &[WorldPt]) -> bool {
         }
     }
     inside
+}
+
+impl crate::Document {
+    /// Highest visible element at `point`, using the command-maintained spatial index.
+    pub fn hit(
+        &self,
+        point: WorldPt,
+        tolerance: f32,
+        interior: bool,
+        unlocked: bool,
+    ) -> Option<&Element> {
+        let area = crate::WorldRect::from_centre(point, tolerance.max(0.0), tolerance.max(0.0));
+        let mut top = None;
+        self.spatial().visit(area, |at| {
+            let e = &self.elements()[at];
+            if top.is_some_and(|index| at <= index)
+                || (unlocked
+                    && (e.locked
+                        || e.frame_id
+                            .and_then(|id| self.get(id))
+                            .is_some_and(|frame| frame.locked)
+                        || self
+                            .get(crate::bound::owner(self, e.id()))
+                            .is_some_and(|e| e.locked)))
+                || !crate::frames::visible_at(self, e, point)
+            {
+                return;
+            }
+            if if interior {
+                e.hit_test_interior(point, tolerance)
+            } else {
+                e.hit_test(point, tolerance)
+            } {
+                top = Some(at);
+            }
+        });
+        top.and_then(|at| self.elements().get(at))
+    }
+}
+
+impl crate::Document {
+    /// Topmost frame containing a centre point, for live drag ownership feedback.
+    pub fn frame_at(&self, point: WorldPt) -> Option<&Element> {
+        let mut top = None;
+        self.spatial()
+            .visit(crate::WorldRect::from_corners(point, point), |at| {
+                let e = &self.elements()[at];
+                if top.is_none_or(|i| at > i)
+                    && matches!(e.kind, Kind::Frame { .. })
+                    && e.kind.bounds().contains(point)
+                {
+                    top = Some(at);
+                }
+            });
+        top.and_then(|at| self.elements().get(at))
+    }
 }

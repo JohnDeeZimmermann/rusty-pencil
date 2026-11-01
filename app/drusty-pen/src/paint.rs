@@ -19,7 +19,7 @@ pub(crate) fn bounded(prims: &[Prim]) -> (Shape, WorldRect) {
         .iter()
         .filter_map(|prim| {
             let (points, pad) = match prim {
-                Prim::Image { .. } | Prim::Text { .. } => return None,
+                Prim::Clip { .. } | Prim::Image { .. } | Prim::Text { .. } => return None,
                 Prim::Fill { points, .. } => (points, 0.0),
                 Prim::Stroke { points, width, .. } => (points, width / 2.0),
             };
@@ -42,7 +42,7 @@ fn paint_at<'a>(prims: impl IntoIterator<Item = &'a Prim>, origin: WorldPt) -> S
     prims
         .into_iter()
         .fold(Shape::new(), |shape, prim| match prim {
-            Prim::Image { .. } | Prim::Text { .. } => shape,
+            Prim::Clip { .. } | Prim::Image { .. } | Prim::Text { .. } => shape,
             Prim::Fill { points, color } => shape.fill(pts(points, origin), palette::color(*color)),
             Prim::Stroke {
                 points,
@@ -72,6 +72,10 @@ pub(crate) fn themed(prims: &[Prim]) -> Vec<Prim> {
         .cloned()
         .map(|mut prim| {
             let color = match &mut prim {
+                Prim::Clip { prims, .. } => {
+                    *prims = themed(prims);
+                    return prim;
+                }
                 Prim::Image { .. } => return prim,
                 Prim::Text { color, .. }
                 | Prim::Fill { color, .. }

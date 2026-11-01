@@ -16,12 +16,25 @@ use rune::{El, Tx, col, el, row, text};
 
 pub(crate) fn panel(s: &State) -> El {
     // Menus and the inspector share the left column; show one surface at a time.
-    if s.menu.is_some() {
+    if s.editor.modes().view || s.menu.is_some() {
         return el().size(0.0, 0.0);
     }
     let editor = &s.editor;
     let dark = editor.settings().dark;
     let mut content = col().gap(d::S_SECTION);
+    if matches!(
+        editor.tool(),
+        Tool::Frame | Tool::Laser | Tool::Lasso | Tool::Eyedropper
+    ) || (editor.selection().len() == 1
+        && editor
+            .selection()
+            .ids()
+            .next()
+            .and_then(|id| editor.document().get(id))
+            .is_some_and(|e| matches!(e.kind, pen_core::Kind::Frame { .. })))
+    {
+        return el().size(0.0, 0.0);
+    }
     if !editor.selection().is_empty()
         || !matches!(editor.tool(), Tool::Select | Tool::Hand)
         || editor.text_session().is_some()

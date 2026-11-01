@@ -20,6 +20,9 @@ impl Eraser {
             ..Self::default()
         };
         for e in doc.elements() {
+            if let Some(frame) = e.frame_id {
+                stroke.followers.entry(frame).or_default().push(e.id());
+            }
             if let Some(c) = e.kind.container() {
                 stroke.followers.entry(c.id()).or_default().push(e.id());
             }
@@ -66,13 +69,11 @@ impl Editor {
             };
             let hit = (0..=steps).any(|i| {
                 let t = i as f32 / steps as f32;
-                e.hit_test(
-                    WorldPt::new(
-                        previous.x + (point.x - previous.x) * t,
-                        previous.y + (point.y - previous.y) * t,
-                    ),
-                    tolerance,
-                )
+                let p = WorldPt::new(
+                    previous.x + (point.x - previous.x) * t,
+                    previous.y + (point.y - previous.y) * t,
+                );
+                pen_core::frames::visible_at(&self.document, e, p) && e.hit_test(p, tolerance)
             });
             if !hit {
                 continue;

@@ -18,7 +18,13 @@ impl EraserIndex {
         let mut entries: Vec<_> = doc
             .elements()
             .iter()
-            .filter(|e| !e.locked)
+            .filter(|e| {
+                !e.locked
+                    && !e
+                        .frame_id
+                        .and_then(|id| doc.get(id))
+                        .is_some_and(|frame| frame.locked)
+            })
             .map(|e| {
                 let b = e.bounds();
                 let pad = e.props.stroke_width * 8.0;

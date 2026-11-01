@@ -13,7 +13,7 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
     let dark = editor.settings().dark;
     let c = |v| d::themed(v, dark);
     let active = editor.tool();
-    let island = Tool::ALL.into_iter().fold(
+    let island = Tool::ALL.into_iter().take(11).fold(
         d::surface(row().key("tools"), d::R_ISLAND, dark)
             .padding(d::PADDING)
             .gap(d::S1)
@@ -32,7 +32,7 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
             .child(roughness_button(editor.roughness(), dark)))
         .child(
             text(if editor.selection_locked() { "Selection is locked  ·  Right-click to unlock  ·  Ctrl + Shift + L toggles the lock".into() } else if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else if editor.arrow_endpoints().is_some() { "Drag an endpoint to rebind  ·  Ctrl disables binding  ·  Ctrl + Enter edits points".into() } else { hint(active) })
-                .key("hint")
+                .key("hint").instant_changes()
                 .font(d::T_HINT)
                 .color(c(d::MUTED)),
         )
@@ -95,6 +95,11 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
         WorldRect::from_corners(WorldPt::new(e, e), WorldPt::new(d::ICON - e, d::ICON - e))
     };
     let kind = match tool {
+        Tool::Frame => Kind::Frame {
+            name: String::new(),
+            bounds: inset(2.0),
+        },
+        Tool::Laser | Tool::Lasso | Tool::Eyedropper => Kind::Ellipse(inset(3.0)),
         Tool::Image => {
             return rune::Shape::new().stroke(
                 vec![
@@ -201,6 +206,10 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
 
 fn hint(tool: Tool) -> String {
     let what = match tool {
+        Tool::Frame => return "Drag a frame · Select it to rename · Moving a frame moves its children".into(),
+        Tool::Laser => return "Drag to point · The trail fades without changing the drawing".into(),
+        Tool::Lasso => return "Draw a loop to select · Shift adds to the selection · Esc cancels".into(),
+        Tool::Eyedropper => return "Click to sample a colour · Shift samples the fill · Esc cancels".into(),
         Tool::Image => return "Choose an image · Paste or drop PNG / JPEG files".into(),
         Tool::Eraser => return "Drag to erase  ·  Hold Alt to restore this stroke  ·  Esc to cancel".into(),
         Tool::Text => return "Click to write  ·  Enter for a new line  ·  Esc to finish  ·  Double-click to edit".into(),

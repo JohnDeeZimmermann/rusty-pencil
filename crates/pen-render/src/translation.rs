@@ -14,6 +14,7 @@ fn same_size(a: WorldRect, b: WorldRect) -> bool {
 pub(crate) fn translation(before: &Element, after: &Element) -> Option<WorldPt> {
     if before.id() != after.id()
         || before.seed() != after.seed()
+        || before.frame_id != after.frame_id
         || before.props != after.props
         || before.angle.to_bits() != after.angle.to_bits()
     {

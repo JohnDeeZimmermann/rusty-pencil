@@ -50,6 +50,44 @@ pub(crate) fn group(s: &State) -> El {
             },
         ));
     }
+    for (key, label, shortcut, c, on) in [
+        (
+            "snap-objects",
+            "Snap to objects",
+            "Alt+S",
+            's',
+            s.editor.modes().snap_objects,
+        ),
+        ("zen-mode", "Zen mode", "Alt+Z", 'z', s.editor.modes().zen),
+        (
+            "view-mode",
+            "View mode",
+            "Alt+R",
+            'r',
+            s.editor.modes().view,
+        ),
+        ("stats-mode", "Stats", "Alt+/", '/', s.editor.modes().stats),
+    ] {
+        toggles = toggles.child(switch_row(
+            key,
+            label,
+            shortcut,
+            on,
+            dark,
+            move |s: &mut State, tx| {
+                s.input(
+                    InputEvent::Key {
+                        key: pen_editor::Key::Char(c),
+                        mods: pen_editor::Modifiers {
+                            alt: true,
+                            ..Default::default()
+                        },
+                    },
+                    tx,
+                );
+            },
+        ));
+    }
     col()
         .w_full()
         .gap(d::S_SECTION)

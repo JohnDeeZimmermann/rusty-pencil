@@ -15,7 +15,9 @@ fn adaptive_radius(side: f32) -> f32 {
 /// The closed outline of `kind`, without repeating the first point at the end.
 pub fn outline(kind: &Kind, edges: Edges) -> Vec<WorldPt> {
     match *kind {
-        Kind::Image { bounds: r, .. } | Kind::Text { bounds: r, .. } => vec![
+        Kind::Frame { bounds: r, .. }
+        | Kind::Image { bounds: r, .. }
+        | Kind::Text { bounds: r, .. } => vec![
             r.min(),
             WorldPt::new(r.max().x, r.min().y),
             r.max(),

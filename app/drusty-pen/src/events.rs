@@ -40,6 +40,38 @@ pub(crate) fn canvas_input(node: El) -> El {
         .on_drag(|s: &mut State, d: &mut Drag, tx| {
             let at = ScreenPt::new(d.x, d.y);
             let mods = mods(tx.mods());
+            if d.phase == Phase::Down
+                && s.editor.tool() == pen_editor::Tool::Eyedropper
+                && let Some(color) = crate::images::sample(s, at)
+            {
+                s.input(
+                    InputEvent::SampleColor {
+                        color,
+                        background: mods.shift,
+                    },
+                    tx,
+                );
+                return;
+            }
+            if s.polish.link_gesture {
+                if d.phase == Phase::Up {
+                    s.polish.link_gesture = false;
+                }
+                return;
+            }
+            if d.phase == Phase::Down && mods.ctrl {
+                let point = s.editor.camera().screen_to_world(at);
+                if let Some(link) = s
+                    .editor
+                    .document()
+                    .hit(point, 5.0 / s.editor.camera().zoom(), true, false)
+                    .and_then(|e| e.link.clone())
+                {
+                    s.polish.link_gesture = true;
+                    crate::details::open_destination(s, Some(link), tx);
+                    return;
+                }
+            }
             let event = if tx.button() == PointerButton::Middle {
                 match d.phase {
                     Phase::Down => InputEvent::PanStart { at },

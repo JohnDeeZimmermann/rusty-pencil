@@ -16,6 +16,7 @@ pub fn draw_element(element: &Element, out: &mut DrawList) {
     let centre = element.kind.bounds().centre();
     for prim in &mut out.prims[first..] {
         match prim {
+            Prim::Clip { .. } => {}
             Prim::Image { angle, .. } | Prim::Text { angle, .. } => *angle = element.angle,
             Prim::Fill { points, .. } | Prim::Stroke { points, .. } => {
                 for point in points {
@@ -29,7 +30,10 @@ pub fn draw_element(element: &Element, out: &mut DrawList) {
 pub fn draw_seeded(kind: &Kind, props: &pen_core::Props, seed: u32, out: &mut DrawList) {
     let first = out.prims.len();
     draw(kind, props, out);
-    if matches!(kind, Kind::Text { .. } | Kind::Freedraw(_)) {
+    if matches!(
+        kind,
+        Kind::Frame { .. } | Kind::Text { .. } | Kind::Freedraw(_)
+    ) {
         return;
     }
     let amount = match props.roughness {

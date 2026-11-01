@@ -107,6 +107,10 @@ pub fn excalidraw(value: &Value) -> Result<SceneFile, FileError> {
             _ => Roughness::Artist,
         };
         let kind = match v["type"].as_str() {
+            Some("frame") => Kind::Frame {
+                name: v["name"].as_str().unwrap_or("Frame").into(),
+                bounds,
+            },
             Some("rectangle") => Kind::Rect(bounds),
             Some("ellipse") => Kind::Ellipse(bounds),
             Some("diamond") => Kind::Diamond(bounds),
@@ -180,7 +184,11 @@ pub fn excalidraw(value: &Value) -> Result<SceneFile, FileError> {
         };
         let id = doc.alloc_id();
         let mut element = Element::new(id, kind, props);
-        element.angle = number(v, "angle", 0.0);
+        element.angle = if matches!(element.kind, Kind::Frame { .. }) {
+            0.0
+        } else {
+            number(v, "angle", 0.0)
+        };
         if let Some(seed) = v["seed"].as_u64() {
             element.set_seed(seed as u32);
         }
@@ -215,6 +223,20 @@ pub fn excalidraw(value: &Value) -> Result<SceneFile, FileError> {
         let Some(out) = scene.elements.iter_mut().find(|e| e.id() == *id) else {
             continue;
         };
+        if !matches!(out.kind, Kind::Frame { .. }) {
+            out.frame_id = v["frameId"]
+                .as_str()
+                .and_then(|id| sources.get(id))
+                .copied()
+                .filter(|id| {
+                    doc.get(*id)
+                        .is_some_and(|f| matches!(f.kind, Kind::Frame { .. }))
+                });
+        }
+        out.link = v["link"]
+            .as_str()
+            .filter(|url| url.starts_with("https://") || url.starts_with("http://"))
+            .map(|url| Link::Web(url.into()));
         if let Kind::Text { container, .. } = &mut out.kind {
             *container = v["containerId"]
                 .as_str()

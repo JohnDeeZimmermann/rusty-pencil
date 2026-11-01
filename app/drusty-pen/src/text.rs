@@ -124,7 +124,35 @@ pub(crate) fn paint_with_images(
         .inert();
     let mut start = 0;
     for (i, prim) in prims.iter().enumerate() {
-        if matches!(prim, Prim::Image { .. }) {
+        if let Prim::Clip {
+            bounds,
+            prims: inner,
+        } = prim
+        {
+            if start < i {
+                let (shape, b) = shapes::bounded(&prims[start..i]);
+                root = root.child(layer(shape, b, &format!("paint-{start}")));
+            }
+            root = root.child(
+                el().key(format!("clip-{i}"))
+                    .absolute(bounds.min().x, bounds.min().y)
+                    .size(bounds.width(), bounds.height())
+                    .clip_rounded(0.0)
+                    .child(
+                        el().absolute(-bounds.min().x, -bounds.min().y)
+                            .size(0.0, 0.0)
+                            .child(paint_with_images(
+                                inner,
+                                pen_core::Settings {
+                                    dark: false,
+                                    ..settings
+                                },
+                                images,
+                            )),
+                    ),
+            );
+            start = i + 1;
+        } else if matches!(prim, Prim::Image { .. }) {
             if start < i {
                 let (shape, bounds) = shapes::bounded(&prims[start..i]);
                 root = root.child(layer(shape, bounds, &format!("paint-{start}")));

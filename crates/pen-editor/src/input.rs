@@ -4,6 +4,23 @@ use crate::{ScreenPt, ScreenVec};
 /// top-left.
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
+    RenameFrame(String),
+    SampleColor {
+        color: pen_core::Srgba,
+        background: bool,
+    },
+    Geometry {
+        field: crate::GeometryField,
+        value: f32,
+    },
+    SetLink(Option<pen_core::Link>),
+    SelectElement(pen_core::ElementId),
+    PlaceScene {
+        scene: pen_core::file::SceneFile,
+        at: ScreenPt,
+    },
+    /// Elapsed seconds for ephemeral laser trails; never modifies the document.
+    Tick(f32),
     InsertImage {
         file: pen_core::BinaryFile,
         at: ScreenPt,

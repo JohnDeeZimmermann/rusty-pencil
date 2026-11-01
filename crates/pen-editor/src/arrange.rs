@@ -198,17 +198,24 @@ impl Editor {
     /// Includes bound text; order is the document's paint order.
     #[must_use]
     pub fn copy_elements(&self) -> Vec<Element> {
-        self.document
+        let mut copied: Vec<_> = self
+            .document
             .elements()
             .iter()
             .filter(|e| {
                 self.selection.contains(e.id())
+                    || e.frame_id.is_some_and(|id| self.selection.contains(id))
                     || e.kind
                         .container()
                         .is_some_and(|c| self.selection.contains(c.id()))
             })
             .cloned()
-            .collect()
+            .collect();
+        let ids: Vec<_> = copied.iter().map(Element::id).collect();
+        for e in &mut copied {
+            e.frame_id = e.frame_id.filter(|id| ids.contains(id));
+        }
+        copied
     }
 
     pub(crate) fn paste_elements(&mut self, elements: &[Element], offset: WorldPt) -> Redraw {
@@ -248,6 +255,10 @@ impl Editor {
                     .copied(ids[&e.id()])
                     .with_bounds(e.kind.bounds().translated(offset.x, offset.y));
                 out.locked = false;
+                out.frame_id = out.frame_id.and_then(|id| ids.get(&id).copied());
+                if let Some(pen_core::Link::Element(id)) = out.link {
+                    out.link = ids.get(&id).copied().map(pen_core::Link::Element);
+                }
                 for g in &mut out.group_ids {
                     *g = *groups.entry(*g).or_insert_with(|| {
                         next_group += 1;

@@ -1,0 +1,215 @@
+[
+  {
+    "t": 0.1,
+    "type": "key",
+    "name": "f"
+  },
+  {
+    "t": 0.3,
+    "type": "drag",
+    "x": 280,
+    "y": 220,
+    "dx": 460,
+    "dy": 360,
+    "dur": 0.3
+  },
+  {
+    "t": 0.8,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 1,
+    "type": "click",
+    "x": 320,
+    "y": 260
+  },
+  {
+    "t": 1.2,
+    "type": "type",
+    "text": "A little room to think",
+    "every": 0.02
+  },
+  {
+    "t": 1.9,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 2.1,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 2.2,
+    "type": "click",
+    "key": "Background-color-2"
+  },
+  {
+    "t": 2.3,
+    "type": "drag",
+    "x": 330,
+    "y": 340,
+    "dx": 140,
+    "dy": 90,
+    "dur": 0.3
+  },
+  {
+    "t": 2.9,
+    "type": "key",
+    "name": "o"
+  },
+  {
+    "t": 3.0,
+    "type": "click",
+    "key": "Background-color-3"
+  },
+  {
+    "t": 3.1,
+    "type": "drag",
+    "x": 540,
+    "y": 340,
+    "dx": 140,
+    "dy": 90,
+    "dur": 0.3
+  },
+  {
+    "t": 3.7,
+    "type": "key",
+    "name": "a"
+  },
+  {
+    "t": 3.9,
+    "type": "drag",
+    "x": 475,
+    "y": 385,
+    "dx": 60,
+    "dy": 0,
+    "dur": 0.3
+  },
+  {
+    "t": 4.4,
+    "type": "key",
+    "name": "o"
+  },
+  {
+    "t": 4.6,
+    "type": "drag",
+    "x": 650,
+    "y": 475,
+    "dx": 150,
+    "dy": 70,
+    "dur": 0.25
+  },
+  {
+    "t": 5,
+    "type": "key",
+    "name": "v"
+  },
+  {
+    "t": 5.2,
+    "type": "click",
+    "x": 500,
+    "y": 220
+  },
+  {
+    "t": 5.4,
+    "type": "click",
+    "key": "frame-name"
+  },
+  {
+    "t": 5.5,
+    "type": "key",
+    "name": "a",
+    "cmd": true,
+    "ctrl": true
+  },
+  {
+    "t": 5.6,
+    "type": "type",
+    "text": "Local studio",
+    "every": 0.01
+  },
+  {
+    "t": 5.85,
+    "type": "key",
+    "name": "Enter"
+  },
+  {
+    "t": 6.2,
+    "type": "key",
+    "name": "/",
+    "alt": true
+  },
+  {
+    "t": 6.8,
+    "type": "key",
+    "name": "/",
+    "alt": true
+  },
+  {
+    "t": 7,
+    "type": "click",
+    "key": "library-toggle"
+  },
+  {
+    "t": 7.2,
+    "type": "click",
+    "key": "library-add"
+  },
+  {
+    "t": 8,
+    "type": "key",
+    "name": "d",
+    "alt": true,
+    "shift": true
+  },
+  {
+    "t": 8.6,
+    "type": "key",
+    "name": "/",
+    "cmd": true,
+    "ctrl": true
+  },
+  {
+    "t": 8.8,
+    "type": "type",
+    "text": "duplicate",
+    "every": 0.03
+  },
+  {
+    "t": 9.5,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 10,
+    "type": "key",
+    "name": "?"
+  },
+  {
+    "t": 10.8,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 11,
+    "type": "key",
+    "name": "k"
+  },
+  {
+    "t": 11.2,
+    "type": "drag",
+    "x": 400,
+    "y": 500,
+    "dx": 170,
+    "dy": -60,
+    "dur": 0.5
+  },
+  {
+    "t": 12.7,
+    "type": "key",
+    "name": "z",
+    "alt": true
+  }
+]

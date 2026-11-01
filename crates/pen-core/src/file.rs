@@ -2,7 +2,7 @@
 use crate::{Command, Document, Element, Kind, Props, WorldPt};
 use serde::{Deserialize, Serialize};
 
-pub const VERSION: u32 = 2;
+pub const VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AppState {
@@ -141,6 +141,7 @@ impl SceneFile {
                 return Err(FileError::Invalid("invalid embedded image".into()));
             }
         }
+        crate::frames::validate(&self.elements).map_err(|e| FileError::Invalid(e.to_string()))?;
         for e in &self.elements {
             if let Kind::Image { file_id, crop, .. } = &e.kind
                 && (!crop.valid() || !self.files.contains_key(file_id))

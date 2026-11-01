@@ -38,6 +38,7 @@ fn composed(scene: &Scene) -> Vec<Prim> {
             part.prims().iter().cloned().map(|mut prim| {
                 let delta = part.offset();
                 match &mut prim {
+                    Prim::Clip { .. } => unreachable!(),
                     Prim::Image { bounds, .. } | Prim::Text { bounds, .. } => {
                         *bounds = bounds.translated(delta.x, delta.y);
                     }

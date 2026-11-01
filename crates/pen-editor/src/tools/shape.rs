@@ -22,6 +22,7 @@ enum ShapeTool {
     Rectangle,
     Diamond,
     Ellipse,
+    Frame,
 }
 
 impl ShapeDrag {
@@ -32,7 +33,10 @@ impl ShapeDrag {
         mods: Modifiers,
     ) -> Option<Self> {
         let tool = match tool {
-            Tool::Image
+            Tool::Laser
+            | Tool::Lasso
+            | Tool::Eyedropper
+            | Tool::Image
             | Tool::Eraser
             | Tool::Select
             | Tool::Arrow
@@ -42,6 +46,7 @@ impl ShapeDrag {
             | Tool::Text => {
                 return None;
             }
+            Tool::Frame => ShapeTool::Frame,
             Tool::Rectangle => ShapeTool::Rectangle,
             Tool::Diamond => ShapeTool::Diamond,
             Tool::Ellipse => ShapeTool::Ellipse,
@@ -79,6 +84,10 @@ impl ShapeDrag {
     pub(crate) fn kind(&self) -> Kind {
         let bounds = self.bounds();
         match self.tool {
+            ShapeTool::Frame => Kind::Frame {
+                name: "Frame".into(),
+                bounds,
+            },
             ShapeTool::Rectangle => Kind::Rect(bounds),
             ShapeTool::Diamond => Kind::Diamond(bounds),
             ShapeTool::Ellipse => Kind::Ellipse(bounds),

@@ -13,11 +13,22 @@ struct Item {
 #[derive(Debug, Default)]
 pub(crate) struct Overlay {
     items: Vec<Item>,
+    feedback: rune::Shape,
+    feedback_bounds: pen_core::WorldRect,
+    pub feedback_changed: bool,
+    feedback_active: bool,
     scratch: Vec<OverlayRect>,
 }
 
 impl Overlay {
     pub(crate) fn show(&mut self, editor: &Editor) -> bool {
+        self.feedback_changed = self.feedback_active
+            || !editor.laser().is_empty()
+            || !editor.lasso().is_empty()
+            || !editor.guides().is_empty();
+        self.feedback_active =
+            !editor.laser().is_empty() || !editor.lasso().is_empty() || !editor.guides().is_empty();
+        (self.feedback, self.feedback_bounds) = crate::feedback::shape(editor);
         pen_render::overlay(editor, &mut self.scratch);
         let changed = self.items.len() != self.scratch.len()
             || self
@@ -42,12 +53,26 @@ impl Overlay {
         changed
     }
 
-    pub(crate) fn view(&self, dark: bool) -> El {
+    pub(crate) fn view(&self, dark: bool, camera: &crate::present::LiveCamera) -> El {
         let c = |v| d::themed(v, dark);
         self.items.iter().enumerate().fold(
             el().key("selection-overlay")
                 .absolute(0.0, 0.0)
-                .size(0.0, 0.0),
+                .size(0.0, 0.0)
+                .child(
+                    el().key("ephemeral-world")
+                        .absolute(0.0, 0.0)
+                        .size(0.0, 0.0)
+                        .live_offset(&camera.offset)
+                        .live_scale(&camera.scale)
+                        .pixel_snap(false)
+                        .child(crate::layer(
+                            self.feedback.clone(),
+                            self.feedback_bounds,
+                            "ephemeral-paint",
+                        ))
+                        .inert(),
+                ),
             |layer, (i, item)| {
                 let rect = el()
                     .key(format!("selection-{i}"))

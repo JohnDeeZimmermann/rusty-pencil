@@ -1,5 +1,5 @@
 //! Cached document paint and live replacements, composed in document z-order.
-use crate::{DrawList, Prim, SceneCache, draw_element};
+use crate::{DrawList, Prim, SceneCache};
 use pen_core::{Document, Element, ElementId, WorldPt};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -62,10 +62,11 @@ impl Scene {
         for element in preview {
             if let Some(at) = self.preview_parts.get(&element.id()).copied() {
                 let part = &mut self.parts[at];
-                if let Some(offset) = part
-                    .snapshot
-                    .as_ref()
-                    .and_then(|before| crate::translation::translation(before, element))
+                if element.frame_id.is_none()
+                    && let Some(offset) = part
+                        .snapshot
+                        .as_ref()
+                        .and_then(|before| crate::translation::translation(before, element))
                 {
                     part.offset = offset;
                     continue;
@@ -73,7 +74,7 @@ impl Scene {
                 self.revision = self.revision.wrapping_add(1);
                 let part = &mut self.parts[at];
                 part.paint.clear();
-                draw_element(element, &mut part.paint);
+                crate::frames::draw(doc, preview, element, &mut part.paint);
                 part.revision = self.revision;
                 part.snapshot = Some(element.clone());
                 part.offset = WorldPt::ORIGIN;
@@ -100,18 +101,14 @@ impl Scene {
                 self.preview_parts.insert(element.id(), self.parts.len());
                 let mut retained = DrawList::new();
                 if let Some(prims) = self.cache.element_prims(element.id()) {
-                    for prim in prims {
-                        retained.push(prim.clone());
-                    }
+                    crate::frames::append(doc, preview, element, prims, &mut retained);
                 }
                 self.push_part(retained);
                 if let Some(part) = self.parts.last_mut() {
                     part.snapshot = Some(element.clone());
                 }
             } else if let Some(prims) = self.cache.element_prims(element.id()) {
-                for prim in prims {
-                    paint.push(prim.clone());
-                }
+                crate::frames::append(doc, preview, element, prims, &mut paint);
             }
         }
         self.push_part(paint);

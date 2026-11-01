@@ -3,6 +3,9 @@ use pen_core::Command;
 
 impl Editor {
     pub(crate) fn key(&mut self, key: Key, mods: Modifiers) -> Redraw {
+        if let Some(redraw) = self.polish_key(key, mods) {
+            return redraw;
+        }
         if mods.ctrl && mods.shift && matches!(key, Key::Char('<' | '>' | ',' | '.')) {
             let (_, size, _) = self.text_style();
             let sizes = [16.0, 20.0, 28.0, 36.0];

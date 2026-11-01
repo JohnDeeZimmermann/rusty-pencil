@@ -8,6 +8,7 @@
 mod arrowheads;
 mod cache;
 pub mod export;
+pub mod frames;
 mod overlay;
 mod path;
 mod rough;
@@ -30,6 +31,10 @@ pub use pen_core::TOLERANCE;
 /// One paint operation, in world points.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Prim {
+    Clip {
+        bounds: pen_core::WorldRect,
+        prims: Vec<Prim>,
+    },
     Image {
         file_id: pen_core::FileId,
         crop: pen_core::Crop,
@@ -133,6 +138,32 @@ pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
 }
 
 fn draw_base(kind: &Kind, props: &Props, out: &mut DrawList) {
+    if let Kind::Frame { name, bounds } = kind {
+        let props = Props {
+            background: None,
+            stroke_width: 1.0,
+            stroke: Srgba::rgb(0x707874),
+            edges: pen_core::Edges::Sharp,
+            roughness: pen_core::Roughness::Architect,
+            ..*props
+        };
+        draw_base(&Kind::Rect(*bounds), &props, out);
+        out.push(Prim::Text {
+            angle: 0.0,
+            content: name.clone(),
+            font: pen_core::Font::Normal,
+            size: 14.0,
+            align: pen_core::TextAlign::Left,
+            bounds: pen_core::WorldRect::from_corners(
+                WorldPt::new(bounds.min().x, bounds.min().y - 24.0),
+                WorldPt::new(bounds.max().x, bounds.min().y - 4.0),
+            ),
+            color: props.stroke,
+            fit: TextFit::Free,
+            vertical_align: pen_core::VerticalAlign::Top,
+        });
+        return;
+    }
     if let Kind::Image {
         file_id,
         crop,
@@ -222,3 +253,6 @@ mod translation_tests;
 
 #[cfg(test)]
 mod export_tests;
+
+#[cfg(test)]
+mod frame_tests;

@@ -6,6 +6,7 @@ use crate::{Element, ElementId};
 #[derive(Debug, Clone, Default)]
 pub struct Document {
     elements: Vec<Element>,
+    spatial: crate::SpatialIndex,
     files: BTreeMap<crate::FileId, crate::BinaryFile>,
     index: BTreeMap<ElementId, usize>,
     bound_arrows: BTreeMap<ElementId, Vec<ElementId>>,
@@ -44,6 +45,8 @@ pub enum Command {
 pub enum DocError {
     #[error("no element with id {0:?}")]
     Missing(ElementId),
+    #[error("invalid frame ownership or rotation")]
+    Frame,
     #[error("invalid embedded image, missing source or invalid crop")]
     Image,
     #[error("an element with id {0:?} already exists")]
@@ -54,6 +57,10 @@ pub enum DocError {
 
 impl Document {
     #[must_use]
+    pub fn spatial(&self) -> &crate::SpatialIndex {
+        &self.spatial
+    }
+
     pub fn files(&self) -> &BTreeMap<crate::FileId, crate::BinaryFile> {
         &self.files
     }
@@ -103,6 +110,9 @@ impl Document {
     pub fn apply(&mut self, command: Command) -> Result<Command, DocError> {
         let mut staged = BTreeMap::new();
         self.validate(&command, &mut staged)?;
+        if !crate::frames::validate_change(self, &staged) {
+            return Err(DocError::Frame);
+        }
         let mut files = BTreeMap::new();
         file_changes(&command, &mut files);
         let valid_image = |e: &Element| match &e.kind {
@@ -159,6 +169,7 @@ impl Document {
                         .any(|b| b.element == *shape)))
                 )
         );
+        self.spatial = crate::SpatialIndex::build(&self.elements);
         self.revision = self.revision.wrapping_add(1);
         Ok(inverse)
     }

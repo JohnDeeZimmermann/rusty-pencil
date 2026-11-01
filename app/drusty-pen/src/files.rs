@@ -519,7 +519,9 @@ pub(crate) fn menu(s: &State) -> El {
         .child(
             menu_action("Reset canvas", "reset-canvas", "", dark).on_press(|s: &mut State| {
                 s.menu = None;
-                s.files.confirm_reset = true;
+                if !s.editor.modes().view {
+                    s.files.confirm_reset = true;
+                }
             }),
         )
 }
@@ -573,6 +575,7 @@ pub(crate) fn confirmation(s: &State) -> El {
             .child(row().gap(d::S3)
                 .child(button("Cancel", "cancel-reset",dark).on_press(|s: &mut State| s.files.confirm_reset = false))
                 .child(button("Reset canvas", "confirm-reset",dark).fill(d::themed(d::ACCENT,dark)).on_press_tx(|s: &mut State, tx| {
+                    if s.editor.modes().view { s.files.confirm_reset=false; return; }
                     let camera = Camera::centred_on(WorldPt::ORIGIN, s.editor.viewport(), 1.0);
                     let scene = SceneFile::new(&Document::new(), AppState { scroll: camera.scroll(), ..AppState::default() });
                     s.install(&scene);

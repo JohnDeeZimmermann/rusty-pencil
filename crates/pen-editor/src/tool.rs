@@ -15,11 +15,15 @@ pub enum Tool {
     Image,
     Hand,
     Eraser,
+    Frame,
+    Laser,
+    Lasso,
+    Eyedropper,
 }
 
 impl Tool {
     /// Every tool, in toolbar order.
-    pub const ALL: [Tool; 11] = [
+    pub const ALL: [Tool; 15] = [
         Tool::Select,
         Tool::Rectangle,
         Tool::Diamond,
@@ -31,6 +35,10 @@ impl Tool {
         Tool::Image,
         Tool::Hand,
         Tool::Eraser,
+        Tool::Frame,
+        Tool::Laser,
+        Tool::Lasso,
+        Tool::Eyedropper,
     ];
 
     #[must_use]
@@ -47,6 +55,10 @@ impl Tool {
             Tool::Image => "Image",
             Tool::Hand => "Hand",
             Tool::Eraser => "Eraser",
+            Tool::Frame => "Frame",
+            Tool::Laser => "Laser pointer",
+            Tool::Lasso => "Lasso selection",
+            Tool::Eyedropper => "Eye-dropper",
         }
     }
 
@@ -65,6 +77,10 @@ impl Tool {
             Tool::Image => '9',
             Tool::Hand => 'h',
             Tool::Eraser => 'e',
+            Tool::Frame => 'f',
+            Tool::Laser => 'k',
+            Tool::Lasso => 's',
+            Tool::Eyedropper => 'i',
         }
     }
 
@@ -83,6 +99,10 @@ impl Tool {
             Tool::Image => '9',
             Tool::Hand => 'h',
             Tool::Eraser => '0',
+            Tool::Frame => 'f',
+            Tool::Laser => 'k',
+            Tool::Lasso => 's',
+            Tool::Eyedropper => 'i',
         }
     }
 

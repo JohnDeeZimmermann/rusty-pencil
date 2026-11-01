@@ -101,6 +101,16 @@ pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
                 }
             }
             for handle in Handle::ALL.into_iter().chain([Handle::Rotate]) {
+                if handle == Handle::Rotate
+                    && editor.selection().ids().any(|id| {
+                        editor
+                            .document()
+                            .get(id)
+                            .is_some_and(|e| matches!(e.kind, pen_core::Kind::Frame { .. }))
+                    })
+                {
+                    continue;
+                }
                 if endpoints.is_some() && handle != Handle::Rotate {
                     continue;
                 }

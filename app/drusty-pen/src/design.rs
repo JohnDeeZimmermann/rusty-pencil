@@ -118,3 +118,12 @@ pub(crate) const PREFERENCES_TAB_WIDTH: f32 = 96.0;
 pub(crate) const TAB_BAR_HEIGHT: f32 = 48.0;
 pub(crate) const TAB_WIDTH: f32 = 196.0;
 pub(crate) const CHROME_TOP: f32 = TAB_BAR_HEIGHT + S4;
+
+// M9 secondary panels.
+pub(crate) const PALETTE_WIDTH: f32 = 480.0;
+pub(crate) const PALETTE_HEIGHT: f32 = 360.0;
+pub(crate) const DETAILS_TOP: f32 = INSPECTOR_TOP + CONTROL * 3.0 + S2 * 4.0;
+pub(crate) const STAT_LABEL: f32 = 56.0;
+pub(crate) const LIBRARY_WIDTH: f32 = 240.0;
+pub(crate) const LIBRARY_THUMB: f32 = 112.0;
+pub(crate) const LASER: Srgba = Srgba::rgb(0xe5_55_55);

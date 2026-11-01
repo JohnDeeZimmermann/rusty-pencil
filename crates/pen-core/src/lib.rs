@@ -14,6 +14,7 @@ pub use arrowheads::{Head, arrowheads};
 mod color;
 mod document;
 mod element;
+pub mod frames;
 mod images;
 pub use images::{BinaryFile, Crop, FileId};
 pub mod file;
@@ -24,13 +25,15 @@ mod outline;
 mod path;
 mod props;
 mod settings;
+mod spatial;
 pub use settings::Settings;
+pub use spatial::{Anchor, SpatialIndex};
 mod text;
 
 pub use bound::Container;
 pub use color::Srgba;
 pub use document::{Command, DocError, Document};
-pub use element::{Edges, Element, ElementId, Kind};
+pub use element::{Edges, Element, ElementId, Kind, Link};
 pub use geometry::{WorldPt, WorldRect};
 pub use outline::{TOLERANCE, outline};
 pub use path::{Path, PathPoint};
@@ -59,3 +62,6 @@ mod routing_tests;
 
 #[cfg(test)]
 mod import_tests;
+
+#[cfg(test)]
+mod frame_tests;

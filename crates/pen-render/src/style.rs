@@ -10,7 +10,7 @@ pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props) {
             continue;
         }
         let color = match &mut prim {
-            Prim::Image { .. } => unreachable!(),
+            Prim::Clip { .. } | Prim::Image { .. } => unreachable!(),
             Prim::Fill { color, .. } | Prim::Stroke { color, .. } | Prim::Text { color, .. } => {
                 color
             }

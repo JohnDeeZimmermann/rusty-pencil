@@ -231,3 +231,36 @@ pub(crate) fn crop_controls(s: &State) -> El {
 #[cfg(test)]
 #[path = "image_cache_tests.rs"]
 mod tests;
+
+/// Source-pixel sampling respects the same crop and inverse rotation as image painting.
+pub(crate) fn sample(s: &State, at: ScreenPt) -> Option<pen_core::Srgba> {
+    let point = s.editor.camera().screen_to_world(at);
+    let e = s.editor.document().hit(point, 0.0, false, false)?;
+    let pen_core::Kind::Image {
+        file_id,
+        crop,
+        bounds,
+    } = &e.kind
+    else {
+        return None;
+    };
+    let file = s.editor.document().files().get(file_id)?;
+    let p = pen_core::rotate(point, bounds.centre(), -e.angle);
+    let x = (crop.x + (p.x - bounds.min().x) / bounds.width().max(0.001) * crop.width)
+        * file.width as f32;
+    let y = (crop.y + (p.y - bounds.min().y) / bounds.height().max(0.001) * crop.height)
+        * file.height as f32;
+    let image = image::load_from_memory(&file.data).ok()?.into_rgba8();
+    let rgba = image
+        .get_pixel(
+            (x as u32).min(file.width - 1),
+            (y as u32).min(file.height - 1),
+        )
+        .0;
+    Some(pen_core::Srgba {
+        r: rgba[0],
+        g: rgba[1],
+        b: rgba[2],
+        a: rgba[3],
+    })
+}

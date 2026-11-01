@@ -41,6 +41,10 @@ pub struct Element {
     #[serde(default)]
     pub locked: bool,
     #[serde(default)]
+    pub frame_id: Option<ElementId>,
+    #[serde(default)]
+    pub link: Option<Link>,
+    #[serde(default)]
     /// Empty only on uncommitted elements; the document assigns it on insertion.
     pub z_key: crate::ZKey,
     #[serde(default)]
@@ -64,6 +68,8 @@ impl Element {
             angle: 0.0,
             group_ids: Vec::new(),
             locked: false,
+            frame_id: None,
+            link: None,
             z_key: crate::ZKey::default(),
         }
     }
@@ -96,6 +102,8 @@ impl Element {
             && self.angle.to_bits() == other.angle.to_bits()
             && self.group_ids == other.group_ids
             && self.locked == other.locked
+            && self.frame_id == other.frame_id
+            && self.link == other.link
             && (other.z_key.is_empty() || self.z_key == other.z_key)
     }
 
@@ -110,6 +118,8 @@ impl Element {
         self.angle = after.angle;
         self.group_ids.clone_from(&after.group_ids);
         self.locked = after.locked;
+        self.frame_id = after.frame_id;
+        self.link.clone_from(&after.link);
         if !after.z_key.is_empty() {
             self.z_key.clone_from(&after.z_key);
         }
@@ -135,6 +145,10 @@ impl Element {
 /// What an element is, with its geometry in world points.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum Kind {
+    Frame {
+        name: String,
+        bounds: WorldRect,
+    },
     Image {
         file_id: crate::FileId,
         crop: crate::Crop,
@@ -200,6 +214,10 @@ impl Kind {
                     ),
                 }
             }
+            Self::Frame { name, .. } => Self::Frame {
+                name: name.clone(),
+                bounds,
+            },
             Self::Image { file_id, crop, .. } => Self::Image {
                 file_id: file_id.clone(),
                 crop: *crop,
@@ -217,7 +235,8 @@ impl Kind {
     #[must_use]
     pub fn bounds(&self) -> WorldRect {
         match self {
-            Kind::Image { bounds: r, .. }
+            Kind::Frame { bounds: r, .. }
+            | Kind::Image { bounds: r, .. }
             | Kind::Text { bounds: r, .. }
             | Kind::Rect(r)
             | Kind::Diamond(r)
@@ -265,4 +284,11 @@ fn seed_for(id: ElementId) -> u32 {
     z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
     z ^= z >> 31;
     (z ^ (z >> 32)) as u32
+}
+
+/// Local element destinations and explicit web URLs survive scene round trips.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum Link {
+    Web(String),
+    Element(ElementId),
 }

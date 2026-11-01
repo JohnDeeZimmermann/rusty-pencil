@@ -27,7 +27,7 @@ impl Container {
         match element.kind {
             Kind::Rect(_) | Kind::Diamond(_) | Kind::Ellipse(_) => Some(Self::Shape(element.id())),
             Kind::Line(_) | Kind::Arrow(_) => Some(Self::Path(element.id())),
-            Kind::Image { .. } | Kind::Text { .. } | Kind::Freedraw(_) => None,
+            Kind::Frame { .. } | Kind::Image { .. } | Kind::Text { .. } | Kind::Freedraw(_) => None,
         }
     }
 
@@ -132,6 +132,7 @@ pub fn fit(text: &Element, container: &Element) -> Element {
     let mut out = text.clone();
     out.angle = container.angle;
     out.locked = container.locked;
+    out.frame_id = container.frame_id;
     if let (Some(placed), Kind::Text { bounds, .. }) = (placed, &mut out.kind) {
         let c = placed.centre();
         let to = crate::rotate(c, container.kind.bounds().centre(), container.angle);

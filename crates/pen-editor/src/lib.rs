@@ -7,7 +7,11 @@ mod arrange;
 mod arrange_positions;
 mod binding;
 mod images;
+mod polish;
+mod snapping;
+mod tracing;
 pub use actions::Action;
+pub use polish::{GeometryField, Modes};
 mod camera;
 mod eraser;
 mod eraser_index;
@@ -51,6 +55,7 @@ enum Gesture {
 /// Owned by the app; no window, renderer, or shared mutable state.
 #[derive(Debug, Clone, Default)]
 pub struct Editor {
+    polish: polish::Polish,
     binding_draft: Option<Kind>,
     binding_targets: Vec<WorldRect>,
     eraser: Option<eraser::Eraser>,
@@ -195,7 +200,13 @@ impl Editor {
     }
 
     pub fn handle(&mut self, event: InputEvent) -> Redraw {
-        let redraw = self.dispatch(event);
+        self.polish.refresh(&self.document);
+        let appearance = matches!(&event,InputEvent::Settings(settings) if settings.canvas==self.settings.canvas && settings.grid==self.settings.grid && settings.tool_lock==self.settings.tool_lock);
+        let redraw = if self.polish.modes.view && !polish::view_event(&event) && !appearance {
+            Redraw::Nothing
+        } else {
+            self.dispatch(event)
+        };
         self.refresh_binding();
         self.refresh_followers();
         redraw
@@ -211,6 +222,13 @@ impl Editor {
 
     fn dispatch(&mut self, event: InputEvent) -> Redraw {
         match event {
+            InputEvent::SampleColor { .. }
+            | InputEvent::RenameFrame(_)
+            | InputEvent::Geometry { .. }
+            | InputEvent::SetLink(_)
+            | InputEvent::SelectElement(_)
+            | InputEvent::PlaceScene { .. }
+            | InputEvent::Tick(_) => self.polish_event(event),
             InputEvent::InsertImage { file, at } => self.insert_image(file, at),
             InputEvent::CropImage(crop) => self.crop_image(crop),
             InputEvent::Context { at } => {
@@ -220,10 +238,7 @@ impl Editor {
                 let point = self.camera.screen_to_world(at);
                 if let Some(e) = self
                     .document
-                    .elements()
-                    .iter()
-                    .rev()
-                    .find(|e| e.hit_test(point, 5.0 / self.camera.zoom()))
+                    .hit(point, 5.0 / self.camera.zoom(), false, false)
                 {
                     let id = pen_core::bound::owner(&self.document, e.id());
                     if !self.selection.contains(id) {
@@ -374,6 +389,9 @@ impl Editor {
     }
 
     fn drag_to(&mut self, at: Option<ScreenPt>, mods: Modifiers) -> Redraw {
+        if let Some(redraw) = self.trace_move(at) {
+            return redraw;
+        }
         if self.eraser.is_some() {
             return self.erase_to(at, mods);
         }
@@ -397,6 +415,16 @@ impl Editor {
                 if let Some(at) = at {
                     let point =
                         properties::snap(self.camera.screen_to_world(at), self.settings.grid);
+                    let point = if self.polish.modes.snap_objects && !mods.ctrl {
+                        self.polish.snapping.point(
+                            point,
+                            self.camera.zoom(),
+                            &mut self.polish.guides,
+                        )
+                    } else {
+                        self.polish.guides.clear();
+                        point
+                    };
                     if point.is_finite() {
                         drag.current = point;
                         drag.pointer = at;
@@ -416,6 +444,7 @@ impl Editor {
                     &self.camera,
                     self.settings.grid,
                     &mut self.document,
+                    &mut self.polish,
                 ) {
                     Redraw::Draft
                 } else {
@@ -433,8 +462,20 @@ impl Editor {
             return Redraw::Draft;
         }
         let id = self.document.alloc_id();
+        let mut kind = drag.kind();
+        if let Kind::Frame { name, .. } = &mut kind {
+            *name = format!(
+                "Frame {}",
+                self.document
+                    .elements()
+                    .iter()
+                    .filter(|e| matches!(e.kind, Kind::Frame { .. }))
+                    .count()
+                    + 1
+            );
+        }
         let command = Command::Add {
-            element: Element::new(id, drag.kind(), self.style),
+            element: Element::new(id, kind, self.style),
             at: self.document.elements().len(),
         };
         self.commit_drawing(command, id)
@@ -443,6 +484,7 @@ impl Editor {
     /// The only way edits reach the document. Bound text follows inside the same history
     /// entry, so one undo restores a container and its text together.
     fn execute(&mut self, command: Command, before: Selection) -> bool {
+        let command = pen_core::frames::follow(&self.document, command);
         let command = pen_core::binding::follow(&self.document, command);
         let command = pen_core::bound::follow(&self.document, command);
         let success = self
@@ -456,7 +498,8 @@ impl Editor {
     }
 
     fn cancel(&mut self) -> bool {
-        let erased = self.eraser.take().is_some();
+        let erased = self.eraser.take().is_some() | self.polish.trace.take().is_some();
+        self.polish.guides.clear();
         let property = self.property_edit.is_some();
         if property {
             self.end_property(true);
@@ -480,7 +523,10 @@ impl Editor {
         self.cancel();
         self.point_editor = None;
         self.tool = tool;
-        if tool != Tool::Select {
+        if !matches!(
+            tool,
+            Tool::Select | Tool::Lasso | Tool::Laser | Tool::Eyedropper
+        ) {
             self.selection.clear();
         }
         Redraw::Tool
@@ -516,3 +562,9 @@ mod binding_tests;
 
 #[cfg(test)]
 mod image_tests;
+
+#[cfg(test)]
+mod m9_tests;
+
+#[cfg(test)]
+mod snap_timing_tests;

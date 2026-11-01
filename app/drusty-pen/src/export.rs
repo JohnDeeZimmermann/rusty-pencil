@@ -13,7 +13,7 @@ pub(crate) struct Panel {
     scale: u8,
     background: bool,
     dark: bool,
-    selection: bool,
+    pub(crate) selection: bool,
 }
 impl Default for Panel {
     fn default() -> Self {
@@ -28,14 +28,44 @@ impl Default for Panel {
 }
 fn paint(s: &State, selection: bool) -> DrawList {
     let mut list = DrawList::new();
+    let frame = selection
+        .then(|| {
+            s.editor
+                .selection()
+                .ids()
+                .next()
+                .filter(|_| s.editor.selection().len() == 1)
+                .and_then(|id| s.editor.document().get(id))
+                .filter(|e| matches!(e.kind, pen_core::Kind::Frame { .. }))
+        })
+        .flatten();
+    if let Some(frame) = frame {
+        let mut inner = DrawList::new();
+        for e in s
+            .editor
+            .document()
+            .elements()
+            .iter()
+            .filter(|e| e.frame_id == Some(frame.id()))
+        {
+            pen_render::draw_element(e, &mut inner);
+        }
+        list.push(pen_render::Prim::Clip {
+            bounds: frame.kind.bounds(),
+            prims: inner.prims().to_vec(),
+        });
+        return list;
+    }
     for e in s.editor.document().elements() {
         if !selection
             || s.editor.selection().contains(e.id())
+            || e.frame_id
+                .is_some_and(|id| s.editor.selection().contains(id))
             || e.kind
                 .container()
                 .is_some_and(|c| s.editor.selection().contains(c.id()))
         {
-            pen_render::draw_element(e, &mut list);
+            pen_render::frames::draw(s.editor.document(), &[], e, &mut list);
         }
     }
     list
@@ -128,6 +158,15 @@ pub(crate) fn key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
                 s.input(pen_editor::InputEvent::FinishText, tx);
             }
             s.export.open = !s.export.open;
+            if s.export.open {
+                s.export.selection = s.editor.selection().len() == 1
+                    && s.editor
+                        .selection()
+                        .ids()
+                        .next()
+                        .and_then(|id| s.editor.document().get(id))
+                        .is_some_and(|e| matches!(e.kind, pen_core::Kind::Frame { .. }));
+            }
             s.menu = None;
         }
         'c' => copy(s, ev.mods.alt, tx),

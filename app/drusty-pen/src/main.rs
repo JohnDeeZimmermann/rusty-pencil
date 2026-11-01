@@ -4,16 +4,20 @@
 mod arrange;
 mod clipboard;
 mod design;
+mod details;
 mod events;
 mod export;
+mod feedback;
 mod files;
 mod grid;
 mod images;
+mod library;
 mod menu;
 mod navigation;
 mod overlay;
 mod paint;
 mod palette;
+mod polish;
 mod preferences;
 mod present;
 mod properties;
@@ -36,6 +40,8 @@ const WINDOW: (f32, f32) = (1024.0, 720.0);
 /// written only by [`State::input`], from the editor; it is never read back into the editor.
 struct State {
     export: export::Panel,
+    polish: polish::Panel,
+    library: library::Library,
     context: Option<pen_editor::ScreenPt>,
     menu: Option<menu::Section>,
     preferences: preferences::Preferences,
@@ -61,6 +67,8 @@ impl State {
     fn new(camera: Camera) -> Self {
         Self {
             export: export::Panel::default(),
+            polish: polish::Panel::default(),
+            library: library::Library::default(),
             context: None,
             menu: None,
             preferences: preferences::Preferences::default(),
@@ -88,6 +96,7 @@ impl State {
     /// Feeds one event to the editor and presents what changed, rebuilding as little as
     /// possible. Returns what the editor reported.
     fn input(&mut self, event: InputEvent, tx: &mut Tx) -> Redraw {
+        let modal_open = self.polish.modal.is_some();
         let context_closed = self.context.is_some()
             && matches!(
                 &event,
@@ -125,6 +134,12 @@ impl State {
                 | InputEvent::Paste(_)
                 | InputEvent::PasteScene(_)
                 | InputEvent::InsertImage { .. }
+                | InputEvent::SampleColor { .. }
+                | InputEvent::RenameFrame(_)
+                | InputEvent::Geometry { .. }
+                | InputEvent::SetLink(_)
+                | InputEvent::SelectElement(_)
+                | InputEvent::PlaceScene { .. }
                 | InputEvent::Context { .. }
                 | InputEvent::Property(
                     pen_core::Property::Stroke(_) | pen_core::Property::Background(_)
@@ -169,6 +184,7 @@ impl State {
         self.text_session_changed(old_text);
         if refresh_properties {
             properties::sync(self);
+            details::sync(self);
         }
         if self.editor.document().revision() != revision
             || self.editor.style() != style
@@ -199,7 +215,7 @@ impl State {
         });
         match redraw {
             // Only live values changed: no view rebuild, no layout.
-            Redraw::Nothing | Redraw::Camera if !context_closed => tx.live_only(),
+            Redraw::Nothing | Redraw::Camera if !context_closed && !modal_open => tx.live_only(),
             Redraw::Nothing | Redraw::Camera => {}
             Redraw::Draft | Redraw::Tool | Redraw::Scene => {
                 let scene_changed = self.show_feedback();
@@ -208,6 +224,10 @@ impl State {
                     && !overlay_changed
                     && !refresh_properties
                     && !context_closed
+                    && self.editor.laser().is_empty()
+                    && self.editor.lasso().is_empty()
+                    && self.editor.guides().is_empty()
+                    && !self.overlay.feedback_changed
                     && self.editor.draft().is_none()
                     && self.editor.text_session().is_none()
                 {
@@ -263,6 +283,7 @@ fn init() -> State {
         .unwrap_or_else(|| Camera::centred_on(WorldPt::ORIGIN, viewport, 1.0));
     let mut state = State::new(camera);
     state.restore();
+    library::restore(&mut state);
     state
 }
 
@@ -314,29 +335,51 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
             )
             .child(s.grid.view(s.editor.settings()))
             .child(world)
-            .child(s.overlay.view(s.editor.settings().dark))
-            .child(toolbar::toolbar(&s.editor))
-            .child(navigation::zoom_pill(
-                &s.camera.zoom_label,
-                s.editor.settings().dark,
-            ))
-            .child(navigation::content_button(
-                &s.content_button,
-                s.editor.settings().dark,
-            ))
-            .child(properties::panel(s))
-            .child(files::controls(s))
-            .child(menu::view(s))
-            .child(tabs::view(s))
+            .child(s.overlay.view(s.editor.settings().dark, &s.camera))
+            .child(chrome(s))
+            .child(polish::dialog(s))
             .child(files::confirmation(s))
             .child(tabs::confirmation(s))
             .child(export::view(s))
-            .child(arrange::menu(s)),
+            .child(arrange::menu(s))
+            .child(library::ghost(s)),
     )
+}
+
+fn chrome(s: &State) -> El {
+    if s.editor.modes().zen {
+        return polish::controls(s);
+    }
+    el().key("chrome")
+        .absolute(0.0, 0.0)
+        .w_full()
+        .h_full()
+        .child(toolbar::toolbar(&s.editor))
+        .child(navigation::zoom_pill(
+            &s.camera.zoom_label,
+            s.editor.settings().dark,
+        ))
+        .child(navigation::content_button(
+            &s.content_button,
+            s.editor.settings().dark,
+        ))
+        .child(properties::panel(s))
+        .child(files::controls(s))
+        .child(menu::view(s))
+        .child(tabs::view(s))
+        .child(polish::controls(s))
+        .child(if s.library.open {
+            library::view(s)
+        } else {
+            details::inspector(s)
+        })
 }
 
 /// Keys no focused control took. Tool shortcuts, Escape, and modifier changes mid-drag.
 fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    if polish::key(s, ev, tx) {
+        return true;
+    }
     if tabs::key(s, ev, tx) {
         return true;
     }
@@ -425,7 +468,7 @@ fn spec() -> AppSpec<State> {
         on_key: Some(on_key),
         fonts: text::FONTS,
         families: text::FAMILIES,
-        poll: Some(files::poll),
+        poll: Some(polish::poll),
         ..AppSpec::new("drusty-pen", WINDOW, init, view)
     }
 }
@@ -451,3 +494,6 @@ mod drag_tests;
 
 #[cfg(test)]
 mod m8_tests;
+
+#[cfg(test)]
+mod m9_tests;

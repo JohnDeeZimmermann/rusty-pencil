@@ -44,6 +44,7 @@ fn ink(c: Srgba, dark: bool) -> String {
 }
 fn bounds(prim: &Prim) -> Option<WorldRect> {
     match prim {
+        Prim::Clip { bounds, .. } => Some(*bounds),
         Prim::Image { bounds, angle, .. } | Prim::Text { bounds, angle, .. } => [
             bounds.min(),
             WorldPt::new(bounds.max().x, bounds.min().y),
@@ -84,10 +85,15 @@ fn svg_source(
         .filter_map(bounds)
         .reduce(WorldRect::union)
         .ok_or(ExportError::Empty)?;
-    let x = b.min().x - 16.0;
-    let y = b.min().y - 16.0;
-    let w = (b.width() + 32.0).ceil();
-    let h = (b.height() + 32.0).ceil();
+    let padding = if matches!(list.prims(), [Prim::Clip { .. }]) {
+        0.0
+    } else {
+        16.0
+    };
+    let x = b.min().x - padding;
+    let y = b.min().y - padding;
+    let w = (b.width() + padding * 2.0).ceil();
+    let h = (b.height() + padding * 2.0).ceil();
     let scale = f32::from(options.scale);
     if !(1..=3).contains(&options.scale)
         || !w.is_finite()
@@ -111,6 +117,33 @@ fn svg_source(
     }
     for (i, prim) in list.prims().iter().enumerate() {
         match prim {
+            Prim::Clip { bounds: b, prims } => {
+                let inner = DrawList {
+                    prims: prims.clone(),
+                };
+                if !inner.is_empty() {
+                    let source = svg_source(
+                        &inner,
+                        files,
+                        Options {
+                            background: None,
+                            ..options
+                        },
+                    )?;
+                    let body = source
+                        .split_once('>')
+                        .map_or("", |(_, body)| body)
+                        .trim_end_matches("</svg>\n");
+                    let _ = writeln!(
+                        out,
+                        "<defs><clipPath id=\"frame-{i}\"><rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\"/></clipPath></defs><g clip-path=\"url(#frame-{i})\">{body}</g>",
+                        b.min().x,
+                        b.min().y,
+                        b.width(),
+                        b.height()
+                    );
+                }
+            }
             Prim::Fill { points, color } | Prim::Stroke { points, color, .. } => {
                 let points = points
                     .iter()

@@ -60,6 +60,13 @@ impl SelectionDrag {
                 .and_then(|r| Handle::hit(r, origin, camera.zoom()))
         };
         let handle = handle.filter(|handle| {
+            if *handle == Handle::Rotate
+                && selection
+                    .elements(doc)
+                    .any(|e| matches!(e.kind, pen_core::Kind::Frame { .. }))
+            {
+                return false;
+            }
             if selection.len() == 1
                 && selection
                     .elements(doc)
@@ -71,16 +78,7 @@ impl SelectionDrag {
             selection.len() == 1 || !selection.bounds(doc).is_some_and(|b| b.contains(origin))
         });
         let hit = doc
-            .elements()
-            .iter()
-            .rev()
-            .find(|e| {
-                !e.locked
-                    && !doc
-                        .get(pen_core::bound::owner(doc, e.id()))
-                        .is_some_and(|owner| owner.locked)
-                    && e.hit_test(origin, 5.0 / camera.zoom())
-            })
+            .hit(origin, 5.0 / camera.zoom(), false, true)
             .map(|e| pen_core::bound::owner(doc, e.id()));
         let action = if let Some(handle) = handle {
             let originals = selection.elements(doc).cloned().collect();
@@ -160,9 +158,11 @@ impl SelectionDrag {
                 doc.elements()
                     .iter()
                     .filter(|e| {
-                        e.kind
-                            .container()
-                            .is_some_and(|c| selected.contains(&c.id()))
+                        !selected.contains(&e.id())
+                            && (e.frame_id.is_some_and(|id| selected.contains(&id))
+                                || e.kind
+                                    .container()
+                                    .is_some_and(|c| selected.contains(&c.id())))
                     })
                     .cloned(),
             );
@@ -179,6 +179,10 @@ impl SelectionDrag {
             let mut groups = std::collections::BTreeMap::new();
             for e in &mut originals {
                 *e = e.copied(ids[&e.id()]);
+                e.frame_id = e.frame_id.and_then(|id| ids.get(&id).copied());
+                if let Some(pen_core::Link::Element(id)) = e.link {
+                    e.link = ids.get(&id).copied().map(pen_core::Link::Element);
+                }
                 for g in &mut e.group_ids {
                     *g = *groups.entry(*g).or_insert_with(|| {
                         next_group += 1;
@@ -213,6 +217,7 @@ impl SelectionDrag {
         camera: &Camera,
         grid: bool,
         doc: &mut Document,
+        polish: &mut crate::polish::Polish,
     ) -> bool {
         let old = (self.pointer, self.current, self.mods);
         if let Some(at) = at {
@@ -262,6 +267,14 @@ impl SelectionDrag {
                         WorldPt::new(next.x - p.x, next.y - p.y)
                     })
                 } else {
+                    delta
+                };
+                let delta = if polish.modes.snap_objects && !mods.ctrl {
+                    polish
+                        .snapping
+                        .adjust(originals, delta, camera.zoom(), &mut polish.guides)
+                } else {
+                    polish.guides.clear();
                     delta
                 };
                 let (dx, dy) = if mods.shift {
@@ -348,6 +361,20 @@ impl SelectionDrag {
             }
             Action::Box | Action::Toggle => {}
         }
+        if matches!(self.action, Action::Move(_)) {
+            for i in 0..self.preview.len() {
+                if matches!(self.preview[i].kind, pen_core::Kind::Frame { .. })
+                    || self.preview[i]
+                        .frame_id
+                        .is_some_and(|id| self.preview.iter().any(|e| e.id() == id))
+                {
+                    continue;
+                }
+                self.preview[i].frame_id = doc
+                    .frame_at(self.preview[i].bounds().centre())
+                    .map(Element::id);
+            }
+        }
         true
     }
 
@@ -387,7 +414,8 @@ impl SelectionDrag {
                 // Bound text is reached through its container.
                 if !element.locked
                     && element.kind.container().is_none()
-                    && bounds.intersects(element.bounds())
+                    && pen_core::frames::visible_bounds(doc, element)
+                        .is_some_and(|visible| bounds.intersects(visible))
                 {
                     selection.expand_group(doc, element.id(), None);
                 }

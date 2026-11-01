@@ -10,6 +10,7 @@ pub(crate) struct Followers {
     key: Option<(u64, Vec<ElementId>)>,
     /// Committed bound text whose container is in the preview.
     texts: Vec<Element>,
+    children: Vec<Element>,
     arrows: Vec<Element>,
     /// The base preview plus fitted followers; empty when nothing follows.
     composed: Vec<Element>,
@@ -23,6 +24,19 @@ impl Followers {
         if !fresh {
             let ids: Vec<ElementId> = base.iter().map(Element::id).collect();
             self.texts.clear();
+            self.children.clear();
+            if !ids.is_empty() {
+                self.children.extend(
+                    doc.elements()
+                        .iter()
+                        .filter(|e| {
+                            !ids.contains(&e.id()) && e.frame_id.is_some_and(|id| ids.contains(&id))
+                        })
+                        .cloned(),
+                );
+            }
+            let mut affected = ids.clone();
+            affected.extend(self.children.iter().map(Element::id));
             self.arrows.clear();
             if !ids.is_empty() {
                 self.arrows.extend(
@@ -33,12 +47,11 @@ impl Followers {
                                 && e.bindings
                                     .iter()
                                     .flatten()
-                                    .any(|b| ids.contains(&b.element))
+                                    .any(|b| affected.contains(&b.element))
                         })
                         .cloned(),
                 );
             }
-            let mut affected = ids.clone();
             affected.extend(self.arrows.iter().map(Element::id));
             if !ids.is_empty() {
                 self.texts.extend(
@@ -46,7 +59,7 @@ impl Followers {
                         .iter()
                         .filter(|e| {
                             e.kind.container().is_some_and(|c| {
-                                affected.contains(&c.id()) && !ids.contains(&e.id())
+                                affected.contains(&c.id()) && !affected.contains(&e.id())
                             })
                         })
                         .cloned(),
@@ -55,24 +68,54 @@ impl Followers {
             self.key = Some((doc.revision(), ids));
         }
         self.composed.clear();
-        if self.texts.is_empty()
+        if self.children.is_empty()
+            && self.texts.is_empty()
             && self.arrows.is_empty()
             && !base.iter().any(|e| e.bindings.iter().any(Option::is_some))
         {
             return;
         }
         self.composed.extend_from_slice(base);
+        for child in &self.children {
+            if let Some((old, new)) = child
+                .frame_id
+                .and_then(|id| doc.get(id).zip(base.iter().find(|e| e.id() == id)))
+            {
+                let a = old.kind.bounds();
+                let b = new.kind.bounds();
+                if (a.width() - b.width()).abs() < 0.0001
+                    && (a.height() - b.height()).abs() < 0.0001
+                {
+                    self.composed.push(
+                        child.with_bounds(
+                            child
+                                .kind
+                                .bounds()
+                                .translated(b.min().x - a.min().x, b.min().y - a.min().y),
+                        ),
+                    );
+                } else {
+                    self.composed.push(child.clone());
+                }
+            }
+        }
         for i in 0..self.composed.len() {
             if self.composed[i].bindings.iter().any(Option::is_some) {
                 let fitted = pen_core::binding::fit(&self.composed[i], |id| {
-                    base.iter().find(|e| e.id() == id).or_else(|| doc.get(id))
+                    self.composed
+                        .iter()
+                        .find(|e| e.id() == id)
+                        .or_else(|| doc.get(id))
                 });
                 self.composed[i] = fitted;
             }
         }
         for arrow in &self.arrows {
             self.composed.push(pen_core::binding::fit(arrow, |id| {
-                base.iter().find(|e| e.id() == id).or_else(|| doc.get(id))
+                self.composed
+                    .iter()
+                    .find(|e| e.id() == id)
+                    .or_else(|| doc.get(id))
             }));
         }
         for text in &self.texts {

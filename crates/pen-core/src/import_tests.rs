@@ -2,8 +2,8 @@ use crate::*;
 #[test]
 fn every_excalidraw_type_imports_and_unsupported_types_are_counted() {
     let scene = file::load(include_bytes!("../tests/fixtures/all-elements.excalidraw")).unwrap();
-    assert_eq!(scene.elements.len(), 8);
-    assert_eq!(scene.skipped_elements, 4);
+    assert_eq!(scene.elements.len(), 9);
+    assert_eq!(scene.skipped_elements, 3);
     assert_eq!(scene.files.len(), 1);
     let doc = scene.document().unwrap();
     let saved = file::save(&file::SceneFile::new(&doc, scene.app_state)).unwrap();

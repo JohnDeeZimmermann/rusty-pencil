@@ -139,6 +139,13 @@ impl State {
         self.camera.show(self.editor.camera());
         self.grid.show(self.editor.camera());
         crate::properties::sync(self);
+        self.polish.modal = None;
+        self.polish.frame.focused = false;
+        for field in &mut self.polish.geometry {
+            field.focused = false;
+        }
+        self.library.dragging = None;
+        crate::details::sync(self);
         self.overlay.show(&self.editor);
         self.show_feedback();
         self.content_button.set(if self.editor.content_offscreen() {

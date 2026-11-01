@@ -9,9 +9,12 @@ impl Editor {
         if !self.camera.screen_to_world(at).is_finite() {
             return Redraw::Nothing;
         }
-        if self.navigation.space || self.tool == Tool::Hand {
+        if self.polish.modes.view || self.navigation.space || self.tool == Tool::Hand {
             self.navigation.pan = Some(at);
             return Redraw::Camera;
+        }
+        if let Some(redraw) = self.trace_down(at, mods) {
+            return redraw;
         }
         let finished_text = self.text_session.is_some();
         self.finish_text();
@@ -75,6 +78,12 @@ impl Editor {
             )
             .map(Gesture::Drawing)
         };
+        let excluded: Vec<_> = if self.tool == Tool::Select {
+            self.selection.ids().collect()
+        } else {
+            Vec::new()
+        };
+        self.polish.snapping.prepare(&self.document, &excluded);
         if finished_text {
             Redraw::Scene
         } else {
@@ -83,6 +92,10 @@ impl Editor {
     }
 
     pub(crate) fn pointer_up(&mut self, at: ScreenPt, mods: Modifiers) -> Redraw {
+        if let Some(redraw) = self.trace_up(at, mods) {
+            return redraw;
+        }
+        self.polish.guides.clear();
         if self.is_panning() {
             let redraw = self.pan_to(at);
             self.navigation.pan = None;
@@ -146,7 +159,7 @@ impl Editor {
     }
 
     pub(crate) fn double_click(&mut self, at: ScreenPt, mods: Modifiers) -> Redraw {
-        if self.navigation.space || self.tool == Tool::Hand {
+        if self.polish.modes.view || self.navigation.space || self.tool == Tool::Hand {
             return self.pointer_down(at, mods);
         }
         if matches!(self.gesture, Some(Gesture::Path(_))) {
@@ -159,17 +172,7 @@ impl Editor {
         let point = self.camera.screen_to_world(at);
         let hit = self
             .document
-            .elements()
-            .iter()
-            .rev()
-            .find(|e| {
-                !e.locked
-                    && !self
-                        .document
-                        .get(bound::owner(&self.document, e.id()))
-                        .is_some_and(|owner| owner.locked)
-                    && e.hit_test_interior(point, 5.0 / self.camera.zoom())
-            })
+            .hit(point, 5.0 / self.camera.zoom(), true, true)
             .map(|e| bound::owner(&self.document, e.id()))
             .and_then(|id| self.document.get(id));
         let Some(element) = hit else {
