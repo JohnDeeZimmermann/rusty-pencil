@@ -39,7 +39,12 @@
   {
     "t": 2.03,
     "type": "click",
-    "key": "rough-Architect"
+    "key": "roughness"
+  },
+  {
+    "t": 2.11,
+    "type": "click",
+    "key": "roughness"
   },
   {
     "t": 2.28,
@@ -58,7 +63,7 @@
   {
     "t": 3.08,
     "type": "click",
-    "key": "rough-Artist"
+    "key": "roughness"
   },
   {
     "t": 3.33,
@@ -77,7 +82,7 @@
   {
     "t": 4.13,
     "type": "click",
-    "key": "rough-Cartoonist"
+    "key": "roughness"
   },
   {
     "t": 4.38,

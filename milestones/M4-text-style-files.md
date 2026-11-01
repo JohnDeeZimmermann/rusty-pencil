@@ -80,3 +80,8 @@
   **0.643 ms** on this machine. This is a small scene, not a large-document benchmark.
   All **149 workspace tests** pass. Screenshots checked the finished scene, active text
   editing, reset confirmation, launch recovery and sharp text at **3000%**.
+
+- Inspector refinement: the left panel now appears only for the text tool, selected text or
+  an active text edit. Font family and alignment use outline icons with descriptive tooltips;
+  size choices share one row. Sloppiness cycles from a stroke icon in the toolbar, retaining
+  the M4 styling feature without a permanent sidebar.

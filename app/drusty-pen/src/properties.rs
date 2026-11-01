@@ -1,16 +1,10 @@
-//! M4's small type and outline inspector. Choices apply to selection and future elements.
-use crate::{State, design as d};
-use pen_core::{Font, Kind, Roughness, TextAlign};
+//! Contextual text controls. Icon buttons preserve the active field's typing focus.
+use crate::{State, design as d, property_icons as icons};
+use pen_core::{Font, Kind, TextAlign};
 use pen_editor::{Editor, InputEvent, Tool};
-use rune::{El, Tx, col, el, row, text};
+use rune::{El, Shape, Tx, canvas, col, el, row, text};
 
 pub(crate) fn panel(editor: &Editor) -> El {
-    let mut panel = d::raised(col().key("properties"), d::R_ISLAND)
-        .absolute(d::S4, d::INSPECTOR_TOP)
-        .w(d::INSPECTOR_WIDTH)
-        .padding(d::S3)
-        .gap(d::S3)
-        .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only());
     let has_text = editor.tool() == Tool::Text
         || editor.text_session().is_some()
         || editor
@@ -18,108 +12,113 @@ pub(crate) fn panel(editor: &Editor) -> El {
             .ids()
             .filter_map(|id| editor.document().get(id))
             .any(|e| matches!(e.kind, Kind::Text { .. }));
-    if has_text {
-        let (font, size, align) = editor.text_style();
-        panel = panel.child(label("Font"));
-        for (name, value) in [
-            ("Hand-drawn", Font::HandDrawn),
-            ("Normal", Font::Normal),
-            ("Code", Font::Code),
-        ] {
-            panel = panel.child(choice(
-                name,
+    if !has_text {
+        return el().size(0.0, 0.0);
+    }
+
+    let (font, size, align) = editor.text_style();
+    let fonts = [
+        ("Hand-drawn", Font::HandDrawn),
+        ("Normal", Font::Normal),
+        ("Code", Font::Code),
+    ]
+    .into_iter()
+    .fold(row().gap(d::S1), |r, (name, value)| {
+        r.child(
+            choice(
                 &format!("font-{value:?}"),
+                name,
                 font == value,
                 InputEvent::TextStyle {
                     font: value,
                     size,
                     align,
                 },
-            ));
-        }
-        panel = panel.child(label("Size"));
-        let sizes = [("S", 16.0), ("M", 20.0), ("L", 28.0), ("XL", 36.0)]
-            .into_iter()
-            .fold(row().gap(d::S1), |r, (name, value)| {
-                r.child(
-                    choice(
-                        name,
-                        &format!("size-{name}"),
-                        (size - value).abs() < 0.1,
-                        InputEvent::TextStyle {
-                            font,
-                            size: value,
-                            align,
-                        },
-                    )
-                    .w(d::SIZE_CHOICE),
-                )
-            });
-        panel = panel.child(sizes).child(label("Align"));
-        let aligns = [
-            ("Left", TextAlign::Left),
-            ("Centre", TextAlign::Centre),
-            ("Right", TextAlign::Right),
-        ]
+            )
+            .child(icon(icons::font(value, ink(font == value)))),
+        )
+    });
+    let sizes = [("S", 16.0), ("M", 20.0), ("L", 28.0), ("XL", 36.0)]
         .into_iter()
         .fold(row().gap(d::S1), |r, (name, value)| {
+            let active = (size - value).abs() < 0.1;
             r.child(
                 choice(
-                    name,
-                    &format!("align-{name}"),
-                    align == value,
+                    &format!("size-{name}"),
+                    &format!("Font size {name} · {value:.0} pt"),
+                    active,
                     InputEvent::TextStyle {
                         font,
-                        size,
-                        align: value,
+                        size: value,
+                        align,
                     },
                 )
-                .w(d::ALIGN_CHOICE),
+                .child(text(name).font(d::T_LABEL).color(d::c(ink(active)))),
             )
         });
-        panel = panel.child(aligns);
-    } else {
-        panel = panel.child(label("Sloppiness"));
-        for (name, value) in [
-            ("Architect", Roughness::Architect),
-            ("Artist", Roughness::Artist),
-            ("Cartoonist", Roughness::Cartoonist),
-        ] {
-            panel = panel.child(choice(
-                name,
-                &format!("rough-{value:?}"),
-                editor.roughness() == value,
-                InputEvent::Roughness(value),
-            ));
-        }
-    }
-    panel
+    let aligns = [
+        ("Left", TextAlign::Left),
+        ("Centre", TextAlign::Centre),
+        ("Right", TextAlign::Right),
+    ]
+    .into_iter()
+    .fold(row().gap(d::S1), |r, (name, value)| {
+        r.child(
+            choice(
+                &format!("align-{name}"),
+                &format!("Align {name}"),
+                align == value,
+                InputEvent::TextStyle {
+                    font,
+                    size,
+                    align: value,
+                },
+            )
+            .child(icon(icons::align(value, ink(align == value)))),
+        )
+    });
+    d::raised(col().key("properties"), d::R_ISLAND)
+        .transition(rune::Transition::none())
+        .absolute(d::S4, d::INSPECTOR_TOP)
+        .w(d::INSPECTOR_WIDTH)
+        .padding(d::S3)
+        .gap(d::S3)
+        .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only())
+        .child(group("Font family", fonts))
+        .child(group("Font size", sizes))
+        .child(group("Text align", aligns))
 }
 
-fn label(name: &str) -> El {
-    text(name).font(d::T_LABEL).color(d::c(d::MUTED))
+fn group(label: &str, controls: El) -> El {
+    col()
+        .gap(d::S1)
+        .child(text(label).font(d::T_LABEL).color(d::c(d::MUTED)))
+        .child(controls)
 }
 
-fn choice(name: &str, key: &str, active: bool, event: InputEvent) -> El {
+fn ink(active: bool) -> pen_core::Srgba {
+    if active { d::ON_ACCENT } else { d::INK }
+}
+
+fn icon(shape: Shape) -> El {
+    canvas(shape).size(d::ICON, d::ICON)
+}
+
+fn choice(key: &str, help: &str, active: bool, event: InputEvent) -> El {
     el().key(key)
-        .h(d::BUTTON)
-        .w_full()
+        .size(d::BUTTON, d::BUTTON)
         .items_center()
         .justify_center()
-        .child(
-            text(name)
-                .font(d::T_LABEL)
-                .color(d::c(if active { d::ON_ACCENT } else { d::INK })),
-        )
         .radius(d::R_BUTTON)
-        .color(d::c(if active { d::ON_ACCENT } else { d::INK }))
-        .fill(d::c(if active { d::ACCENT } else { d::PAPER }))
+        .fill(d::c(if active { d::ACCENT } else { d::ACCENT_SOFT }))
         .hover(if active {
             rune::Color::TRANSPARENT
         } else {
-            d::c(d::ACCENT_SOFT)
+            d::c(d::BORDER)
         })
+        .help(help)
         .preserve_focus_on_press(true)
+        .press_scale(d::PRESS)
         .on_press_tx(move |s: &mut State, tx| {
             s.input(event.clone(), tx);
         })

@@ -273,3 +273,69 @@ fn document_text_rasterizes_at_screen_resolution_after_maximum_live_zoom() {
         "high quality text cannot rebuild the view on zoom"
     );
 }
+
+#[test]
+fn text_inspector_is_contextual_and_dismisses_with_the_text_selection() {
+    let mut rt = app();
+    let visible = |rt: &Runtime<State>| {
+        rt.elements()
+            .iter()
+            .any(|e| e.key.as_deref() == Some("properties"))
+    };
+    assert!(!visible(&rt), "an empty canvas stays clear");
+    drag(&mut rt, (300.0, 300.0), (450.0, 400.0));
+    key(&mut rt, "v");
+    click(&mut rt, 350.0, 300.0);
+    assert_eq!(rt.state.editor.selection().len(), 1);
+    assert!(
+        !visible(&rt),
+        "shapes without text do not open the text inspector"
+    );
+    key(&mut rt, "t");
+    assert!(
+        visible(&rt),
+        "the text tool exposes its defaults before placement"
+    );
+    click(&mut rt, 500.0, 250.0);
+    key(&mut rt, "A label");
+    special(&mut rt, Key::Escape);
+    assert!(visible(&rt), "selected text keeps its controls");
+    click(&mut rt, 800.0, 550.0);
+    assert!(!visible(&rt), "clicking the canvas hides the inspector");
+    click(&mut rt, 510.0, 260.0);
+    assert!(visible(&rt), "selecting existing text restores it");
+    key(&mut rt, "r");
+    assert!(!visible(&rt), "another drawing tool hides text controls");
+}
+
+#[test]
+fn outline_styles_cycle_from_the_toolbar_without_opening_a_panel() {
+    let mut rt = app();
+    use pen_core::Roughness;
+    for expected in [
+        Roughness::Cartoonist,
+        Roughness::Architect,
+        Roughness::Artist,
+    ] {
+        click_key(&mut rt, "roughness");
+        assert_eq!(rt.state.editor.roughness(), expected);
+        assert!(
+            !rt.elements()
+                .iter()
+                .any(|e| e.key.as_deref() == Some("properties"))
+        );
+    }
+    drag(&mut rt, (300.0, 300.0), (450.0, 400.0));
+    key(&mut rt, "v");
+    click(&mut rt, 350.0, 300.0);
+    click_key(&mut rt, "roughness");
+    assert_eq!(
+        rt.state.editor.document().elements()[0].props.roughness,
+        Roughness::Cartoonist
+    );
+    command(&mut rt, 'z', false);
+    assert_eq!(
+        rt.state.editor.document().elements()[0].props.roughness,
+        Roughness::Artist
+    );
+}

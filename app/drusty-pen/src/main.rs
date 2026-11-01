@@ -10,6 +10,7 @@ mod paint;
 mod palette;
 mod present;
 mod properties;
+mod property_icons;
 mod scene;
 mod text;
 mod toolbar;

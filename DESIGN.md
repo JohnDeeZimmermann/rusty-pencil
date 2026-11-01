@@ -66,10 +66,15 @@ press and hover motion remains subtle.
 
 ## Text and file controls
 
-The type inspector appears for text creation or selection, with font, size and alignment
-choices. Other tools show the three outline styles. Both use the same floating surface,
-44-point targets and teal active state as the toolbar. Document text uses bundled Caveat,
+The type inspector appears only while the text tool is active or text is selected or being
+edited. Font family and alignment use compact outline icons with tooltips; size uses a single
+S/M/L/XL row. Controls keep 44-point targets and the toolbar's teal active state. Clicking away
+or switching to another drawing tool hides the panel. Document text uses bundled Caveat,
 Inter or Roboto Mono; interface labels continue to use Inter.
+
+Outline sloppiness uses a small stroke icon after the toolbar's tools. Clicking cycles
+Architect, Artist and Cartoonist for the selection or future shapes. Its tooltip identifies
+the current style, keeping outline styling available without an always-open sidebar.
 
 File actions sit at the bottom right, with a muted status above them. Reset opens a compact
 modal with Cancel and Reset canvas actions. The status uses a fixed live-text box so camera

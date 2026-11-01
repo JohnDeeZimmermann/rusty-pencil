@@ -1,6 +1,6 @@
 //! The floating tool island at the top of the window, and the quiet hint under it.
 
-use pen_core::{Edges, Kind, Path, Props, Srgba, WorldPt, WorldRect};
+use pen_core::{Edges, Kind, Path, Props, Roughness, Srgba, WorldPt, WorldRect};
 use pen_editor::{Editor, InputEvent, Tool};
 use pen_render::DrawList;
 use rune::{Color, Cursor, El, Tx, canvas, col, el, row, text};
@@ -25,7 +25,9 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
         .pin(Some(0.0), Some(d::S4), Some(0.0), None)
         .items_center()
         .gap(d::S3)
-        .child(island)
+        .child(island
+            .child(el().size(d::S1, d::BUTTON).items_center().justify_center().child(el().size(d::OUTLINE, d::ICON).fill(c(d::BORDER))))
+            .child(roughness_button(editor.roughness())))
         .child(
             text(if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else { hint(active) })
                 .key("hint")
@@ -174,4 +176,28 @@ fn hint(tool: Tool) -> String {
         "square"
     };
     format!("Drag to draw {what}  ·  Shift for a {square}  ·  Alt from the centre")
+}
+
+/// Outline style remains available without opening an inspector on an empty canvas.
+fn roughness_button(current: Roughness) -> El {
+    let (name, next) = match current {
+        Roughness::Architect => ("Architect", Roughness::Artist),
+        Roughness::Artist => ("Artist", Roughness::Cartoonist),
+        Roughness::Cartoonist => ("Cartoonist", Roughness::Architect),
+    };
+    el().key("roughness")
+        .size(d::BUTTON, d::BUTTON)
+        .radius(d::R_BUTTON)
+        .items_center()
+        .justify_center()
+        .hover(c(d::ACCENT_SOFT))
+        .press_scale(d::PRESS)
+        .preserve_focus_on_press(true)
+        .child(canvas(crate::property_icons::roughness(current)).size(d::ICON, d::ICON))
+        .help(format!(
+            "Sloppiness: {name} · Click to cycle outline styles"
+        ))
+        .on_press_tx(move |s: &mut State, tx| {
+            s.input(InputEvent::Roughness(next), tx);
+        })
 }

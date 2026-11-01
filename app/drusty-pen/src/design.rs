@@ -61,8 +61,6 @@ pub(crate) const R_HANDLE: f32 = 2.0;
 
 // M4 inspector, file status, and confirmation surfaces.
 pub(crate) const INSPECTOR_TOP: f32 = 128.0;
-pub(crate) const INSPECTOR_WIDTH: f32 = 180.0;
-pub(crate) const SIZE_CHOICE: f32 = 36.0;
-pub(crate) const ALIGN_CHOICE: f32 = 49.0;
+pub(crate) const INSPECTOR_WIDTH: f32 = BUTTON * 4.0 + S1 * 3.0 + S3 * 2.0;
 pub(crate) const FILE_STATUS_WIDTH: f32 = 440.0;
 pub(crate) const CONFIRM_WIDTH: f32 = 360.0;
