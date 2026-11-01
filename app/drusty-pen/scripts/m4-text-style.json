@@ -1,0 +1,349 @@
+[
+  {
+    "t": 0.1,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 0.35,
+    "type": "click",
+    "x": 260,
+    "y": 130
+  },
+  {
+    "t": 0.6,
+    "type": "click",
+    "key": "font-HandDrawn"
+  },
+  {
+    "t": 0.85,
+    "type": "click",
+    "key": "size-XL"
+  },
+  {
+    "t": 1.1,
+    "type": "type",
+    "text": "A little room to think",
+    "every": 0.008
+  },
+  {
+    "t": 1.53,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 1.78,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 2.03,
+    "type": "click",
+    "key": "rough-Architect"
+  },
+  {
+    "t": 2.28,
+    "type": "drag",
+    "x": 260,
+    "y": 265,
+    "dx": 180,
+    "dy": 130,
+    "dur": 0.25
+  },
+  {
+    "t": 2.83,
+    "type": "key",
+    "name": "o"
+  },
+  {
+    "t": 3.08,
+    "type": "click",
+    "key": "rough-Artist"
+  },
+  {
+    "t": 3.33,
+    "type": "drag",
+    "x": 505,
+    "y": 265,
+    "dx": 180,
+    "dy": 130,
+    "dur": 0.25
+  },
+  {
+    "t": 3.88,
+    "type": "key",
+    "name": "d"
+  },
+  {
+    "t": 4.13,
+    "type": "click",
+    "key": "rough-Cartoonist"
+  },
+  {
+    "t": 4.38,
+    "type": "drag",
+    "x": 750,
+    "y": 250,
+    "dx": 180,
+    "dy": 160,
+    "dur": 0.25
+  },
+  {
+    "t": 4.93,
+    "type": "key",
+    "name": "a"
+  },
+  {
+    "t": 5.18,
+    "type": "drag",
+    "x": 452,
+    "y": 330,
+    "dx": 40,
+    "dy": 0,
+    "dur": 0.2
+  },
+  {
+    "t": 5.73,
+    "type": "drag",
+    "x": 700,
+    "y": 330,
+    "dx": 35,
+    "dy": 0,
+    "dur": 0.2
+  },
+  {
+    "t": 6.28,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 6.53,
+    "type": "click",
+    "x": 294,
+    "y": 300
+  },
+  {
+    "t": 6.78,
+    "type": "click",
+    "key": "font-HandDrawn"
+  },
+  {
+    "t": 7.03,
+    "type": "click",
+    "key": "size-L"
+  },
+  {
+    "t": 7.28,
+    "type": "type",
+    "text": "Sketch",
+    "every": 0.008
+  },
+  {
+    "t": 7.57,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 7.82,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 8.07,
+    "type": "click",
+    "x": 538,
+    "y": 305
+  },
+  {
+    "t": 8.32,
+    "type": "click",
+    "key": "font-Normal"
+  },
+  {
+    "t": 8.57,
+    "type": "click",
+    "key": "size-M"
+  },
+  {
+    "t": 8.82,
+    "type": "type",
+    "text": "Explore",
+    "every": 0.008
+  },
+  {
+    "t": 9.13,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 9.38,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 9.63,
+    "type": "click",
+    "x": 796,
+    "y": 305
+  },
+  {
+    "t": 9.88,
+    "type": "click",
+    "key": "font-Code"
+  },
+  {
+    "t": 10.13,
+    "type": "click",
+    "key": "size-M"
+  },
+  {
+    "t": 10.38,
+    "type": "type",
+    "text": "build()",
+    "every": 0.008
+  },
+  {
+    "t": 10.69,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 10.94,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 11.19,
+    "type": "click",
+    "x": 288,
+    "y": 435
+  },
+  {
+    "t": 11.44,
+    "type": "click",
+    "key": "font-Normal"
+  },
+  {
+    "t": 11.69,
+    "type": "click",
+    "key": "size-S"
+  },
+  {
+    "t": 11.94,
+    "type": "type",
+    "text": "Architect",
+    "every": 0.008
+  },
+  {
+    "t": 12.26,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 12.51,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 12.76,
+    "type": "click",
+    "x": 560,
+    "y": 435
+  },
+  {
+    "t": 13.01,
+    "type": "click",
+    "key": "font-Normal"
+  },
+  {
+    "t": 13.26,
+    "type": "click",
+    "key": "size-S"
+  },
+  {
+    "t": 13.51,
+    "type": "type",
+    "text": "Artist",
+    "every": 0.008
+  },
+  {
+    "t": 13.81,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 14.06,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 14.31,
+    "type": "click",
+    "x": 790,
+    "y": 435
+  },
+  {
+    "t": 14.56,
+    "type": "click",
+    "key": "font-Normal"
+  },
+  {
+    "t": 14.81,
+    "type": "click",
+    "key": "size-S"
+  },
+  {
+    "t": 15.06,
+    "type": "type",
+    "text": "Cartoonist",
+    "every": 0.008
+  },
+  {
+    "t": 15.39,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 15.64,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 15.89,
+    "type": "click",
+    "x": 280,
+    "y": 535
+  },
+  {
+    "t": 16.14,
+    "type": "click",
+    "key": "font-HandDrawn"
+  },
+  {
+    "t": 16.39,
+    "type": "click",
+    "key": "size-L"
+  },
+  {
+    "t": 16.64,
+    "type": "type",
+    "text": "Write freely. Keep every idea.\nYour canvas stays with you.",
+    "every": 0.008
+  },
+  {
+    "t": 17.35,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 17.6,
+    "type": "click",
+    "x": 935,
+    "y": 570
+  },
+  {
+    "t": 17.85,
+    "type": "key",
+    "name": "Escape"
+  }
+]

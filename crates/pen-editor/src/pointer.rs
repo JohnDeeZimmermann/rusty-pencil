@@ -12,6 +12,11 @@ impl Editor {
             self.navigation.pan = Some(at);
             return Redraw::Camera;
         }
+        let finished_text = self.text_session.is_some();
+        self.finish_text();
+        if self.tool == Tool::Text {
+            return self.begin_text(at, None);
+        }
         if let Some(edit) = &mut self.point_editor {
             if edit.press(&self.document, at, &self.camera) {
                 return Redraw::Draft;
@@ -42,7 +47,11 @@ impl Editor {
             ShapeDrag::start(self.tool, self.camera.screen_to_world(at), at, mods)
                 .map(Gesture::Drawing)
         };
-        Redraw::Draft
+        if finished_text {
+            Redraw::Scene
+        } else {
+            Redraw::Draft
+        }
     }
 
     pub(crate) fn pointer_up(&mut self, at: ScreenPt, mods: Modifiers) -> Redraw {
@@ -121,6 +130,9 @@ impl Editor {
             .iter()
             .rev()
             .find(|e| e.hit_test(point, 5.0 / self.camera.zoom()));
+        if let Some(element) = hit.filter(|e| matches!(e.kind, pen_core::Kind::Text { .. })) {
+            return self.begin_text(at, Some(element.id()));
+        }
         if let Some(element) = hit.filter(|e| e.kind.is_linear()) {
             self.selection = Selection::only(element.id());
             return self.begin_point_edit();

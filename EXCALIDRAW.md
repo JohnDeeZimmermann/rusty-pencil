@@ -15,7 +15,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Arrow (`A` / `5`) — M3
 - [x] Line (`L` / `6`) — M3
 - [x] Freedraw / pen (`P` / `7`) — M3
-- [ ] Text (`T` / `8`) — M4
+- [x] Text (`T` / `8`) — M4
 - [ ] Image (`9`) — M8
 - [ ] Eraser (`E` / `0`), hold Alt to un-erase — M6
 - [x] Hand / pan tool (`H`) — M3
@@ -33,12 +33,12 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Fill style: hachure, cross-hatch, solid — M5
 - [ ] Stroke width: thin, bold, extra bold — M5
 - [ ] Stroke style: solid, dashed, dotted — M5
-- [ ] Sloppiness: architect, artist, cartoonist — M4
+- [x] Sloppiness: architect, artist, cartoonist — M4
 - [ ] Edges: sharp, round — M5
 - [ ] Opacity slider — M5
-- [ ] Font family: hand-drawn, normal, code — M4
-- [ ] Font size: S, M, L, XL (+ Ctrl+Shift+`<` / `>`) — M4
-- [ ] Text align: left, centre, right — M4
+- [x] Font family: hand-drawn, normal, code — M4
+- [x] Font size: S, M, L, XL (+ Ctrl+Shift+`<` / `>`) — M4
+- [x] Text align: left, centre, right — M4
 - [ ] Vertical align for text inside a shape — M7
 - [ ] Arrowheads at start/end: none, arrow, bar, dot, triangle, circle, diamond (filled + outline) — M5
 - [ ] Arrow type: sharp, curved, elbow — M7
@@ -69,10 +69,10 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Text
 
-- [ ] Click to place, type, Esc or click away to finish — M4
-- [ ] Multi-line text, auto-sizing box — M4
-- [ ] Double-click text to edit it — M4
-- [ ] IME / non-Latin input — M4
+- [x] Click to place, type, Esc or click away to finish — M4
+- [x] Multi-line text, auto-sizing box — M4
+- [x] Double-click text to edit it — M4
+- [x] IME / non-Latin input — M4
 - [ ] Text inside shapes (double-click a shape), wraps to the container — M7
 - [ ] Labels on arrows — M7
 - [ ] "Wrap text in container" action — M7
@@ -132,10 +132,10 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 
 ## Files and export
 
-- [ ] Save / Save as scene file (JSON) — M4
-- [ ] Open scene file, also by drag-and-drop onto the window — M4
-- [ ] Autosave and restore the last scene on launch — M4
-- [ ] Reset canvas — M4
+- [x] Save / Save as scene file (JSON) — M4
+- [x] Open scene file, also by drag-and-drop onto the window — M4
+- [x] Autosave and restore the last scene on launch — M4
+- [x] Reset canvas — M4
 - [ ] Import `.excalidraw` files — M8
 - [ ] Export PNG: scale 1×/2×/3×, background on/off, dark mode, selection only — M8
 - [ ] Export SVG — M8

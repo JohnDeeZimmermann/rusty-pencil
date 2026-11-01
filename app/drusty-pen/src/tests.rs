@@ -8,8 +8,15 @@ use rune::{Env, PhysicalInput, PhysicalKeyCode, Runtime};
 
 fn app() -> Runtime<State> {
     let camera = Camera::centred_on(WorldPt::ORIGIN, ScreenVec::new(WINDOW.0, WINDOW.1), 1.0);
-    let mut rt = Runtime::new(State::new(camera), view, WINDOW, Env::new(false, 2.0));
+    let mut rt = Runtime::with_text(
+        State::new(camera),
+        view,
+        WINDOW,
+        Env::new(false, 2.0),
+        text::system(),
+    );
     rt.on_key = spec().on_key;
+    rt.poll = spec().poll;
     rt.set_modifier_keys(true);
     rt.check_live_only(false);
     rt.frame(0.0);
@@ -312,3 +319,6 @@ mod selection;
 
 #[path = "m3_tests.rs"]
 mod m3;
+
+#[path = "m4_tests.rs"]
+mod m4;

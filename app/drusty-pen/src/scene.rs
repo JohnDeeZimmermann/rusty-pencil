@@ -1,14 +1,13 @@
 //! Rune adapter for composed scene paint. The renderer owns ordering and invalidation;
 //! this adapter retains Rune shapes and memoized nodes by the renderer's part revisions.
-use crate::{layer, paint};
-use pen_core::{Document, Element, WorldRect};
-use rune::{El, Shape, el, memo};
+use pen_core::{Document, Element};
+use rune::{El, el, memo};
 
-#[derive(Debug)]
 struct Part {
     revision: u64,
-    shape: Shape,
-    bounds: WorldRect,
+    #[cfg(test)]
+    empty: bool,
+    node: El,
 }
 
 #[derive(Debug, Default)]
@@ -30,11 +29,11 @@ impl Scene {
             {
                 continue;
             }
-            let (shape, bounds) = paint::bounded(part.prims());
             let painted = Part {
                 revision: part.revision(),
-                shape,
-                bounds,
+                #[cfg(test)]
+                empty: part.prims().is_empty(),
+                node: crate::text::paint(part.prims()),
             };
             if let Some(old) = self.parts.get_mut(i) {
                 *old = painted;
@@ -46,7 +45,7 @@ impl Scene {
 
     #[cfg(test)]
     pub(crate) fn is_empty(&self) -> bool {
-        self.parts.iter().all(|p| p.shape.is_empty())
+        self.parts.iter().all(|p| p.empty)
     }
 
     pub(crate) fn view(&self) -> El {
@@ -54,10 +53,16 @@ impl Scene {
             el().key("scene-parts").absolute(0.0, 0.0).size(0.0, 0.0),
             |node, (i, part)| {
                 let key = format!("scene-part-{i}");
-                node.child(memo(key.clone(), part.revision, || {
-                    layer(part.shape.clone(), part.bounds, &key)
-                }))
+                node.child(memo(key.clone(), part.revision, || part.node.clone()))
             },
         )
+    }
+}
+
+impl std::fmt::Debug for Part {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Part")
+            .field("revision", &self.revision)
+            .finish_non_exhaustive()
     }
 }

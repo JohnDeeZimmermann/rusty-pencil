@@ -91,6 +91,11 @@ impl Navigation {
 
 impl Editor {
     #[must_use]
+    pub fn viewport(&self) -> ScreenVec {
+        self.navigation.viewport
+    }
+
+    #[must_use]
     pub fn is_panning(&self) -> bool {
         self.navigation.pan.is_some()
     }

@@ -49,6 +49,16 @@ impl Default for Camera {
 }
 
 impl Camera {
+    #[must_use]
+    pub fn new(scroll: WorldPt, zoom: f32) -> Self {
+        let mut camera = Self {
+            scroll: WorldPt::ORIGIN,
+            zoom: clamp_zoom(zoom, 1.0),
+        };
+        camera.set_scroll(scroll);
+        camera
+    }
+
     pub const MIN_ZOOM: f32 = 0.1;
     pub const MAX_ZOOM: f32 = 30.0;
 

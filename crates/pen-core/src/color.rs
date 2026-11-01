@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 /// A colour as stored in the document: 8-bit sRGB (gamma-encoded, as CSS and Excalidraw store
 /// it) with straight, not premultiplied, alpha. Renderers decode to linear light themselves.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Srgba {
     pub r: u8,
     pub g: u8,

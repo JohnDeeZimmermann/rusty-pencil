@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 /// A point on the infinite canvas, in world points (y down). At 100% zoom one world point is
 /// one screen point. Never mix with screen coordinates; `pen-editor`'s camera converts.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Default)]
 pub struct WorldPt {
     pub x: f32,
     pub y: f32,
@@ -24,7 +25,7 @@ impl WorldPt {
 ///
 /// Invariant: `min.x <= max.x` and `min.y <= max.y`. Every constructor normalises, so a rect
 /// dragged up and to the left is the same rect as one dragged down and to the right.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Default)]
 pub struct WorldRect {
     min: WorldPt,
     max: WorldPt,

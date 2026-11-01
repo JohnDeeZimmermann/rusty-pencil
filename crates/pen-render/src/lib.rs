@@ -8,7 +8,9 @@
 mod cache;
 mod overlay;
 mod path;
+mod rough;
 mod scene;
+pub use rough::{draw_element, draw_seeded};
 
 use pen_core::{Kind, Props, Srgba, WorldPt};
 
@@ -24,6 +26,14 @@ pub use pen_core::TOLERANCE;
 /// One paint operation, in world points.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Prim {
+    Text {
+        content: String,
+        font: pen_core::Font,
+        size: f32,
+        align: pen_core::TextAlign,
+        bounds: pen_core::WorldRect,
+        color: Srgba,
+    },
     /// A simple polygon filled with `color`.
     Fill { points: Vec<WorldPt>, color: Srgba },
     /// A polyline `width` world points wide, with round joins and caps; `closed` joins the
@@ -70,6 +80,26 @@ impl DrawList {
 
 /// Appends the paint for one element (or draft) to `out`: background fill, then stroke.
 pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
+    if let Kind::Text {
+        content,
+        font,
+        size,
+        align,
+        bounds,
+    } = kind
+    {
+        if !content.is_empty() {
+            out.push(Prim::Text {
+                content: content.clone(),
+                font: *font,
+                size: *size,
+                align: *align,
+                bounds: *bounds,
+                color: props.stroke,
+            });
+        }
+        return;
+    }
     if let Some(path) = kind.path() {
         path::draw_path(kind, path, props, out);
         return;

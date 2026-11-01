@@ -3,6 +3,21 @@ use pen_core::Command;
 
 impl Editor {
     pub(crate) fn key(&mut self, key: Key, mods: Modifiers) -> Redraw {
+        if mods.ctrl && mods.shift && matches!(key, Key::Char('<' | '>' | ',' | '.')) {
+            let (_, size, _) = self.text_style();
+            let sizes = [16.0, 20.0, 28.0, 36.0];
+            let larger = matches!(key, Key::Char('>' | '.'));
+            let size = if larger {
+                sizes.into_iter().find(|s| *s > size).unwrap_or(36.0)
+            } else {
+                sizes.into_iter().rev().find(|s| *s < size).unwrap_or(16.0)
+            };
+            let (font, _, align) = self.text_style();
+            return self.set_text_style(font, size, align);
+        }
+        if self.text_session.is_some() {
+            return Redraw::Nothing;
+        }
         if let Some(redraw) = self.view_key(key, mods) {
             return redraw;
         }

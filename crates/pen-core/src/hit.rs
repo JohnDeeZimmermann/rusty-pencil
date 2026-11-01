@@ -10,6 +10,9 @@ impl Element {
             return false;
         }
         let bounds = self.kind.bounds();
+        if matches!(self.kind, Kind::Text { .. }) {
+            return bounds.contains(point);
+        }
         let radius = if matches!(self.kind, Kind::Freedraw(_)) {
             self.props.stroke_width * 1.6
         } else {

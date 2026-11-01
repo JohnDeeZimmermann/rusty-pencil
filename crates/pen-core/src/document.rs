@@ -48,8 +48,14 @@ impl Document {
 
     /// A fresh id, never reused even after removal or undo.
     pub fn alloc_id(&mut self) -> ElementId {
-        self.next_id += 1;
+        self.next_id = self.next_id.saturating_add(1);
         ElementId::new(self.next_id)
+    }
+
+    /// Identity a new draft will receive on commit. This does not reserve the id.
+    #[must_use]
+    pub fn draft_id(&self) -> ElementId {
+        ElementId::new(self.next_id.saturating_add(1))
     }
 
     /// Bottom to top.

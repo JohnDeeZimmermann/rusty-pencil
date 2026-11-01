@@ -25,7 +25,7 @@ fn document() -> Document {
 fn paint(elements: &[Element]) -> Vec<Prim> {
     let mut list = DrawList::new();
     for element in elements {
-        draw(&element.kind, &element.props, &mut list);
+        draw_element(element, &mut list);
     }
     list.prims().to_vec()
 }

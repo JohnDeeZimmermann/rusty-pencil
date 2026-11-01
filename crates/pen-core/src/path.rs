@@ -1,15 +1,16 @@
 use crate::{WorldPt, WorldRect};
+use serde::{Deserialize, Serialize};
 
 /// One sample relative to a path's origin, in world points (y down). Pressure is 0..=1;
 /// line and arrow vertices use 0.5. Freedraw preserves pressure through simplification.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct PathPoint {
     pub offset: WorldPt,
     pub pressure: f32,
 }
 
 /// Open path geometry. Samples are relative to `origin`, so moving a path preserves them.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Path {
     pub origin: WorldPt,
     pub points: Vec<PathPoint>,

@@ -11,7 +11,9 @@ rust-version.workspace = true
 pen-core.workspace = true
 pen-editor.workspace = true
 pen-render.workspace = true
-rune.workspace = true
+rune = { workspace = true, features = ["native-file-dialog"] }
+directories = "6"
+tempfile = "3"
 
 [lints]
 workspace = true

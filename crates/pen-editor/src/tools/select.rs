@@ -156,7 +156,14 @@ impl SelectionDrag {
                     original.kind.bounds(),
                     *handle,
                     delta,
-                    mods,
+                    if matches!(original.kind, pen_core::Kind::Text { .. }) {
+                        Modifiers {
+                            shift: true,
+                            ..mods
+                        }
+                    } else {
+                        mods
+                    },
                     camera.zoom(),
                 )));
             }

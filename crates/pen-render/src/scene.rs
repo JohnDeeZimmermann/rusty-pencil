@@ -1,5 +1,5 @@
 //! Cached document paint and live replacements, composed in document z-order.
-use crate::{DrawList, Prim, SceneCache, draw};
+use crate::{DrawList, Prim, SceneCache, draw_element};
 use pen_core::{Document, Element, ElementId};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -57,7 +57,7 @@ impl Scene {
                 self.revision = self.revision.wrapping_add(1);
                 let part = &mut self.parts[at];
                 part.paint.clear();
-                draw(&element.kind, &element.props, &mut part.paint);
+                draw_element(element, &mut part.paint);
                 part.revision = self.revision;
             }
         }

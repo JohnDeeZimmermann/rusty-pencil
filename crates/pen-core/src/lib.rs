@@ -7,10 +7,12 @@
 mod color;
 mod document;
 mod element;
+pub mod file;
 mod geometry;
 mod hit;
 mod outline;
 mod path;
+mod text;
 
 pub use color::Srgba;
 pub use document::{Command, DocError, Document};
@@ -29,3 +31,5 @@ mod hit_tests;
 
 #[cfg(test)]
 mod path_tests;
+
+pub use text::{Font, Roughness, TextAlign};

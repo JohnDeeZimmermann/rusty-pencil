@@ -3,12 +3,15 @@
 
 mod design;
 mod events;
+mod files;
 mod navigation;
 mod overlay;
 mod paint;
 mod palette;
 mod present;
+mod properties;
 mod scene;
+mod text;
 mod toolbar;
 
 use pen_core::{WorldPt, WorldRect};
@@ -23,6 +26,9 @@ const WINDOW: (f32, f32) = (1024.0, 720.0);
 /// written only by [`State::input`], from the editor; it is never read back into the editor.
 struct State {
     editor: Editor,
+    text_edit: rune::TextEdit,
+    fonts: rune::text::TextSystem,
+    files: files::Files,
     camera: present::LiveCamera,
     scene: scene::Scene,
     /// The element being drawn, rebuilt on every pointer move of a drag.
@@ -38,6 +44,9 @@ impl State {
     fn new(camera: Camera) -> Self {
         Self {
             editor: Editor::new(camera),
+            text_edit: rune::TextEdit::default(),
+            fonts: text::system(),
+            files: files::Files::default(),
             camera: present::LiveCamera::new(&camera),
             scene: scene::Scene::default(),
             draft: Shape::new(),
@@ -51,8 +60,49 @@ impl State {
     /// Feeds one event to the editor and presents what changed, rebuilding as little as
     /// possible. Returns what the editor reported.
     fn input(&mut self, event: InputEvent, tx: &mut Tx) -> Redraw {
+        let event = if let InputEvent::Key {
+            key: pen_editor::Key::Char(c),
+            mods,
+        } = &event
+            && mods.ctrl
+            && mods.shift
+            && matches!(c, '<' | '>' | ',' | '.')
+        {
+            let (font, size, align) = self.editor.text_style();
+            let sizes = [16.0, 20.0, 28.0, 36.0];
+            let size = if matches!(c, '>' | '.') {
+                sizes.into_iter().find(|s| *s > size).unwrap_or(36.0)
+            } else {
+                sizes.into_iter().rev().find(|s| *s < size).unwrap_or(16.0)
+            };
+            InputEvent::TextStyle { font, size, align }
+        } else {
+            event
+        };
         let camera = *self.editor.camera();
-        let redraw = self.editor.handle(event);
+        let revision = self.editor.document().revision();
+        let style = self.editor.style();
+        let text_defaults = self.editor.text_defaults();
+        let text_changed = matches!(&event, InputEvent::TextChanged { content, .. } if self.editor.text_session().is_some_and(|s| matches!(&s.element.kind, pen_core::Kind::Text { content: old, .. } if content != old)));
+        let old_text = self.editor.text_session().map(|s| s.element.id());
+        let redraw = if let InputEvent::TextStyle { font, size, align } = event {
+            let fonts = &mut self.fonts;
+            self.editor
+                .style_text(font, size, align, |content, font, size| {
+                    text::measure(fonts, content, font, size)
+                })
+        } else {
+            self.editor.handle(event)
+        };
+        self.text_session_changed(old_text);
+        if self.editor.document().revision() != revision
+            || *self.editor.camera() != camera
+            || self.editor.style() != style
+            || self.editor.text_defaults() != text_defaults
+            || text_changed
+        {
+            self.files.changed(tx);
+        }
         if *self.editor.camera() != camera {
             self.camera.show(self.editor.camera());
         }
@@ -75,7 +125,7 @@ impl State {
             .show(self.editor.document(), self.editor.preview());
         self.draft_paint.clear();
         if let Some(draft) = self.editor.draft() {
-            pen_render::draw(&draft.kind, &draft.props, &mut self.draft_paint);
+            pen_render::draw_seeded(&draft.kind, &draft.props, draft.seed, &mut self.draft_paint);
         }
         (self.draft, self.draft_bounds) = paint::bounded(self.draft_paint.prims());
     }
@@ -102,7 +152,9 @@ fn init() -> State {
     let viewport = ScreenVec::new(WINDOW.0, WINDOW.1);
     let camera = present::camera_arg(rune::extra_args())
         .unwrap_or_else(|| Camera::centred_on(WorldPt::ORIGIN, viewport, 1.0));
-    State::new(camera)
+    let mut state = State::new(camera);
+    state.restore();
+    state
 }
 
 /// Bounded paint under the world transform; Rune uses the rect to cull offscreen canvases.
@@ -125,7 +177,8 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         // A drag rebuilds the view on every move; the committed scene is reused unless the
         // document changed.
         .child(s.scene.view())
-        .child(layer(s.draft.clone(), s.draft_bounds, "draft"));
+        .child(layer(s.draft.clone(), s.draft_bounds, "draft"))
+        .child(text::editor(s));
 
     events::canvas_input(
         el().key("viewport")
@@ -147,12 +200,18 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
             .child(s.overlay.view())
             .child(toolbar::toolbar(&s.editor))
             .child(navigation::zoom_pill(&s.camera.zoom_label))
-            .child(navigation::content_button(&s.content_button)),
+            .child(navigation::content_button(&s.content_button))
+            .child(properties::panel(&s.editor))
+            .child(files::controls(s))
+            .child(files::confirmation(s)),
     )
 }
 
 /// Keys no focused control took. Tool shortcuts, Escape, and modifier changes mid-drag.
 fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
+    if files::key(s, ev, tx) {
+        return true;
+    }
     let mods = mods(ev.mods);
     if matches!(&ev.key, Key::Text(t) if t == " ") && !mods.ctrl && !mods.alt {
         s.input(InputEvent::Space(true), tx);
@@ -206,13 +265,19 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
 fn spec() -> AppSpec<State> {
     AppSpec {
         on_key: Some(on_key),
+        fonts: text::FONTS,
+        families: text::FAMILIES,
+        poll: Some(files::poll),
         ..AppSpec::new("drusty-pen", WINDOW, init, view)
     }
 }
 
 fn main() {
     // Modifier keys on their own, so pressing Shift mid-drag squares the shape at once.
-    rune::App::new(spec()).modifier_keys().run();
+    rune::App::new(spec())
+        .on_close(files::close)
+        .modifier_keys()
+        .run();
 }
 
 #[cfg(test)]

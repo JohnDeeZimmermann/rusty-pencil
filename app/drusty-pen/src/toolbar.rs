@@ -85,6 +85,11 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
         WorldRect::from_corners(WorldPt::new(e, e), WorldPt::new(d::ICON - e, d::ICON - e))
     };
     let kind = match tool {
+        Tool::Text => {
+            return rune::Shape::new()
+                .stroke(vec![[3.0, 4.0], [17.0, 4.0]], d::ICON_STROKE, c(ink))
+                .stroke(vec![[10.0, 4.0], [10.0, 17.0]], d::ICON_STROKE, c(ink));
+        }
         Tool::Select => {
             let points = vec![
                 [4.0, 2.0],
@@ -154,6 +159,7 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
 
 fn hint(tool: Tool) -> String {
     let what = match tool {
+        Tool::Text => return "Click to write  ·  Enter for a new line  ·  Esc to finish  ·  Double-click to edit".into(),
         Tool::Select => return "Click to select  ·  Shift to add  ·  Drag to move or box select  ·  Esc to cancel".into(),
         Tool::Hand => return "Drag to pan  ·  Wheel to scroll  ·  Ctrl + wheel to zoom  ·  Shift + 1 to fit all".into(),
         Tool::Line | Tool::Arrow => return "Drag or click point to point  ·  Shift snaps 15°  ·  Enter / Esc / double-click to finish".into(),

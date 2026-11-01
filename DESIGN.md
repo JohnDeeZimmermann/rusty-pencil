@@ -54,8 +54,7 @@ Use rune's bundled interface font. Keep controls compact and avoid heavy weights
 ## Icons and canvas
 
 Tool icons use `pen_render::draw`, so their geometry matches the drawing tools. The document's
-stroke colours and shape defaults remain independent of chrome colours. The hand-drawn style
-is planned for M4.
+stroke colours and shape defaults remain independent of chrome colours. Committed and draft shapes use the same seeded hand-drawn contours; toolbar icons stay clean.
 
 ## Selection feedback
 
@@ -64,3 +63,14 @@ handles with 2-point corners. Geometry has a 5-screen-point gap to the selection
 Marquee fill uses `SELECTION_WASH` (the accent ink at 24/255 alpha). These dimensions stay
 constant through pan and zoom. Canvas feedback appears and disappears immediately; toolbar
 press and hover motion remains subtle.
+
+## Text and file controls
+
+The type inspector appears for text creation or selection, with font, size and alignment
+choices. Other tools show the three outline styles. Both use the same floating surface,
+44-point targets and teal active state as the toolbar. Document text uses bundled Caveat,
+Inter or Roboto Mono; interface labels continue to use Inter.
+
+File actions sit at the bottom right, with a muted status above them. Reset opens a compact
+modal with Cancel and Reset canvas actions. The status uses a fixed live-text box so camera
+updates can remain live-only.

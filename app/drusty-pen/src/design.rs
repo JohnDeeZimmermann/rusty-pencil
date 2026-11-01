@@ -58,3 +58,11 @@ pub(crate) fn raised(el: rune::El, radius: f32) -> rune::El {
 /// Transparent teal for the marquee; it never obscures document strokes.
 pub(crate) const SELECTION_WASH: Srgba = Srgba { a: 24, ..ON_ACCENT };
 pub(crate) const R_HANDLE: f32 = 2.0;
+
+// M4 inspector, file status, and confirmation surfaces.
+pub(crate) const INSPECTOR_TOP: f32 = 128.0;
+pub(crate) const INSPECTOR_WIDTH: f32 = 180.0;
+pub(crate) const SIZE_CHOICE: f32 = 36.0;
+pub(crate) const ALIGN_CHOICE: f32 = 49.0;
+pub(crate) const FILE_STATUS_WIDTH: f32 = 440.0;
+pub(crate) const CONFIRM_WIDTH: f32 = 360.0;

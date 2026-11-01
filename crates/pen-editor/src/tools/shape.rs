@@ -32,7 +32,9 @@ impl ShapeDrag {
         mods: Modifiers,
     ) -> Option<Self> {
         let tool = match tool {
-            Tool::Select | Tool::Arrow | Tool::Line | Tool::Freedraw | Tool::Hand => return None,
+            Tool::Select | Tool::Arrow | Tool::Line | Tool::Freedraw | Tool::Hand | Tool::Text => {
+                return None;
+            }
             Tool::Rectangle => ShapeTool::Rectangle,
             Tool::Diamond => ShapeTool::Diamond,
             Tool::Ellipse => ShapeTool::Ellipse,

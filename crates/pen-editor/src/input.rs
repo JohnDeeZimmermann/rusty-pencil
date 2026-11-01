@@ -2,8 +2,19 @@ use crate::{ScreenPt, ScreenVec};
 
 /// A GUI-neutral input event. Points are screen points relative to the canvas viewport's
 /// top-left.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
+    TextChanged {
+        content: String,
+        bounds: pen_core::WorldRect,
+    },
+    FinishText,
+    TextStyle {
+        font: pen_core::Font,
+        size: f32,
+        align: pen_core::TextAlign,
+    },
+    Roughness(pen_core::Roughness),
     /// Move the content by `by` (positive: content moves right / down), as a wheel or
     /// two-finger scroll does.
     Pan {

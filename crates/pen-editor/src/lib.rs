@@ -9,7 +9,9 @@ mod navigation;
 mod pointer;
 mod selection;
 mod shortcuts;
+mod text;
 mod tool;
+pub use text::TextSession;
 mod tools;
 
 use history::History;
@@ -44,6 +46,8 @@ pub struct Editor {
     history: History,
     navigation: Navigation,
     point_editor: Option<PointEditor>,
+    text_session: Option<TextSession>,
+    text_defaults: text::TextDefaults,
 }
 
 /// Uncommitted shape geometry, in world points.
@@ -51,6 +55,7 @@ pub struct Editor {
 pub struct Draft {
     pub kind: Kind,
     pub props: Props,
+    pub seed: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,6 +95,9 @@ impl Editor {
     /// Only touched elements, replacing their committed paint during a transform.
     #[must_use]
     pub fn preview(&self) -> &[Element] {
+        if let Some(edit) = &self.text_session {
+            return &edit.hidden;
+        }
         if let Some(edit) = &self.point_editor {
             return edit.preview();
         }
@@ -123,10 +131,12 @@ impl Editor {
             Some(Gesture::Path(drag)) => Some(Draft {
                 kind: drag.kind(true),
                 props: self.style,
+                seed: self.document.draft_id().seed(),
             }),
             Some(Gesture::Drawing(drag)) => Some(Draft {
                 kind: drag.kind(),
                 props: self.style,
+                seed: self.document.draft_id().seed(),
             }),
             _ => None,
         }
@@ -134,6 +144,10 @@ impl Editor {
 
     pub fn handle(&mut self, event: InputEvent) -> Redraw {
         match event {
+            InputEvent::TextChanged { content, bounds } => self.update_text(content, bounds),
+            InputEvent::FinishText => self.finish_text(),
+            InputEvent::TextStyle { font, size, align } => self.set_text_style(font, size, align),
+            InputEvent::Roughness(roughness) => self.set_roughness(roughness),
             InputEvent::Pan { by } => {
                 self.camera.pan_by(by);
                 self.camera_moved()
@@ -193,6 +207,9 @@ impl Editor {
             InputEvent::Key {
                 key: Key::Escape, ..
             } => {
+                if self.text_session.is_some() {
+                    return self.finish_text();
+                }
                 if self.tool != Tool::Freedraw && matches!(self.gesture, Some(Gesture::Path(_))) {
                     return self.finish_path(false);
                 }
@@ -322,9 +339,10 @@ impl Editor {
     }
 
     fn select_tool(&mut self, tool: Tool) -> Redraw {
-        if self.tool == tool {
+        if self.tool == tool && self.text_session.is_none() {
             return Redraw::Nothing;
         }
+        self.finish_text();
         self.cancel();
         self.point_editor = None;
         self.tool = tool;

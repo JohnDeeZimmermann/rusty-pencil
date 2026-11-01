@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use pen_core::{Document, ElementId};
 
-use crate::{DrawList, Prim, draw};
+use crate::{DrawList, Prim, draw_element};
 
 /// Per-element paint, cached by `(id, version)`: rebuilding the scene after one element
 /// changes re-flattens only that element.
@@ -34,7 +34,7 @@ impl SceneCache {
                 .is_some_and(|e| e.version == element.version());
             if !fresh {
                 let mut paint = DrawList::new();
-                draw(&element.kind, &element.props, &mut paint);
+                draw_element(element, &mut paint);
                 self.entries.insert(
                     element.id(),
                     Entry {
