@@ -15,6 +15,10 @@ use pen_editor::{InputEvent, Tool};
 use rune::{El, Tx, col, el, row, text};
 
 pub(crate) fn panel(s: &State) -> El {
+    // Menus and the inspector share the left column; show one surface at a time.
+    if s.menu.is_some() {
+        return el().size(0.0, 0.0);
+    }
     let editor = &s.editor;
     let dark = editor.settings().dark;
     let mut content = col().gap(d::S_SECTION);

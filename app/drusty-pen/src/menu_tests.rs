@@ -88,3 +88,25 @@ fn opening_a_menu_finishes_text_and_escape_closes_a_focused_colour_field() {
     assert!(rt.state.menu.is_none());
     assert!(rt.find("app-menu-popup").is_none());
 }
+
+#[test]
+fn menus_replace_the_inspector_and_restore_the_selection_properties_on_close() {
+    let mut rt = app();
+    drag(&mut rt, (340.0, 240.0), (560.0, 390.0));
+    let selected = rt.state.editor.selection().clone();
+    let revision = rt.state.editor.document().revision();
+    let inspector = rt.find("shape-properties").expect("selection inspector");
+
+    for section in ["menu-file", "menu-preferences"] {
+        click(&mut rt, section);
+        assert!(rt.find("app-menu-popup").is_some());
+        assert!(rt.find("shape-properties").is_none());
+        assert!(rt.find("Stroke-hex").is_none());
+        assert_eq!(rt.state.editor.selection(), &selected);
+        click(&mut rt, section);
+        assert!(rt.find("app-menu-popup").is_none());
+        assert_eq!(rt.find("shape-properties"), Some(inspector));
+        assert!(rt.find("Stroke-hex").is_some());
+        assert_eq!(rt.state.editor.document().revision(), revision);
+    }
+}

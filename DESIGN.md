@@ -83,7 +83,9 @@ centred drawing toolbar. Its dropdowns use the same paper surfaces, teal active 
 compact controls as the inspector. File contains Open, Save and Reset canvas, with shortcut
 hints and a divider before Reset. Reset opens a compact confirmation modal. Muted file
 status remains at the bottom right in a fixed live-text box so camera updates stay live-only.
-Menus close on Escape, a second press of their tab, or an outside press. Dismissal consumes
+An open menu temporarily replaces the shape inspector in the left column, keeping their
+surfaces from overlapping. Closing the menu restores the inspector in place with the current
+selection. Menus close on Escape, a second press of their tab, or an outside press. Dismissal consumes
 the pointer gesture so it cannot draw on the canvas.
 
 ## Properties and canvas settings

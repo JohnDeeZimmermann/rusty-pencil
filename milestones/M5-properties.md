@@ -16,6 +16,7 @@
 - [x] Dark mode (Alt+Shift+D), canvas background colour, grid (Ctrl+') with snap to grid.
 
 - [x] Top-left File / Preferences menu bar; canvas settings are separate from shape properties.
+- [x] Open menus replace the inspector temporarily so left-column panels never overlap.
 
 ## Tasks
 
