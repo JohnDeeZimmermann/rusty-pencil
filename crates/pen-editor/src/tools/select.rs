@@ -177,6 +177,12 @@ impl SelectionDrag {
                         pen_core::GroupId(next_group)
                     });
                 }
+                for link in &mut e.bindings {
+                    *link = link.and_then(|mut b| {
+                        b.element = *ids.get(&b.element)?;
+                        Some(b)
+                    });
+                }
                 if let pen_core::Kind::Text { container, .. } = &mut e.kind {
                     *container = container.and_then(|c| {
                         ids.get(&c.id()).map(|id| match c {

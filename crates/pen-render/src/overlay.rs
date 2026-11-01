@@ -22,6 +22,18 @@ pub struct OverlayRect {
 /// document paint stays cached. Handles work for single and multi-element selections.
 pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
     out.clear();
+    for bounds in editor.binding_targets() {
+        let p = editor.camera().world_to_screen(bounds.min());
+        out.push(OverlayRect {
+            kind: OverlayKind::Marquee,
+            rect: [
+                p.x - 4.0,
+                p.y - 4.0,
+                bounds.width() * editor.camera().zoom() + 8.0,
+                bounds.height() * editor.camera().zoom() + 8.0,
+            ],
+        });
+    }
     if editor.tool() != Tool::Select {
         return;
     }

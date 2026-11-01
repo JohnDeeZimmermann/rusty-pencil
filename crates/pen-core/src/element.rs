@@ -43,6 +43,8 @@ pub struct Element {
     #[serde(default)]
     /// Empty only on uncommitted elements; the document assigns it on insertion.
     pub z_key: crate::ZKey,
+    #[serde(default)]
+    pub bindings: [Option<crate::binding::Binding>; 2],
     pub props: Props,
     pub kind: Kind,
 }
@@ -56,6 +58,7 @@ impl Element {
             id,
             version: 1,
             seed: seed_for(id),
+            bindings: [None; 2],
             props,
             kind,
             angle: 0.0,
@@ -87,6 +90,7 @@ impl Element {
     pub(crate) fn same_content(&self, other: &Self) -> bool {
         self.id == other.id
             && self.kind == other.kind
+            && self.bindings == other.bindings
             && self.props == other.props
             && self.seed == other.seed
             && self.angle.to_bits() == other.angle.to_bits()
@@ -98,6 +102,7 @@ impl Element {
     pub(crate) fn replace(&mut self, after: &Self) {
         self.kind.clone_from(&after.kind);
         self.props = after.props;
+        self.bindings = after.bindings;
         self.angle = after.angle;
         self.group_ids.clone_from(&after.group_ids);
         self.locked = after.locked;

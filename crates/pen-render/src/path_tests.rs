@@ -80,3 +80,33 @@ fn invalid_samples_and_widths_do_not_reach_paint() {
         assert!(freehand_outline(&Path::from_world(&[WorldPt::ORIGIN]), width).is_empty());
     }
 }
+
+#[test]
+fn curved_arrows_keep_full_size_heads_and_hit_the_same_curve() {
+    let kind = Kind::Arrow(Path::from_world(&[
+        WorldPt::new(0.0, 0.0),
+        WorldPt::new(100.0, 80.0),
+        WorldPt::new(220.0, 0.0),
+    ]));
+    let props = Props {
+        arrow_type: pen_core::ArrowType::Curved,
+        roughness: pen_core::Roughness::Architect,
+        ..Props::default()
+    };
+    let mut out = DrawList::new();
+    draw(&kind, &props, &mut out);
+    let [
+        Prim::Stroke { points: curve, .. },
+        Prim::Stroke { points: head, .. },
+    ] = out.prims()
+    else {
+        panic!("curve and open head");
+    };
+    assert!(curve.len() > 20);
+    assert!((head[0].x - head[1].x).hypot(head[0].y - head[1].y) > 15.0);
+    let mut doc = pen_core::Document::new();
+    let element = pen_core::Element::new(doc.alloc_id(), kind, props);
+    assert!(element.hit_test(curve[curve.len() / 3], 0.1));
+    assert!(element.hit_test(head[0], 0.1));
+    assert!(!element.hit_test(WorldPt::new(100.0, 0.0), 0.1));
+}

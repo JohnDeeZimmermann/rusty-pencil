@@ -7,7 +7,9 @@
 mod arrange;
 pub use arrange::{GroupId, ZKey, rotate};
 mod arrowheads;
+pub mod binding;
 pub mod bound;
+pub mod routing;
 pub use arrowheads::{Head, arrowheads};
 mod color;
 mod document;
@@ -29,7 +31,9 @@ pub use element::{Edges, Element, ElementId, Kind};
 pub use geometry::{WorldPt, WorldRect};
 pub use outline::{TOLERANCE, outline};
 pub use path::{Path, PathPoint};
-pub use props::{Arrowhead, FillStyle, Property, Props, StrokeStyle, Value};
+pub use props::{
+    ArrowType, Arrowhead, FillStyle, Property, Props, StrokeStyle, Value, VerticalAlign,
+};
 
 #[cfg(test)]
 mod tests;
@@ -46,3 +50,6 @@ pub use text::{Font, Roughness, TextAlign};
 
 #[cfg(test)]
 mod bound_tests;
+
+#[cfg(test)]
+mod routing_tests;

@@ -1,0 +1,128 @@
+[
+  {
+    "t": 0.1,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 0.4,
+    "type": "drag",
+    "x": 300,
+    "y": 220,
+    "dx": 190,
+    "dy": 200,
+    "dur": 0.2
+  },
+  {
+    "t": 0.7,
+    "type": "key",
+    "name": "v"
+  },
+  {
+    "t": 1.0,
+    "type": "double-click",
+    "x": 395,
+    "y": 320
+  },
+  {
+    "t": 1.3,
+    "type": "type",
+    "text": "Top\naligned",
+    "every": 0.03
+  },
+  {
+    "t": 2.0,
+    "type": "click",
+    "x": 60,
+    "y": 374
+  },
+  {
+    "t": 2.3000000000000003,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 2.9,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 3.1999999999999997,
+    "type": "drag",
+    "x": 535,
+    "y": 220,
+    "dx": 190,
+    "dy": 200,
+    "dur": 0.2
+  },
+  {
+    "t": 3.5,
+    "type": "key",
+    "name": "v"
+  },
+  {
+    "t": 3.8,
+    "type": "double-click",
+    "x": 630,
+    "y": 320
+  },
+  {
+    "t": 4.1,
+    "type": "type",
+    "text": "Middle\naligned",
+    "every": 0.03
+  },
+  {
+    "t": 4.8,
+    "type": "click",
+    "x": 124,
+    "y": 374
+  },
+  {
+    "t": 5.1,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 5.699999999999999,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 5.999999999999999,
+    "type": "drag",
+    "x": 770,
+    "y": 220,
+    "dx": 190,
+    "dy": 200,
+    "dur": 0.2
+  },
+  {
+    "t": 6.299999999999999,
+    "type": "key",
+    "name": "v"
+  },
+  {
+    "t": 6.6,
+    "type": "double-click",
+    "x": 865,
+    "y": 320
+  },
+  {
+    "t": 6.8999999999999995,
+    "type": "type",
+    "text": "Bottom\naligned",
+    "every": 0.03
+  },
+  {
+    "t": 7.6,
+    "type": "click",
+    "x": 188,
+    "y": 374
+  },
+  {
+    "t": 7.8999999999999995,
+    "type": "key",
+    "name": "Escape"
+  }
+]

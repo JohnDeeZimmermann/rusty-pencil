@@ -171,3 +171,37 @@ fn malformed_fractional_key_is_rejected_at_the_file_boundary() {
     value["elements"][0]["z_key"] = serde_json::json!([0]);
     assert!(load(&serde_json::to_vec(&value).unwrap()).is_err());
 }
+
+#[test]
+fn dangling_arrow_bindings_are_dropped_with_a_load_warning() {
+    let mut scene = scene();
+    let missing = crate::ElementId::new(900);
+    scene.elements[4].bindings[0] = Some(crate::binding::Binding {
+        element: missing,
+        focus: 0.0,
+        gap: 8.0,
+    });
+    let bytes = serde_json::to_vec(&scene).unwrap();
+    let repaired = load(&bytes).unwrap();
+    assert_eq!(repaired.dropped_bindings, 1);
+    assert_eq!(repaired.elements[4].bindings, [None; 2]);
+    assert_eq!(repaired.elements[4].kind, scene.elements[4].kind);
+    assert!(repaired.document().is_ok());
+}
+
+#[test]
+fn arrow_bindings_and_new_properties_round_trip_with_derived_back_references() {
+    let mut scene = scene();
+    let shape = scene.elements[0].id();
+    let arrow = scene.elements[4].id();
+    scene.elements[4].bindings[1] = Some(crate::binding::Binding {
+        element: shape,
+        focus: -0.25,
+        gap: 8.0,
+    });
+    scene.elements[4].props.arrow_type = crate::ArrowType::Elbow;
+    scene.elements[6].props.vertical_align = crate::VerticalAlign::Bottom;
+    let loaded = load(&save(&scene).unwrap()).unwrap();
+    assert_eq!(loaded, scene);
+    assert_eq!(loaded.document().unwrap().bound_arrows(shape), &[arrow]);
+}

@@ -37,7 +37,15 @@ pub fn arrowheads(path: &Path, props: &Props) -> Vec<Head> {
         if !length.is_finite() || length < 0.001 {
             continue;
         }
-        let size = (props.stroke_width * 8.0).max(10.0).min(length * 0.5);
+        let available = if props.arrow_type == crate::ArrowType::Curved {
+            points
+                .windows(2)
+                .map(|s| (s[1].x - s[0].x).hypot(s[1].y - s[0].y))
+                .sum()
+        } else {
+            length
+        };
+        let size = (props.stroke_width * 8.0).max(10.0).min(available * 0.5);
         let (dx, dy) = ((tip.x - other.x) / length, (tip.y - other.y) / length);
         let p = |back: f32, side: f32| {
             WorldPt::new(tip.x - dx * back - dy * side, tip.y - dy * back + dx * side)

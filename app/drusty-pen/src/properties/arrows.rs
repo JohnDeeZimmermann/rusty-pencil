@@ -26,7 +26,29 @@ pub(super) fn group(editor: &Editor) -> Option<El> {
         ("◆", A::Diamond),
         ("◇", A::DiamondOutline),
     ];
-    let mut root = col().gap(d::S_SECTION);
+    let value = editor.property(|p| p.arrow_type);
+    let types = [
+        ("Sharp", pen_core::ArrowType::Sharp),
+        ("Curved", pen_core::ArrowType::Curved),
+        ("Elbow", pen_core::ArrowType::Elbow),
+    ]
+    .into_iter()
+    .fold(row(), |r, (label, t)| {
+        r.child(choice(
+            &format!("arrow-type-{t:?}"),
+            label,
+            value == Value::Uniform(t),
+            Property::ArrowType(t),
+            (segment_w(3), d::T_CONTROL),
+            dark,
+        ))
+    });
+    let mut root = col().gap(d::S_SECTION).child(field(
+        "Arrow type",
+        value == Value::Mixed,
+        track(types, dark),
+        dark,
+    ));
     let width = segment_w(5);
     for (start, label) in [(true, "Start arrowhead"), (false, "End arrowhead")] {
         let value = editor.property(|p| if start { p.start_head } else { p.end_head });

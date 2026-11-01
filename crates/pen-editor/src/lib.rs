@@ -5,6 +5,7 @@
 mod actions;
 mod arrange;
 mod arrange_positions;
+mod binding;
 pub use actions::Action;
 mod camera;
 mod eraser;
@@ -49,6 +50,8 @@ enum Gesture {
 /// Owned by the app; no window, renderer, or shared mutable state.
 #[derive(Debug, Clone, Default)]
 pub struct Editor {
+    binding_draft: Option<Kind>,
+    binding_targets: Vec<WorldRect>,
     eraser: Option<eraser::Eraser>,
     group_scope: Option<pen_core::GroupId>,
     clipboard: Vec<Element>,
@@ -174,7 +177,10 @@ impl Editor {
     pub fn draft(&self) -> Option<Draft> {
         match &self.gesture {
             Some(Gesture::Path(drag)) => Some(Draft {
-                kind: drag.kind(true),
+                kind: self
+                    .binding_draft
+                    .as_ref()
+                    .map_or_else(|| drag.kind(true), Clone::clone),
                 props: self.style,
                 seed: self.document.draft_id().seed(),
             }),
@@ -189,6 +195,7 @@ impl Editor {
 
     pub fn handle(&mut self, event: InputEvent) -> Redraw {
         let redraw = self.dispatch(event);
+        self.refresh_binding();
         self.refresh_followers();
         redraw
     }
@@ -338,7 +345,7 @@ impl Editor {
         } else if self
             .point_editor
             .as_mut()
-            .is_some_and(|e| e.camera_moved(&self.camera, self.settings.grid))
+            .is_some_and(|e| e.camera_moved(&self.camera, self.settings.grid, &self.document))
         {
             Redraw::Draft
         } else {
@@ -351,7 +358,7 @@ impl Editor {
             return self.erase_to(at, mods);
         }
         if let Some(edit) = &mut self.point_editor {
-            return if edit.update(at, mods, &self.camera, self.settings.grid) {
+            return if edit.update(at, mods, &self.camera, self.settings.grid, &self.document) {
                 Redraw::Draft
             } else {
                 Redraw::Nothing
@@ -416,6 +423,7 @@ impl Editor {
     /// The only way edits reach the document. Bound text follows inside the same history
     /// entry, so one undo restores a container and its text together.
     fn execute(&mut self, command: Command, before: Selection) -> bool {
+        let command = pen_core::binding::follow(&self.document, command);
         let command = pen_core::bound::follow(&self.document, command);
         let success = self
             .history
@@ -482,3 +490,6 @@ mod property_tests;
 
 #[cfg(test)]
 mod arrange_tests;
+
+#[cfg(test)]
+mod binding_tests;

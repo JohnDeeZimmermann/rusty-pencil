@@ -17,6 +17,7 @@ impl Editor {
         let before_selection = self.selection.clone();
         let originals: Vec<_> = self.selection.elements(&self.document).cloned().collect();
         match action {
+            Action::WrapText => return self.wrap_text(),
             Action::Copy | Action::Cut => {
                 self.clipboard = self.copy_elements();
                 if action == Action::Copy {
@@ -242,6 +243,12 @@ impl Editor {
                     *g = *groups.entry(*g).or_insert_with(|| {
                         next_group += 1;
                         GroupId(next_group)
+                    });
+                }
+                for binding in &mut out.bindings {
+                    *binding = binding.and_then(|mut b| {
+                        b.element = *ids.get(&b.element)?;
+                        Some(b)
                     });
                 }
                 if let Kind::Text { container, .. } = &mut out.kind {

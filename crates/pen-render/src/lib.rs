@@ -37,6 +37,7 @@ pub enum Prim {
         bounds: pen_core::WorldRect,
         color: Srgba,
         fit: TextFit,
+        vertical_align: pen_core::VerticalAlign,
     },
     /// A simple polygon filled with `color`.
     Fill { points: Vec<WorldPt>, color: Srgba },
@@ -96,6 +97,15 @@ impl DrawList {
 
 /// Appends the paint for one element (or draft) to `out`: background fill, then stroke.
 pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
+    let curved;
+    let kind = if let Kind::Arrow(path) = kind
+        && props.arrow_type == pen_core::ArrowType::Curved
+    {
+        curved = Kind::Arrow(pen_core::routing::curved(path));
+        &curved
+    } else {
+        kind
+    };
     let first = out.prims.len();
     draw_base(kind, props, out);
     if matches!(kind, Kind::Freedraw(_)) {
@@ -126,6 +136,7 @@ fn draw_base(kind: &Kind, props: &Props, out: &mut DrawList) {
         if !content.is_empty() {
             out.push(Prim::Text {
                 angle: 0.0,
+                vertical_align: props.vertical_align,
                 content: content.clone(),
                 font: *font,
                 size: *size,

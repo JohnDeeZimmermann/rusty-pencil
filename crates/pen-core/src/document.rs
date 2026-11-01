@@ -7,11 +7,16 @@ use crate::{Element, ElementId};
 pub struct Document {
     elements: Vec<Element>,
     index: BTreeMap<ElementId, usize>,
+    bound_arrows: BTreeMap<ElementId, Vec<ElementId>>,
     next_id: u64,
     revision: u64,
 }
 
 /// A reversible change. Groups validate atomically and undo in reverse order.
+#[expect(
+    clippy::large_enum_variant,
+    reason = "Patches own two inline snapshots; boxing every history operation adds allocation"
+)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Add {
@@ -69,6 +74,12 @@ impl Document {
         self.index.get(&id).and_then(|at| self.elements.get(*at))
     }
 
+    /// Derived back-references, refreshed atomically after each command group.
+    #[must_use]
+    pub fn bound_arrows(&self, shape: ElementId) -> &[ElementId] {
+        self.bound_arrows.get(&shape).map_or(&[], Vec::as_slice)
+    }
+
     /// Changes once per successful command, including a whole group.
     #[must_use]
     pub fn revision(&self) -> u64 {
@@ -85,6 +96,34 @@ impl Document {
             self.elements.sort_by(|a, b| a.z_key.cmp(&b.z_key));
             self.reindex();
         }
+        self.bound_arrows.clear();
+        for e in &self.elements {
+            for b in e.bindings.iter().flatten() {
+                let ids = self.bound_arrows.entry(b.element).or_default();
+                if !ids.contains(&e.id()) {
+                    ids.push(e.id());
+                }
+            }
+        }
+        debug_assert!(
+            self.elements
+                .iter()
+                .all(|e| e.bindings.iter().flatten().all(|b| self
+                    .bound_arrows
+                    .get(&b.element)
+                    .is_some_and(|ids| ids.contains(&e.id()))))
+        );
+        debug_assert!(
+            self.bound_arrows
+                .iter()
+                .all(
+                    |(shape, arrows)| arrows.iter().all(|id| self.get(*id).is_some_and(|e| e
+                        .bindings
+                        .iter()
+                        .flatten()
+                        .any(|b| b.element == *shape)))
+                )
+        );
         self.revision = self.revision.wrapping_add(1);
         Ok(inverse)
     }

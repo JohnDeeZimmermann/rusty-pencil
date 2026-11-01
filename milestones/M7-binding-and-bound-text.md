@@ -6,26 +6,25 @@
 
 ## Done when
 
-- [ ] Arrow ends near a shape highlight it and bind on release; Ctrl disables binding.
-- [ ] Moving, resizing or rotating a shape updates bound arrows.
-- [ ] Arrow type: sharp, curved, elbow. Elbow arrows route orthogonally around their endpoints'
+- [x] Arrow ends near a shape highlight it and bind on release; Ctrl disables binding.
+- [x] Moving, resizing or rotating a shape updates bound arrows.
+- [x] Arrow type: sharp, curved, elbow. Elbow arrows route orthogonally around their endpoints'
       shapes.
-- [ ] Double-click a shape to type text inside it; text wraps to the container; vertical align
-      top / middle / bottom. *(Shipped early, ahead of M5/M6, at the user's request. Vertical
-      align is still to do; text is always centred.)*
+- [x] Double-click a shape to type text inside it; text wraps to the container; vertical align
+      top / middle / bottom. *(Shape text shipped early; M7 adds vertical alignment.)*
 - [x] Double-click an arrow to add a label that follows the arrow.
-- [ ] "Wrap text in container" action.
+- [x] "Wrap text in container" action.
 
 ## Tasks
 
-1. [ ] `pen-core`: `Binding { element: ElementId, focus: f32, gap: f32 }` on arrow ends; shapes keep
+1. [x] `pen-core`: `Binding { element: ElementId, focus: f32, gap: f32 }` on arrow ends; shapes keep
        a back-reference list. An invariant check (debug builds) verifies both sides agree.
 2. [x] `pen-core`: `container_id` on text; containers list bound text. *(See notes: only the
        text stores the link.)*
-3. [ ] `pen-editor`: a "dependent update" pass that runs after any command touching a bound
+3. [x] `pen-editor`: a "dependent update" pass that runs after any command touching a bound
        element, inside the same history entry.
-4. [ ] `pen-render`: curved arrows as Catmull-Rom → cubic Bézier; elbow routing on a grid.
-5. [ ] Deleting a shape unbinds its arrows; deleting a container deletes its text. *(Text half done.)*
+4. [x] `pen-render`: curved arrows as Catmull-Rom → cubic Bézier; elbow routing on a grid.
+5. [x] Deleting a shape unbinds its arrows; deleting a container deletes its text.
 
 ## Tests
 
@@ -55,3 +54,33 @@
   label; Excalidraw masks only the line.
 - Plain double-click on a line now labels it; point editing moved to Ctrl+Enter or
   Ctrl+double-click. Double-click on empty canvas starts free text, as in Excalidraw.
+
+- **Arrow bindings.** Each element has two optional arrow endpoint links; only arrows use
+  them. `focus` is the local radial attachment angle divided by π, and `gap` is world points.
+  Rotation therefore preserves the chosen attachment. `Document::bound_arrows` is a derived
+  back-reference index rebuilt atomically after commands, with debug checks in both directions;
+  it is not serialized as a second source of truth.
+- **Dependent order.** `binding::follow` runs before `bound::follow`, so a changed shape updates
+  its arrows and then their labels in one history entry. Preview membership is looked up once
+  per document revision/selection change; pointer moves fit only affected arrows and text.
+  Endpoint point editing also previews binding and reacts immediately to Ctrl. Clipboard and
+  Alt-drag duplicates remap internal links and drop links to shapes outside the copied set.
+- **Geometry.** Sharp arrows retain their vertices. Curved arrows interpolate them with
+  Catmull–Rom cubic Béziers flattened at the shared world tolerance; painting, hit testing,
+  arrowheads and label anchors share that curve. Head size uses curve length, while direction
+  uses its end tangent. Elbows use a deterministic visibility grid around the endpoint shapes'
+  padded world bounds, with orthogonal escape segments and shortest Manhattan routes. Only
+  endpoint shapes are obstacles; unrelated scene elements do not affect routing. Overlapping
+  endpoint regions may have no collision-free route, in which case a deterministic dogleg is
+  retained.
+- **Text polish.** Top/middle/bottom alignment uses the same layout for display and editing.
+  The context menu's “Wrap text in container” creates a padded rectangle around selected free
+  text and binds it atomically. Loading reports the count of dropped invalid/dangling links;
+  geometry stays visible and the scene remains editable.
+- **Verification.** Event-driven core/editor and Rune tests cover binding feedback, Ctrl,
+  live moves, resize/rotation, dependency chains, deletion, duplication, undo, text wrapping
+  and alignment; file tests cover recovery and round trips. Scripted screenshots:
+  `app/drusty-pen/scripts/m7-connections.json` (connected sharp/curved/elbow geometry and label)
+  `m7-bound-text.json` (wrapping and shape text), and `m7-vertical-align.json` (all vertical
+  placements). Release scripted rendering: frame CPU p50 0.437 ms, p95 1.131 ms across 877
+  forced frames; pan/zoom still only updates live presentation values.

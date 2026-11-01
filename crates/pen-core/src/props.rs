@@ -15,6 +15,8 @@ pub struct Props {
     pub stroke_style: StrokeStyle,
     /// Straight alpha multiplier, 0–100 percent.
     pub opacity: u8,
+    pub arrow_type: ArrowType,
+    pub vertical_align: VerticalAlign,
     pub start_head: Arrowhead,
     pub end_head: Arrowhead,
     #[serde(default)]
@@ -31,6 +33,8 @@ impl Default for Props {
             fill: FillStyle::Solid,
             stroke_style: StrokeStyle::Solid,
             opacity: 100,
+            arrow_type: ArrowType::Sharp,
+            vertical_align: VerticalAlign::Middle,
             start_head: Arrowhead::None,
             end_head: Arrowhead::Arrow,
             roughness: Roughness::Artist,
@@ -79,6 +83,8 @@ pub enum Property {
     StrokeStyle(StrokeStyle),
     Edges(Edges),
     Opacity(u8),
+    ArrowType(ArrowType),
+    VerticalAlign(VerticalAlign),
     StartHead(Arrowhead),
     EndHead(Arrowhead),
 }
@@ -95,6 +101,8 @@ impl Property {
             Self::StrokeStyle(v) => props.stroke_style = v,
             Self::Edges(v) => props.edges = v,
             Self::Opacity(v) => props.opacity = v.min(100),
+            Self::ArrowType(v) => props.arrow_type = v,
+            Self::VerticalAlign(v) => props.vertical_align = v,
             Self::StartHead(v) => props.start_head = v,
             Self::EndHead(v) => props.end_head = v,
         }
@@ -106,4 +114,20 @@ impl Property {
 pub enum Value<T> {
     Uniform(T),
     Mixed,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ArrowType {
+    #[default]
+    Sharp,
+    Curved,
+    Elbow,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VerticalAlign {
+    Top,
+    #[default]
+    Middle,
+    Bottom,
 }

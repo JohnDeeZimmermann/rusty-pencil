@@ -3,6 +3,7 @@ use crate::{Editor, InputEvent, Key, Modifiers, Redraw};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
+    WrapText,
     Duplicate,
     Copy,
     Cut,
@@ -31,7 +32,8 @@ pub enum Action {
 }
 
 impl Action {
-    pub const ALL: [Self; 25] = [
+    pub const ALL: [Self; 26] = [
+        Self::WrapText,
         Self::Copy,
         Self::Cut,
         Self::Paste,
@@ -62,6 +64,7 @@ impl Action {
     #[must_use]
     pub fn id(self) -> &'static str {
         match self {
+            Self::WrapText => "wrap-text",
             Self::Duplicate => "duplicate",
             Self::Copy => "copy",
             Self::Cut => "cut",
@@ -93,6 +96,7 @@ impl Action {
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
+            Self::WrapText => "Wrap text in container",
             Self::Duplicate => "Duplicate",
             Self::Copy => "Copy",
             Self::Cut => "Cut",
@@ -185,6 +189,18 @@ impl Action {
             return false;
         }
         match self {
+            Self::WrapText => {
+                count == 1
+                    && editor.selection.elements(&editor.document).all(|e| {
+                        matches!(
+                            e.kind,
+                            pen_core::Kind::Text {
+                                container: None,
+                                ..
+                            }
+                        )
+                    })
+            }
             Self::Paste => true,
             Self::UnlockAll => editor.document().elements().iter().any(|e| e.locked),
             Self::Ungroup => editor

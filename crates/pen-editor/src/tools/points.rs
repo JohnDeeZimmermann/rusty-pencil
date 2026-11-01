@@ -101,6 +101,7 @@ impl PointEditor {
         mods: Modifiers,
         camera: &Camera,
         grid: bool,
+        doc: &Document,
     ) -> bool {
         let (Some(drag), Some(index), Some(after)) =
             (&mut self.drag, self.active, self.preview.first_mut())
@@ -119,6 +120,8 @@ impl PointEditor {
         if !p.is_finite() {
             return false;
         }
+        after.angle = drag.before.angle;
+        after.bindings = drag.before.bindings;
         let path = linear_path(&mut after.kind);
         path.origin = drag.baseline.origin;
         path.points.clone_from(&drag.baseline.points);
@@ -131,23 +134,49 @@ impl PointEditor {
         let offset = WorldPt::new(p.x - path.origin.x, p.y - path.origin.y);
         path.points[index].offset = offset;
         preserve_pivot(after, drag.before.kind.bounds().centre());
+        if matches!(after.kind, Kind::Arrow(_)) {
+            let end = if index == 0 {
+                Some(0)
+            } else if index + 1 == drag.baseline.points.len() {
+                Some(1)
+            } else {
+                None
+            };
+            if let Some(end) = end {
+                let point = after.kind.path().and_then(|p| p.world_point(index));
+                after.bindings[end] = if mods.ctrl {
+                    None
+                } else {
+                    point.and_then(|p| {
+                        pen_core::binding::candidate(
+                            doc,
+                            pen_core::rotate(p, after.kind.bounds().centre(), after.angle),
+                            16.0 / camera.zoom(),
+                        )
+                    })
+                };
+            }
+            *after = pen_core::binding::fit(after, |id| doc.get(id));
+        }
         true
     }
 
-    pub(crate) fn camera_moved(&mut self, camera: &Camera, grid: bool) -> bool {
+    pub(crate) fn camera_moved(&mut self, camera: &Camera, grid: bool, doc: &Document) -> bool {
         let mods = self.drag.as_ref().map_or(Modifiers::NONE, |d| d.mods);
-        self.update(None, mods, camera, grid)
+        self.update(None, mods, camera, grid, doc)
     }
 
     pub(crate) fn finish(&mut self) -> Option<Command> {
         let drag = self.drag.take()?;
         let after = self.preview.pop()?;
         self.preview.clear();
-        (drag.before.kind != after.kind).then_some(Command::Patch {
-            id: self.id,
-            before: drag.before,
-            after,
-        })
+        (drag.before.kind != after.kind || drag.before.bindings != after.bindings).then_some(
+            Command::Patch {
+                id: self.id,
+                before: drag.before,
+                after,
+            },
+        )
     }
 
     pub(crate) fn cancel(&mut self) -> bool {

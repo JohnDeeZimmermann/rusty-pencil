@@ -97,3 +97,61 @@ fn an_arrow_label_follows_its_arrow_when_grabbed_and_moved() {
         "grabbing the label moves its arrow"
     );
 }
+
+#[test]
+fn binding_and_arrow_type_controls_work_through_rune_input() {
+    let mut rt = app();
+    key(&mut rt, "r");
+    drag(&mut rt, (300.0, 200.0), (480.0, 300.0));
+    key(&mut rt, "a");
+    let (x, y) = rt.find("arrow-type-Elbow").expect("arrow type inspector");
+    click(&mut rt, x, y);
+    drag(&mut rt, (488.0, 250.0), (700.0, 430.0));
+    let arrow = rt.state.editor.document().elements()[1].clone();
+    assert_eq!(arrow.props.arrow_type, pen_core::ArrowType::Elbow);
+    assert!(arrow.bindings[0].is_some());
+    key(&mut rt, "v");
+    drag(&mut rt, (300.0, 250.0), (350.0, 250.0));
+    let after = rt.state.editor.document().get(arrow.id()).unwrap();
+    assert!(
+        (after.kind.path().unwrap().world_point(0).unwrap().x
+            - arrow.kind.path().unwrap().world_point(0).unwrap().x
+            - 50.0)
+            .abs()
+            < 0.01
+    );
+}
+
+#[test]
+fn vertical_alignment_controls_style_the_bound_text_and_the_active_edit() {
+    let mut rt = app();
+    key(&mut rt, "r");
+    drag(&mut rt, (300.0, 200.0), (520.0, 360.0));
+    key(&mut rt, "v");
+    click(&mut rt, 410.0, 280.0);
+    click(&mut rt, 410.0, 280.0);
+    key(&mut rt, "Aligned text");
+    let (x, y) = rt.find("vertical-Top").expect("vertical align inspector");
+    click(&mut rt, x, y);
+    assert_eq!(
+        rt.state
+            .editor
+            .text_session()
+            .unwrap()
+            .element
+            .props
+            .vertical_align,
+        pen_core::VerticalAlign::Top
+    );
+    escape(&mut rt);
+    assert_eq!(
+        rt.state.editor.vertical_align(),
+        pen_core::Value::Uniform(pen_core::VerticalAlign::Top)
+    );
+    let (x, y) = rt.find("vertical-Bottom").unwrap();
+    click(&mut rt, x, y);
+    assert_eq!(
+        bound_text(&rt).props.vertical_align,
+        pen_core::VerticalAlign::Bottom
+    );
+}

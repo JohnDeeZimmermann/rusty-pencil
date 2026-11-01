@@ -231,3 +231,23 @@ impl Editor {
         Redraw::Scene
     }
 }
+
+impl Editor {
+    /// Actual bound text alignment, including mixed selections and an active text edit.
+    #[must_use]
+    pub fn vertical_align(&self) -> pen_core::Value<pen_core::VerticalAlign> {
+        if let Some(session) = &self.text_session {
+            return pen_core::Value::Uniform(session.element.props.vertical_align);
+        }
+        let mut texts = self.styled_texts();
+        let Some(first) = texts.next() else {
+            return self.property(|p| p.vertical_align);
+        };
+        let align = first.props.vertical_align;
+        if texts.all(|e| e.props.vertical_align == align) {
+            pen_core::Value::Uniform(align)
+        } else {
+            pen_core::Value::Mixed
+        }
+    }
+}

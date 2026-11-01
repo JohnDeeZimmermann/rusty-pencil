@@ -25,14 +25,14 @@ pub(crate) fn panel(s: &State) -> El {
         if let Some(text) = text_controls::panel(editor) {
             content = content.child(text);
         }
+        if let Some(arrows) = arrows::group(editor) {
+            content = content.child(arrows);
+        }
         content = content
             .child(colors::group(s, colors::Target::Stroke))
             .child(colors::group(s, colors::Target::Background))
             .child(fill::group(editor))
             .child(stroke::group(editor));
-        if let Some(arrows) = arrows::group(editor) {
-            content = content.child(arrows);
-        }
         content = content.child(opacity::group(editor)).child(divider(dark));
     }
     content = content.child(settings::group(s));

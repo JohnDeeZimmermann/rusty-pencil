@@ -40,6 +40,8 @@ impl Default for AppState {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SceneFile {
+    #[serde(skip)]
+    pub dropped_bindings: usize,
     pub format: String,
     pub version: u32,
     pub elements: Vec<Element>,
@@ -65,6 +67,7 @@ impl SceneFile {
     #[must_use]
     pub fn new(doc: &Document, app_state: AppState) -> Self {
         Self {
+            dropped_bindings: 0,
             format: "drusty-pen".into(),
             version: VERSION,
             elements: doc.elements().to_vec(),
@@ -172,7 +175,8 @@ pub fn load(bytes: &[u8]) -> Result<SceneFile, FileError> {
     scene.version = VERSION;
     // A dangling text binding is damage, not a reason to lose the scene: the text stays,
     // unbound, where it was last drawn.
-    crate::bound::repair(&mut scene.elements);
+    scene.dropped_bindings =
+        crate::bound::repair(&mut scene.elements) + crate::binding::repair(&mut scene.elements);
     scene.document()?;
     Ok(scene)
 }

@@ -20,6 +20,22 @@ impl Element {
         if !point.is_finite() || !tolerance.is_finite() {
             return false;
         }
+        if let Kind::Arrow(path) = &self.kind
+            && self.props.arrow_type == crate::ArrowType::Curved
+        {
+            let mut flattened = self.clone();
+            flattened.kind = Kind::Arrow(crate::routing::curved(path));
+            flattened.angle = 0.0;
+            return flattened.hit_geometry(
+                crate::rotate(point, self.kind.bounds().centre(), -self.angle),
+                tolerance,
+                interior,
+            );
+        }
+        self.hit_geometry(point, tolerance, interior)
+    }
+
+    fn hit_geometry(&self, point: WorldPt, tolerance: f32, interior: bool) -> bool {
         let bounds = self.kind.bounds();
         let point = crate::rotate(point, bounds.centre(), -self.angle);
         if matches!(self.kind, Kind::Text { .. }) {

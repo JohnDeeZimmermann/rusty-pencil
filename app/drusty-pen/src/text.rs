@@ -129,6 +129,7 @@ pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
             bounds,
             color,
             fit,
+            vertical_align,
         } = prim
         {
             if start < i {
@@ -151,9 +152,8 @@ pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
             group = match fit {
                 TextFit::Free => group.child(placed(label, local).key(format!("text-{i}"))),
                 TextFit::Wrap => group.child(
-                    placed(col(), local)
+                    vertical(placed(col(), local), *vertical_align)
                         .key(format!("text-{i}"))
-                        .justify_center()
                         .child(label.w_full().wrap_anywhere()),
                 ),
                 TextFit::Label => group
@@ -257,9 +257,8 @@ fn editor_inner(s: &State) -> El {
         .inert();
     if matches!(container, Some(Container::Shape(_))) {
         // Wrapped at the container's text box and centred in it, as it will be painted.
-        return placed(col(), *bounds)
+        return vertical(placed(col(), *bounds), session.element.props.vertical_align)
             .key("text-edit-layout")
-            .justify_center()
             .instant_changes()
             .child(
                 el().w_full()
@@ -330,5 +329,13 @@ impl State {
             edit.focused = true;
             edit
         });
+    }
+}
+
+fn vertical(el: El, align: pen_core::VerticalAlign) -> El {
+    match align {
+        pen_core::VerticalAlign::Top => el,
+        pen_core::VerticalAlign::Middle => el.justify_center(),
+        pen_core::VerticalAlign::Bottom => el.justify_end(),
     }
 }

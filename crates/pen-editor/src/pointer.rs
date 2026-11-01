@@ -113,12 +113,15 @@ impl Editor {
         let Some(Gesture::Path(draw)) = self.gesture.take() else {
             return Redraw::Nothing;
         };
+        let mods = draw.mods;
         let Some(kind) = draw.finish(self.camera.zoom(), include_tail) else {
             return Redraw::Draft;
         };
         let id = self.document.alloc_id();
+        let mut element = Element::new(id, kind, self.style);
+        self.bind_arrow(&mut element, mods);
         let command = Command::Add {
-            element: Element::new(id, kind, self.style),
+            element,
             at: self.document.elements().len(),
         };
         self.commit_drawing(command, id)

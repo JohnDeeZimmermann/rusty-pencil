@@ -17,6 +17,7 @@ fn encode(elements: &[Element]) -> Option<ClipboardContent> {
         .collect::<Vec<_>>()
         .join("\n");
     let scene = file::SceneFile {
+        dropped_bindings: 0,
         format: "drusty-pen".into(),
         version: file::VERSION,
         elements: elements.to_vec(),

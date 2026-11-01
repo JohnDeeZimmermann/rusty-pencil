@@ -79,6 +79,15 @@ fn every_mutating_registry_action_is_one_undo_and_redo() {
             );
             ed.selection.insert(id);
         }
+        if action == Action::WrapText {
+            ed.handle(InputEvent::SelectTool(Tool::Text));
+            click(&mut ed, p(400.0, 400.0), NONE);
+            ed.handle(InputEvent::TextChanged {
+                content: "Wrap me".into(),
+                bounds: WorldRect::from_centre(WorldPt::new(400.0, 400.0), 40.0, 15.0),
+            });
+            ed.handle(InputEvent::FinishText);
+        }
         let before = contents(&ed);
         let selection = ed.selection.clone();
         assert!(action.enabled(&ed), "{action:?}");

@@ -70,9 +70,15 @@ impl Editor {
             }
             return Redraw::Draft;
         }
-        let commands = self
+        let targets: Vec<_> = self
             .selection
             .elements(&self.document)
+            .chain(self.styled_texts().filter(|e| {
+                !self.selection.contains(e.id()) && matches!(property, Property::VerticalAlign(_))
+            }))
+            .collect();
+        let commands = targets
+            .into_iter()
             .filter_map(|before| {
                 let mut after = before.clone();
                 property.apply(&mut after.props);

@@ -158,6 +158,9 @@ impl Editor {
             .cloned();
         let mut element = element;
         if let Some(container) = &container {
+            if before.is_none() {
+                element.props.vertical_align = container.props.vertical_align;
+            }
             element = bound::fit(&element, container);
         }
         let selection = self.selection.clone();

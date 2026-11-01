@@ -81,6 +81,30 @@ pub(super) fn panel(editor: &Editor) -> Option<El> {
             .child(icon(icons::align(value, ink(align == value, dark)))),
         )
     });
+    let valign = editor.vertical_align();
+    let vertical = [
+        ("Top", pen_core::VerticalAlign::Top),
+        ("Middle", pen_core::VerticalAlign::Middle),
+        ("Bottom", pen_core::VerticalAlign::Bottom),
+    ]
+    .into_iter()
+    .fold(row(), |r, (name, value)| {
+        r.child(
+            choice(
+                &format!("vertical-{name}"),
+                name,
+                valign == pen_core::Value::Uniform(value),
+                InputEvent::Property(pen_core::Property::VerticalAlign(value)),
+                segment_w(3),
+                dark,
+            )
+            .child(
+                text(name)
+                    .font(d::T_CONTROL)
+                    .color(d::c(ink(valign == pen_core::Value::Uniform(value), dark))),
+            ),
+        )
+    });
     Some(
         col()
             .key("properties")
@@ -89,7 +113,13 @@ pub(super) fn panel(editor: &Editor) -> Option<El> {
             .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only())
             .child(group("Font family", false, track(fonts, dark), dark))
             .child(group("Font size", false, track(sizes, dark), dark))
-            .child(group("Text align", false, track(aligns, dark), dark)),
+            .child(group("Text align", false, track(aligns, dark), dark))
+            .child(group(
+                "Vertical align",
+                valign == pen_core::Value::Mixed,
+                track(vertical, dark),
+                dark,
+            )),
     )
 }
 

@@ -39,9 +39,9 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Font family: hand-drawn, normal, code — M4
 - [x] Font size: S, M, L, XL (+ Ctrl+Shift+`<` / `>`) — M4
 - [x] Text align: left, centre, right — M4
-- [ ] Vertical align for text inside a shape — M7
+- [x] Vertical align for text inside a shape — M7
 - [x] Arrowheads at start/end: none, arrow, bar, dot, triangle, circle, diamond (filled + outline) — M5
-- [ ] Arrow type: sharp, curved, elbow — M7
+- [x] Arrow type: sharp, curved, elbow — M7
 - [x] Defaults: new elements use the last chosen properties — M5
 - [x] Copy styles / paste styles (Ctrl+Alt+C / V) — M6
 
@@ -75,14 +75,14 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] IME / non-Latin input — M4
 - [x] Text inside shapes (double-click a shape), wraps to the container — M7
 - [x] Labels on arrows (and lines) — M7
-- [ ] "Wrap text in container" action — M7
+- [x] "Wrap text in container" action — M7
 
 ## Arrows and binding
 
-- [ ] Arrow ends snap to and bind to shapes — M7
-- [ ] Bound arrows follow when shapes move or resize — M7
-- [ ] Hold Ctrl to draw without binding — M7
-- [ ] Elbow arrows route around shapes — M7
+- [x] Arrow ends snap to and bind to shapes — M7
+- [x] Bound arrows follow when shapes move or resize — M7
+- [x] Hold Ctrl to draw without binding — M7
+- [x] Elbow arrows route around shapes — M7
 
 ## Arranging
 

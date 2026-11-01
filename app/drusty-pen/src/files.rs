@@ -123,6 +123,12 @@ impl State {
         let Ok(doc) = scene_file.document() else {
             return;
         };
+        if scene_file.dropped_bindings > 0 {
+            eprintln!(
+                "Dropped {} dangling or invalid bindings while opening scene",
+                scene_file.dropped_bindings
+            );
+        }
         let app = &scene_file.app_state;
         self.editor
             .replace_document(doc, Camera::new(app.scroll, app.zoom), app.style);
@@ -149,7 +155,15 @@ impl State {
                 self.install(&scene);
                 self.files.path = Some(path.to_owned());
                 self.files.changed(tx);
-                self.files.status.set(format!("Opened {}", name(path)));
+                self.files.status.set(if scene.dropped_bindings > 0 {
+                    format!(
+                        "Opened {} · dropped {} invalid bindings",
+                        name(path),
+                        scene.dropped_bindings
+                    )
+                } else {
+                    format!("Opened {}", name(path))
+                });
             }
             Err(error) => self.files.status.set(format!("Could not open: {error}")),
         }

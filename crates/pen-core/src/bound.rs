@@ -113,6 +113,13 @@ pub fn fit(text: &Element, container: &Element) -> Element {
     let placed = match (link, &container.kind) {
         (Container::Shape(_), kind) => text_box(kind),
         (Container::Path(_), Kind::Line(path) | Kind::Arrow(path)) => {
+            let curved;
+            let path = if container.props.arrow_type == crate::ArrowType::Curved {
+                curved = crate::routing::curved(path);
+                &curved
+            } else {
+                path
+            };
             let c = label_anchor(path);
             Some(WorldRect::from_centre(
                 c,
