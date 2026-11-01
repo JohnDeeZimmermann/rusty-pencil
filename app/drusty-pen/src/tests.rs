@@ -2,8 +2,8 @@
 
 use super::*;
 use pen_core::{Kind, WorldRect};
-use pen_editor::Tool;
-use rune::Color;
+use pen_editor::{ScreenPt, Tool};
+use rune::{Color, MagnifyEvent, WheelEvent};
 use rune::{Env, PhysicalInput, PhysicalKeyCode, Runtime};
 
 fn app() -> Runtime<State> {
@@ -45,7 +45,7 @@ fn kinds(rt: &Runtime<State>) -> Vec<Kind> {
         .document()
         .elements()
         .iter()
-        .map(|e| e.kind)
+        .map(|e| e.kind.clone())
         .collect()
 }
 
@@ -309,3 +309,6 @@ fn shapes_drawn_while_zoomed_are_in_world_points() {
 
 #[path = "interaction_tests.rs"]
 mod selection;
+
+#[path = "m3_tests.rs"]
+mod m3;

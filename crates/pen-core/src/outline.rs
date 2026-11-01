@@ -40,6 +40,9 @@ pub fn outline(kind: &Kind, edges: Edges) -> Vec<WorldPt> {
             rounded_polygon(&corners, radius)
         }
         Kind::Ellipse(r) => ellipse(r),
+        Kind::Line(ref p) | Kind::Arrow(ref p) | Kind::Freedraw(ref p) => {
+            p.world_points().collect()
+        }
     }
 }
 

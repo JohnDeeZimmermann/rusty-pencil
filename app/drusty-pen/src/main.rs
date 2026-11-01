@@ -2,6 +2,8 @@
 //! `pen_editor::InputEvent`s and presents editor state as rune elements.
 
 mod design;
+mod events;
+mod navigation;
 mod overlay;
 mod paint;
 mod palette;
@@ -9,19 +11,13 @@ mod present;
 mod scene;
 mod toolbar;
 
-use pen_core::WorldPt;
-use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenPt, ScreenVec};
+use pen_core::{WorldPt, WorldRect};
+use pen_editor::{Camera, Editor, InputEvent, Modifiers, Redraw, ScreenVec};
 use pen_render::DrawList;
-use rune::{
-    AppSpec, Cursor, Cx, Drag, El, Key, KeyEvent, LiveText, MagnifyEvent, Mods, Phase, Shape, Tx,
-    WheelEvent, canvas, el, text,
-};
+use rune::{AppSpec, Cursor, Cx, El, Key, KeyEvent, Live, Mods, Shape, Tx, canvas, el};
 
 /// The window's opening size, in points.
 const WINDOW: (f32, f32) = (1024.0, 720.0);
-
-/// Ctrl+wheel zoom speed: the zoom factor per point of wheel travel is `e^ZOOM_PER_POINT`.
-const ZOOM_PER_POINT: f32 = 0.006;
 
 /// App state: the editor, plus everything rune needs to present it. Presentation state is
 /// written only by [`State::input`], from the editor; it is never read back into the editor.
@@ -31,9 +27,11 @@ struct State {
     scene: scene::Scene,
     /// The element being drawn, rebuilt on every pointer move of a drag.
     draft: Shape,
+    draft_bounds: WorldRect,
     /// Scratch for the draft, so a drag doesn't allocate a fresh list per move.
     draft_paint: DrawList,
     overlay: overlay::Overlay,
+    content_button: Live<f32>,
 }
 
 impl State {
@@ -43,8 +41,10 @@ impl State {
             camera: present::LiveCamera::new(&camera),
             scene: scene::Scene::default(),
             draft: Shape::new(),
+            draft_bounds: WorldRect::default(),
             draft_paint: DrawList::new(),
             overlay: overlay::Overlay::default(),
+            content_button: Live::new(0.0),
         }
     }
 
@@ -57,6 +57,11 @@ impl State {
             self.camera.show(self.editor.camera());
         }
         self.overlay.show(&self.editor);
+        self.content_button.set(if self.editor.content_offscreen() {
+            1.0
+        } else {
+            0.0
+        });
         match redraw {
             // Only live values changed: no view rebuild, no layout.
             Redraw::Nothing | Redraw::Camera => tx.live_only(),
@@ -72,7 +77,7 @@ impl State {
         if let Some(draft) = self.editor.draft() {
             pen_render::draw(&draft.kind, &draft.props, &mut self.draft_paint);
         }
-        self.draft = paint::shape(self.draft_paint.prims());
+        (self.draft, self.draft_bounds) = paint::bounded(self.draft_paint.prims());
     }
 }
 
@@ -100,19 +105,19 @@ fn init() -> State {
     State::new(camera)
 }
 
-/// A zero-size layer at the world origin. The world node is laid out the same way, so
-/// `live_scale` (which scales about the node's centre) scales about (0, 0).
-fn layer(shape: Shape, key: &str) -> El {
+/// Bounded paint under the world transform; Rune uses the rect to cull offscreen canvases.
+fn layer(shape: Shape, bounds: WorldRect, key: &str) -> El {
     canvas(shape)
         .key(key)
-        .absolute(0.0, 0.0)
-        .size(0.0, 0.0)
+        .absolute(bounds.min().x, bounds.min().y)
+        .size(bounds.width(), bounds.height())
         .transition(rune::Transition::none())
 }
 
 fn view(s: &State, _: &mut Cx<State>) -> El {
     let world = el()
         .key("world")
+        .instant_changes()
         .absolute(0.0, 0.0)
         .size(0.0, 0.0)
         .live_offset(&s.camera.offset)
@@ -120,62 +125,39 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         // A drag rebuilds the view on every move; the committed scene is reused unless the
         // document changed.
         .child(s.scene.view())
-        .child(layer(s.draft.clone(), "draft"));
+        .child(layer(s.draft.clone(), s.draft_bounds, "draft"));
 
-    el().key("viewport")
-        .w_full()
-        .h_full()
-        .fill(design::c(design::CANVAS))
-        .focusable(true)
-        .cursor(if s.editor.tool() == pen_editor::Tool::Select {
-            Cursor::Default
-        } else {
-            Cursor::Crosshair
-        })
-        .child(world)
-        .child(s.overlay.view())
-        .child(toolbar::toolbar(s.editor.tool()))
-        .child(zoom_pill(&s.camera.zoom_label))
-        .on_drag(|s: &mut State, d: &mut Drag, tx| {
-            let at = ScreenPt::new(d.x, d.y);
-            let mods = mods(tx.mods());
-            let event = match d.phase {
-                Phase::Down => InputEvent::PointerDown { at, mods },
-                Phase::Move => InputEvent::PointerMove { at, mods },
-                Phase::Up if d.cancelled() => InputEvent::Cancel,
-                Phase::Up => InputEvent::PointerUp { at, mods },
-            };
-            s.input(event, tx);
-        })
-        .on_wheel(|s: &mut State, e: WheelEvent, tx| {
-            let event = if e.mods.cmd || e.mods.ctrl {
-                InputEvent::Zoom {
-                    about: ScreenPt::new(e.x, e.y),
-                    factor: (e.dy * ZOOM_PER_POINT).exp(),
-                }
-            } else {
-                InputEvent::Pan {
-                    by: ScreenVec::new(e.dx, e.dy),
-                }
-            };
-            s.input(event, tx);
-            true
-        })
-        .on_magnify(|s: &mut State, e: MagnifyEvent, tx| {
-            s.input(
-                InputEvent::Zoom {
-                    about: ScreenPt::new(e.x, e.y),
-                    factor: 1.0 + e.delta,
+    events::canvas_input(
+        el().key("viewport")
+            .w_full()
+            .h_full()
+            .fill(design::c(design::CANVAS))
+            .focusable(s.editor.tool() != pen_editor::Tool::Hand && !s.editor.space_held())
+            .preserve_focus_on_press(true)
+            .cursor(
+                if s.editor.tool() == pen_editor::Tool::Hand || s.editor.space_held() {
+                    Cursor::Grab
+                } else if s.editor.tool() == pen_editor::Tool::Select {
+                    Cursor::Default
+                } else {
+                    Cursor::Crosshair
                 },
-                tx,
-            );
-            true
-        })
+            )
+            .child(world)
+            .child(s.overlay.view())
+            .child(toolbar::toolbar(&s.editor))
+            .child(navigation::zoom_pill(&s.camera.zoom_label))
+            .child(navigation::content_button(&s.content_button)),
+    )
 }
 
 /// Keys no focused control took. Tool shortcuts, Escape, and modifier changes mid-drag.
 fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
     let mods = mods(ev.mods);
+    if matches!(&ev.key, Key::Text(t) if t == " ") && !mods.ctrl && !mods.alt {
+        s.input(InputEvent::Space(true), tx);
+        return true;
+    }
     let event = match &ev.key {
         // Never consumed: a modifier is also part of whatever comes next.
         Key::Modifier { .. } => {
@@ -187,6 +169,7 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
             mods,
         },
         Key::Escape
+        | Key::Enter
         | Key::Delete
         | Key::Backspace
         | Key::Left
@@ -195,6 +178,7 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
         | Key::Down => InputEvent::Key {
             key: match ev.key {
                 Key::Escape => pen_editor::Key::Escape,
+                Key::Enter => pen_editor::Key::Enter,
                 Key::Delete => pen_editor::Key::Delete,
                 Key::Backspace => pen_editor::Key::Backspace,
                 Key::Left => pen_editor::Key::Left,
@@ -217,21 +201,6 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
         _ => return false,
     };
     s.input(event, tx) != Redraw::Nothing
-}
-
-fn zoom_pill(label: &LiveText) -> El {
-    design::raised(el().key("zoom"), design::R_STATUS)
-        .pin(Some(design::S4), None, None, Some(design::S4))
-        .py(design::PADDING)
-        .child(
-            text("100%")
-                .live_text(label)
-                // Fixed width: a live label never relayouts, so it must fit "3000%".
-                .size(64.0, 18.0)
-                .align(rune::Align::Center)
-                .font(design::T_LABEL)
-                .color(design::c(design::INK)),
-        )
 }
 
 fn spec() -> AppSpec<State> {

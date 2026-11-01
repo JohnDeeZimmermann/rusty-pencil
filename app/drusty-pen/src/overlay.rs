@@ -57,6 +57,14 @@ impl Overlay {
                 let rect = match item.kind {
                     OverlayKind::Outline => rect.cursor(Cursor::Move),
                     OverlayKind::Marquee => rect.fill(c(d::SELECTION_WASH)),
+                    OverlayKind::Vertex { active } => rect
+                        .fill(c(if active { d::ON_ACCENT } else { d::PAPER }))
+                        .radius(d::R_STATUS)
+                        .cursor(Cursor::Move),
+                    OverlayKind::Midpoint => rect
+                        .fill(c(d::ACCENT))
+                        .radius(d::R_STATUS)
+                        .cursor(Cursor::Crosshair),
                     OverlayKind::Handle(handle) => rect
                         .fill(c(d::PAPER))
                         .radius(d::R_HANDLE)

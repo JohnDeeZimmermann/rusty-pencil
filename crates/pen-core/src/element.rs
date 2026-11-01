@@ -1,4 +1,4 @@
-use crate::{Srgba, WorldRect};
+use crate::{Path, Srgba, WorldRect};
 
 /// Identifies one element for the life of its document. Ids are handed out in increasing
 /// order and never reused, even after the element is removed.
@@ -60,7 +60,7 @@ impl Element {
     }
 
     pub(crate) fn replace(&mut self, after: &Self) {
-        self.kind = after.kind;
+        self.kind.clone_from(&after.kind);
         self.props = after.props;
         self.version = self.version.wrapping_add(1);
     }
@@ -82,30 +82,50 @@ impl Element {
 }
 
 /// What an element is, with its geometry in world points.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     Rect(WorldRect),
     /// The rhombus inscribed in the rect: its corners are the rect's edge midpoints.
     Diamond(WorldRect),
     /// The ellipse inscribed in the rect.
     Ellipse(WorldRect),
+    Line(Path),
+    Arrow(Path),
+    Freedraw(Path),
 }
 
 impl Kind {
     #[must_use]
-    pub fn with_bounds(self, bounds: WorldRect) -> Self {
+    pub fn with_bounds(&self, bounds: WorldRect) -> Self {
         match self {
             Self::Rect(_) => Self::Rect(bounds),
             Self::Diamond(_) => Self::Diamond(bounds),
             Self::Ellipse(_) => Self::Ellipse(bounds),
+            Self::Line(p) => Self::Line(p.with_bounds(bounds)),
+            Self::Arrow(p) => Self::Arrow(p.with_bounds(bounds)),
+            Self::Freedraw(p) => Self::Freedraw(p.with_bounds(bounds)),
         }
     }
 
     #[must_use]
     pub fn bounds(&self) -> WorldRect {
-        match *self {
-            Kind::Rect(r) | Kind::Diamond(r) | Kind::Ellipse(r) => r,
+        match self {
+            Kind::Rect(r) | Kind::Diamond(r) | Kind::Ellipse(r) => *r,
+            Kind::Line(p) | Kind::Arrow(p) | Kind::Freedraw(p) => p.bounds(),
         }
+    }
+
+    #[must_use]
+    pub fn path(&self) -> Option<&Path> {
+        match self {
+            Self::Line(p) | Self::Arrow(p) | Self::Freedraw(p) => Some(p),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn is_linear(&self) -> bool {
+        matches!(self, Self::Line(_) | Self::Arrow(_))
     }
 }
 

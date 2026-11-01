@@ -66,7 +66,7 @@ fn stale_patch_and_identity_change_are_rejected() {
         doc.apply(patch(&before, &after)),
         Err(DocError::Conflict(before.id()))
     );
-    let wrong = Element::new(doc.alloc_id(), before.kind, before.props);
+    let wrong = Element::new(doc.alloc_id(), before.kind.clone(), before.props);
     assert_eq!(
         doc.apply(patch(&after, &wrong)),
         Err(DocError::Conflict(before.id()))
@@ -76,7 +76,7 @@ fn stale_patch_and_identity_change_are_rejected() {
 #[test]
 fn group_sequences_validate_against_previous_commands_and_reverse_z_order() {
     let (mut doc, first) = setup();
-    let second = Element::new(doc.alloc_id(), first.kind, first.props);
+    let second = Element::new(doc.alloc_id(), first.kind.clone(), first.props);
     let moved = second.with_bounds(rect(200.0, 0.0, 100.0, 60.0));
     let inverse = doc
         .apply(Command::Group(vec![

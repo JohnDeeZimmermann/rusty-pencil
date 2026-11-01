@@ -20,7 +20,7 @@ pub(crate) fn resize(
     let mut w = raw_w.abs().max(min);
     let mut h = raw_h.abs().max(min);
     if mods.shift {
-        let ratio = bounds.width() / bounds.height();
+        let ratio = bounds.width().max(min) / bounds.height().max(min);
         if hx == 0.0 {
             w = h * ratio;
         } else if hy == 0.0 || w / h > ratio {

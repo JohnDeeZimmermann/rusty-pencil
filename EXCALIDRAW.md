@@ -12,13 +12,13 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Rectangle (`R` / `2`) — M1
 - [x] Diamond (`D` / `3`) — M1
 - [x] Ellipse (`O` / `4`) — M1
-- [ ] Arrow (`A` / `5`) — M3
-- [ ] Line (`L` / `6`) — M3
-- [ ] Freedraw / pen (`P` / `7`) — M3
+- [x] Arrow (`A` / `5`) — M3
+- [x] Line (`L` / `6`) — M3
+- [x] Freedraw / pen (`P` / `7`) — M3
 - [ ] Text (`T` / `8`) — M4
 - [ ] Image (`9`) — M8
 - [ ] Eraser (`E` / `0`), hold Alt to un-erase — M6
-- [ ] Hand / pan tool (`H`) — M3
+- [x] Hand / pan tool (`H`) — M3
 - [ ] Frame tool (`F`) — M9
 - [ ] Laser pointer (`K`) — M9
 - [ ] Lasso selection — M9
@@ -62,8 +62,8 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Group / ungroup (Ctrl+G / Ctrl+Shift+G), nested groups — M6
 - [ ] Double-click into a group to edit one member — M6
 - [ ] Lock / unlock elements — M6
-- [ ] Edit line/arrow points (double-click or Ctrl+Enter), add and delete points — M3
-- [ ] Multi-point lines and arrows by clicking point to point — M3
+- [x] Edit line/arrow points (double-click or Ctrl+Enter), add and delete points — M3
+- [x] Multi-point lines and arrows by clicking point to point — M3
 - [ ] Hyperlink on an element (Ctrl+K), opens in the system browser — M9
 - [ ] Link to another element in the scene — M9
 
@@ -95,10 +95,10 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 ## Canvas and view
 
 - [x] Infinite canvas — M0
-- [ ] Pan: wheel, Space+drag, middle-mouse drag, hand tool — M3
-- [ ] Zoom: Ctrl+wheel, pinch, Ctrl+`+` / `-`, zoom indicator — M3 (Ctrl+wheel, pinch and indicator done)
-- [ ] Reset zoom (Ctrl+0), zoom to fit (Shift+1), zoom to selection (Shift+2) — M3
-- [ ] "Scroll back to content" button — M3
+- [x] Pan: wheel, Space+drag, middle-mouse drag, hand tool — M3
+- [x] Zoom: Ctrl+wheel, pinch, Ctrl+`+` / `-`, zoom indicator — M3
+- [x] Reset zoom (Ctrl+0), zoom to fit (Shift+1), zoom to selection (Shift+2) — M3
+- [x] "Scroll back to content" button — M3
 - [ ] Dark mode (Alt+Shift+D) — M5
 - [ ] Canvas background colour — M5
 - [ ] Zen mode (Alt+Z): hide panels — M9

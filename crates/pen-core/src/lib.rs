@@ -10,12 +10,14 @@ mod element;
 mod geometry;
 mod hit;
 mod outline;
+mod path;
 
 pub use color::Srgba;
 pub use document::{Command, DocError, Document};
 pub use element::{Edges, Element, ElementId, Kind, Props};
 pub use geometry::{WorldPt, WorldRect};
 pub use outline::{TOLERANCE, outline};
+pub use path::{Path, PathPoint};
 
 #[cfg(test)]
 mod tests;
@@ -24,3 +26,6 @@ mod tests;
 mod command_tests;
 #[cfg(test)]
 mod hit_tests;
+
+#[cfg(test)]
+mod path_tests;

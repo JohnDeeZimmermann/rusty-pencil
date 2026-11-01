@@ -3,12 +3,42 @@ use pen_core::Command;
 
 impl Editor {
     pub(crate) fn key(&mut self, key: Key, mods: Modifiers) -> Redraw {
+        if let Some(redraw) = self.view_key(key, mods) {
+            return redraw;
+        }
+        if key == Key::Enter {
+            if mods.ctrl {
+                return self.begin_point_edit();
+            }
+            if self.point_editor.take().is_some() {
+                return Redraw::Tool;
+            }
+            return self.finish_path(true);
+        }
+        if matches!(key, Key::Backspace | Key::Delete) {
+            if let Some(edit) = &mut self.point_editor {
+                if edit.cancel() {
+                    return Redraw::Draft;
+                }
+                let command = edit.delete(&self.document);
+                return if command.is_some_and(|c| self.execute(c, self.selection.clone())) {
+                    Redraw::Scene
+                } else {
+                    Redraw::Nothing
+                };
+            }
+            if let Some(crate::Gesture::Path(draw)) = &mut self.gesture {
+                draw.backspace();
+                return Redraw::Draft;
+            }
+        }
         if mods.ctrl && !mods.alt {
             if let Key::Char(c) = key {
                 match c.to_ascii_lowercase() {
                     'a' => {
                         self.cancel();
                         self.tool = Tool::Select;
+                        self.point_editor = None;
                         self.selection = Selection::all(&self.document);
                         return Redraw::Tool;
                     }
@@ -23,6 +53,8 @@ impl Editor {
                             redo,
                         ) {
                             Ok(true) => {
+                                self.point_editor = None;
+                                self.navigation.refresh(&self.document);
                                 if !self.selection.is_empty() {
                                     self.tool = Tool::Select;
                                 }

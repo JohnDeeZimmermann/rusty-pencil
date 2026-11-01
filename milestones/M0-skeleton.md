@@ -64,3 +64,8 @@ scene `Shape` is never rebuilt while the camera moves.
 - Headless screenshots: `cargo run -p drusty-pen -- --snap out.png --scale 1`, optionally with
   `--camera X,Y,ZOOM` or `--script app/drusty-pen/scripts/pan-zoom.json --at 0.5`.
 - Window resize does not re-centre the camera. Nothing needs it yet.
+
+- M3 clarified the zero-size-node approach: only the **world transform** stays zero-size.
+  Each paint layer has real geometry bounds and local coordinates, because Rune otherwise
+  culls its out-of-bounds shape when the world origin leaves the viewport. Pan/zoom still
+  update only live camera values; paint and layer bounds are unchanged.

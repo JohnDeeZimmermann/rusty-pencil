@@ -5,14 +5,17 @@
 mod camera;
 mod history;
 mod input;
+mod navigation;
+mod pointer;
 mod selection;
 mod shortcuts;
 mod tool;
 mod tools;
 
 use history::History;
+use navigation::Navigation;
 use pen_core::{Command, Document, Element, Kind, Props, WorldRect};
-use tools::{select::SelectionDrag, shape::ShapeDrag};
+use tools::{path::PathDraw, points::PointEditor, select::SelectionDrag, shape::ShapeDrag};
 
 pub use camera::{Camera, ScreenPt, ScreenVec};
 pub use input::{InputEvent, Key, Modifiers};
@@ -26,6 +29,7 @@ pub const CLICK_SLOP: f32 = 3.0;
 enum Gesture {
     Drawing(ShapeDrag),
     Selecting(SelectionDrag),
+    Path(PathDraw),
 }
 
 /// Owned by the app; no window, renderer, or shared mutable state.
@@ -38,10 +42,12 @@ pub struct Editor {
     gesture: Option<Gesture>,
     selection: Selection,
     history: History,
+    navigation: Navigation,
+    point_editor: Option<PointEditor>,
 }
 
 /// Uncommitted shape geometry, in world points.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Draft {
     pub kind: Kind,
     pub props: Props,
@@ -84,6 +90,9 @@ impl Editor {
     /// Only touched elements, replacing their committed paint during a transform.
     #[must_use]
     pub fn preview(&self) -> &[Element] {
+        if let Some(edit) = &self.point_editor {
+            return edit.preview();
+        }
         match &self.gesture {
             Some(Gesture::Selecting(drag)) => drag.preview(),
             _ => &[],
@@ -110,7 +119,11 @@ impl Editor {
     }
     #[must_use]
     pub fn draft(&self) -> Option<Draft> {
-        match self.gesture {
+        match &self.gesture {
+            Some(Gesture::Path(drag)) => Some(Draft {
+                kind: drag.kind(true),
+                props: self.style,
+            }),
             Some(Gesture::Drawing(drag)) => Some(Draft {
                 kind: drag.kind(),
                 props: self.style,
@@ -129,45 +142,48 @@ impl Editor {
                 self.camera.zoom_about(about, factor);
                 self.camera_moved()
             }
-            InputEvent::PointerDown { at, mods } => {
-                self.cancel();
-                let origin = self.camera.screen_to_world(at);
-                if !origin.is_finite() {
+            InputEvent::Viewport(size) => {
+                if size.dx.is_finite() && size.dy.is_finite() && size.dx > 0.0 && size.dy > 0.0 {
+                    self.navigation.viewport = size;
+                }
+                Redraw::Camera
+            }
+            InputEvent::FitContent => self.fit(false),
+            InputEvent::Space(down) => {
+                if self.navigation.space == down {
                     return Redraw::Nothing;
                 }
-                if self.tool == Tool::Select {
-                    self.gesture = Some(Gesture::Selecting(SelectionDrag::begin(
-                        &self.document,
-                        &mut self.selection,
-                        &self.camera,
-                        at,
-                        mods,
-                    )));
+                self.navigation.space = down;
+                Redraw::Tool
+            }
+            InputEvent::PanStart { at } => {
+                if at.x.is_finite() && at.y.is_finite() {
+                    self.navigation.pan = Some(at);
+                }
+                Redraw::Camera
+            }
+            InputEvent::PanMove { at } => self.pan_to(at),
+            InputEvent::PanEnd => {
+                self.navigation.pan = None;
+                Redraw::Camera
+            }
+            InputEvent::PointerDown { at, mods } => self.pointer_down(at, mods),
+            InputEvent::PointerMove { at, mods } => {
+                if self.is_panning() {
+                    self.pan_to(at)
                 } else {
-                    self.gesture =
-                        ShapeDrag::start(self.tool, origin, at, mods).map(Gesture::Drawing);
+                    self.drag_to(Some(at), mods)
                 }
-                Redraw::Draft
             }
-            InputEvent::PointerMove { at, mods } => self.drag_to(Some(at), mods),
             InputEvent::Modifiers(mods) => self.drag_to(None, mods),
-            InputEvent::PointerUp { at, mods } => {
-                self.drag_to(Some(at), mods);
-                match self.gesture.take() {
-                    Some(Gesture::Drawing(drag)) => self.commit_shape(drag),
-                    Some(Gesture::Selecting(drag)) => {
-                        if let Some((command, before)) =
-                            drag.finish(&self.document, &mut self.selection)
-                            && self.execute(command, before)
-                        {
-                            return Redraw::Scene;
-                        }
-                        Redraw::Draft
-                    }
-                    None => Redraw::Nothing,
-                }
-            }
+            InputEvent::PointerUp { at, mods } => self.pointer_up(at, mods),
+            InputEvent::DoubleClick { at, mods } => self.double_click(at, mods),
             InputEvent::Cancel => {
+                let space = std::mem::take(&mut self.navigation.space);
+                if space {
+                    self.cancel();
+                    return Redraw::Tool;
+                }
                 if self.cancel() {
                     Redraw::Draft
                 } else {
@@ -177,6 +193,15 @@ impl Editor {
             InputEvent::Key {
                 key: Key::Escape, ..
             } => {
+                if self.tool != Tool::Freedraw && matches!(self.gesture, Some(Gesture::Path(_))) {
+                    return self.finish_path(false);
+                }
+                if self.point_editor.as_mut().is_some_and(PointEditor::cancel) {
+                    return Redraw::Draft;
+                }
+                if self.point_editor.take().is_some() {
+                    return Redraw::Tool;
+                }
                 if self.cancel() {
                     Redraw::Draft
                 } else if !self.selection.is_empty() {
@@ -195,10 +220,17 @@ impl Editor {
         let pointer = match &self.gesture {
             Some(Gesture::Drawing(d)) => Some((d.pointer, d.mods)),
             Some(Gesture::Selecting(d)) => Some(d.pointer()),
+            Some(Gesture::Path(d)) => Some((d.pointer, d.mods)),
             None => None,
         };
         if let Some((at, mods)) = pointer {
             self.drag_to(Some(at), mods);
+            Redraw::Draft
+        } else if self
+            .point_editor
+            .as_mut()
+            .is_some_and(|e| e.camera_moved(&self.camera))
+        {
             Redraw::Draft
         } else {
             Redraw::Camera
@@ -206,7 +238,21 @@ impl Editor {
     }
 
     fn drag_to(&mut self, at: Option<ScreenPt>, mods: Modifiers) -> Redraw {
+        if let Some(edit) = &mut self.point_editor {
+            return if edit.update(at, mods, &self.camera) {
+                Redraw::Draft
+            } else {
+                Redraw::Nothing
+            };
+        }
         match &mut self.gesture {
+            Some(Gesture::Path(drag)) => {
+                if drag.update(at, mods, &self.camera) {
+                    Redraw::Draft
+                } else {
+                    Redraw::Nothing
+                }
+            }
             Some(Gesture::Drawing(drag)) => {
                 let before = *drag;
                 if let Some(at) = at {
@@ -253,14 +299,21 @@ impl Editor {
     }
 
     fn execute(&mut self, command: Command, before: Selection) -> bool {
-        self.history
+        let success = self
+            .history
             .execute(&mut self.document, command, before, self.selection.clone())
-            .is_ok()
+            .is_ok();
+        if success {
+            self.navigation.refresh(&self.document);
+        }
+        success
     }
 
     fn cancel(&mut self) -> bool {
+        let panning = self.navigation.pan.take().is_some();
+        let editing = self.point_editor.as_mut().is_some_and(PointEditor::cancel);
         let Some(gesture) = self.gesture.take() else {
-            return false;
+            return panning || editing;
         };
         if let Gesture::Selecting(drag) = gesture {
             drag.cancel(&mut self.selection);
@@ -273,6 +326,7 @@ impl Editor {
             return Redraw::Nothing;
         }
         self.cancel();
+        self.point_editor = None;
         self.tool = tool;
         if tool != Tool::Select {
             self.selection.clear();
@@ -289,3 +343,9 @@ mod history_tests;
 mod selection_tests;
 #[cfg(test)]
 mod shape_tests;
+
+#[cfg(test)]
+mod path_tests;
+
+#[cfg(test)]
+mod navigation_tests;

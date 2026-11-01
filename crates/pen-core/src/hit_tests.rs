@@ -23,8 +23,8 @@ fn filled_shapes_hit_inside_but_hollow_shapes_only_hit_their_outline() {
         Kind::Diamond(bounds()),
         Kind::Ellipse(bounds()),
     ] {
-        let filled = element(kind, true, Edges::Round);
-        let hollow = element(kind, false, Edges::Round);
+        let filled = element(kind.clone(), true, Edges::Round);
+        let hollow = element(kind.clone(), false, Edges::Round);
         assert!(filled.hit_test(WorldPt::new(100.0, 50.0), 5.0));
         assert!(!hollow.hit_test(WorldPt::new(100.0, 50.0), 5.0));
         assert!(hollow.hit_test(WorldPt::new(100.0, 0.0), 5.0));
@@ -45,7 +45,7 @@ fn rounded_corners_and_diamond_empty_corners_follow_visible_geometry() {
     assert!(!round.hit_test(WorldPt::ORIGIN, 0.0));
     assert!(sharp.hit_test(WorldPt::ORIGIN, 0.0));
     for kind in [Kind::Diamond(bounds()), Kind::Ellipse(bounds())] {
-        assert!(!element(kind, true, Edges::Round).hit_test(WorldPt::new(5.0, 5.0), 0.0));
+        assert!(!element(kind.clone(), true, Edges::Round).hit_test(WorldPt::new(5.0, 5.0), 0.0));
     }
 }
 

@@ -7,12 +7,14 @@
 
 mod cache;
 mod overlay;
+mod path;
 mod scene;
 
 use pen_core::{Kind, Props, Srgba, WorldPt};
 
 pub use cache::SceneCache;
 pub use overlay::{OverlayKind, OverlayRect, overlay};
+pub use path::freehand_outline;
 pub use scene::{Scene, ScenePart};
 
 /// Flattening tolerance in world points: curves stay within this of their true position.
@@ -68,6 +70,10 @@ impl DrawList {
 
 /// Appends the paint for one element (or draft) to `out`: background fill, then stroke.
 pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
+    if let Some(path) = kind.path() {
+        path::draw_path(kind, path, props, out);
+        return;
+    }
     let outline = pen_core::outline(kind, props.edges);
     if outline.len() < 2 {
         return;
@@ -98,3 +104,6 @@ mod overlay_tests;
 
 #[cfg(test)]
 mod scene_tests;
+
+#[cfg(test)]
+mod path_tests;

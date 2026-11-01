@@ -1,13 +1,14 @@
 //! Rune adapter for composed scene paint. The renderer owns ordering and invalidation;
 //! this adapter retains Rune shapes and memoized nodes by the renderer's part revisions.
 use crate::{layer, paint};
-use pen_core::{Document, Element};
+use pen_core::{Document, Element, WorldRect};
 use rune::{El, Shape, el, memo};
 
 #[derive(Debug)]
 struct Part {
     revision: u64,
     shape: Shape,
+    bounds: WorldRect,
 }
 
 #[derive(Debug, Default)]
@@ -29,9 +30,11 @@ impl Scene {
             {
                 continue;
             }
+            let (shape, bounds) = paint::bounded(part.prims());
             let painted = Part {
                 revision: part.revision(),
-                shape: paint::shape(part.prims()),
+                shape,
+                bounds,
             };
             if let Some(old) = self.parts.get_mut(i) {
                 *old = painted;
@@ -52,7 +55,7 @@ impl Scene {
             |node, (i, part)| {
                 let key = format!("scene-part-{i}");
                 node.child(memo(key.clone(), part.revision, || {
-                    layer(part.shape.clone(), &key)
+                    layer(part.shape.clone(), part.bounds, &key)
                 }))
             },
         )

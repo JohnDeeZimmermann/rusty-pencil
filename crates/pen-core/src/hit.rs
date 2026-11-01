@@ -1,15 +1,29 @@
-use crate::{Element, WorldPt, outline};
+use crate::{Element, Kind, WorldPt, outline};
 
 impl Element {
-    /// Uses the same flattened outline as rendering, including rounded corners. `tolerance`
-    /// is in world points: callers divide their screen tolerance by camera zoom.
+    /// Uses the canonical shape outline (including rounded corners) or the open path
+    /// centreline with stroke reach. `tolerance` is in world points: divide screen tolerance
+    /// by camera zoom. Paths never hit an implicit closing edge or their empty interior.
     #[must_use]
     pub fn hit_test(&self, point: WorldPt, tolerance: f32) -> bool {
-        if !point.is_finite() || !tolerance.is_finite() || self.kind.bounds().is_degenerate() {
+        if !point.is_finite() || !tolerance.is_finite() {
             return false;
         }
         let bounds = self.kind.bounds();
-        let reach = tolerance.max(0.0) + self.props.stroke_width.max(0.0) / 2.0;
+        let radius = if matches!(self.kind, Kind::Freedraw(_)) {
+            self.props.stroke_width * 1.6
+        } else {
+            self.props.stroke_width / 2.0
+        };
+        let reach = tolerance.max(0.0) + radius.max(0.0);
+        if let Kind::Arrow(path) = &self.kind
+            && let Some(head) = path.arrowhead(self.props.stroke_width)
+            && head
+                .windows(2)
+                .any(|s| distance(point, s[0], s[1]) <= reach)
+        {
+            return true;
+        }
         if point.x < bounds.min().x - reach
             || point.x > bounds.max().x + reach
             || point.y < bounds.min().y - reach
@@ -18,6 +32,17 @@ impl Element {
             return false;
         }
         let points = outline(&self.kind, self.props.edges);
+        if self.kind.path().is_some() {
+            // Open paths never hit their imaginary closing edge or the box interior.
+            return self.props.stroke_width > 0.0
+                && points.iter().enumerate().any(|(i, a)| {
+                    let b = points.get(i + 1).unwrap_or(a);
+                    distance(point, *a, *b) <= reach
+                });
+        }
+        if bounds.is_degenerate() {
+            return false;
+        }
         let mut inside = false;
         for i in 0..points.len() {
             let a = points[i];

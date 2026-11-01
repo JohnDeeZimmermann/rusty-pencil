@@ -10,6 +10,8 @@ rust-version.workspace = true
 [dependencies]
 pen-core.workspace = true
 pen-editor.workspace = true
+# Replaces the pressure, streamline, joins and cap geometry of a freehand outline.
+perfect_freehand = "=0.1.1"
 
 [lints]
 workspace = true

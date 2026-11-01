@@ -7,6 +7,8 @@ pub enum OverlayKind {
     Outline,
     Handle(Handle),
     Marquee,
+    Vertex { active: bool },
+    Midpoint,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -24,6 +26,32 @@ pub fn overlay(editor: &Editor, out: &mut Vec<OverlayRect>) {
         return;
     }
     let camera = editor.camera();
+    if let Some((path, active)) = editor.editable_points() {
+        let mut previous = None;
+        for (i, point) in path.world_points().enumerate() {
+            let p = camera.world_to_screen(point);
+            if let Some(a) = previous {
+                let a: pen_editor::ScreenPt = a;
+                out.push(OverlayRect {
+                    kind: OverlayKind::Midpoint,
+                    rect: [(a.x + p.x) / 2.0 - 3.0, (a.y + p.y) / 2.0 - 3.0, 6.0, 6.0],
+                });
+            }
+            out.push(OverlayRect {
+                kind: OverlayKind::Vertex {
+                    active: active == Some(i),
+                },
+                rect: [
+                    p.x - HANDLE_SIZE / 2.0,
+                    p.y - HANDLE_SIZE / 2.0,
+                    HANDLE_SIZE,
+                    HANDLE_SIZE,
+                ],
+            });
+            previous = Some(p);
+        }
+        return;
+    }
     let screen = |r: WorldRect, pad: f32| {
         let a = camera.world_to_screen(r.min());
         [

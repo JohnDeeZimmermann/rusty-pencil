@@ -36,7 +36,7 @@ fn drag(ed: &mut Editor, from: ScreenPt, to: ScreenPt, mods: Modifiers) -> Redra
 
 fn only_kind(ed: &Editor) -> Kind {
     match ed.document().elements() {
-        [e] => e.kind,
+        [e] => e.kind.clone(),
         other => panic!("expected one element, got {other:?}"),
     }
 }

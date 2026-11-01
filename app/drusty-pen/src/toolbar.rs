@@ -1,7 +1,7 @@
 //! The floating tool island at the top of the window, and the quiet hint under it.
 
-use pen_core::{Edges, Kind, Props, Srgba, WorldPt, WorldRect};
-use pen_editor::{InputEvent, Tool};
+use pen_core::{Edges, Kind, Path, Props, Srgba, WorldPt, WorldRect};
+use pen_editor::{Editor, InputEvent, Tool};
 use pen_render::DrawList;
 use rune::{Color, Cursor, El, Tx, canvas, col, el, row, text};
 
@@ -9,7 +9,8 @@ use crate::design::{self as d, c};
 use crate::{State, paint};
 
 /// The island, centred at the top, and the active tool's hint below it.
-pub(crate) fn toolbar(active: Tool) -> El {
+pub(crate) fn toolbar(editor: &Editor) -> El {
+    let active = editor.tool();
     let island = Tool::ALL.into_iter().fold(
         d::raised(row().key("tools"), d::R_ISLAND)
             .padding(d::PADDING)
@@ -26,7 +27,7 @@ pub(crate) fn toolbar(active: Tool) -> El {
         .gap(d::S3)
         .child(island)
         .child(
-            text(hint(active))
+            text(if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else { hint(active) })
                 .key("hint")
                 .font(d::T_HINT)
                 .color(c(d::MUTED)),
@@ -36,6 +37,7 @@ pub(crate) fn toolbar(active: Tool) -> El {
 fn button(tool: Tool, active: bool) -> El {
     let ink = if active { d::ON_ACCENT } else { d::INK };
     el().key(format!("tool-{}", tool.letter()))
+        .preserve_focus_on_press(true)
         .size(d::BUTTON, d::BUTTON)
         .radius(d::R_BUTTON)
         .fill(if active {
@@ -52,13 +54,17 @@ fn button(tool: Tool, active: bool) -> El {
         .items_center()
         .justify_center()
         .child(canvas(icon(tool, ink)).size(d::ICON, d::ICON))
-        .child(shortcut(tool.digit(), active))
-        .help(format!(
-            "{} — {} or {}",
-            tool.name(),
-            tool.letter().to_ascii_uppercase(),
-            tool.digit()
-        ))
+        .child(shortcut(tool.digit().to_ascii_uppercase(), active))
+        .help(if tool == Tool::Hand {
+            "Hand — H".into()
+        } else {
+            format!(
+                "{} — {} or {}",
+                tool.name(),
+                tool.letter().to_ascii_uppercase(),
+                tool.digit()
+            )
+        })
         .on_press_tx(move |s: &mut State, tx| {
             s.input(InputEvent::SelectTool(tool), tx);
         })
@@ -89,6 +95,48 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
             ];
             return rune::Shape::new().stroke(points, d::ICON_STROKE, c(ink));
         }
+        Tool::Hand => {
+            return rune::Shape::new().stroke(
+                vec![
+                    [6.0, 11.0],
+                    [6.0, 4.0],
+                    [8.5, 4.0],
+                    [8.5, 10.0],
+                    [8.5, 2.0],
+                    [11.0, 2.0],
+                    [11.0, 10.0],
+                    [11.0, 3.0],
+                    [13.5, 3.0],
+                    [13.5, 10.0],
+                    [13.5, 5.0],
+                    [16.0, 5.0],
+                    [16.0, 12.0],
+                    [14.0, 17.0],
+                    [8.0, 17.0],
+                    [3.0, 11.0],
+                    [3.0, 9.0],
+                    [6.0, 11.0],
+                ],
+                d::ICON_STROKE,
+                c(ink),
+            );
+        }
+        Tool::Arrow => Kind::Arrow(Path::from_world(&[
+            WorldPt::new(2.0, 15.0),
+            WorldPt::new(18.0, 5.0),
+        ])),
+        Tool::Line => Kind::Line(Path::from_world(&[
+            WorldPt::new(3.0, 16.0),
+            WorldPt::new(17.0, 4.0),
+        ])),
+        Tool::Freedraw => Kind::Line(Path::from_world(&[
+            WorldPt::new(2.0, 15.0),
+            WorldPt::new(6.0, 7.0),
+            WorldPt::new(9.0, 6.0),
+            WorldPt::new(10.0, 14.0),
+            WorldPt::new(13.0, 15.0),
+            WorldPt::new(18.0, 7.0),
+        ])),
         Tool::Rectangle => Kind::Rect(inset(2.0)),
         Tool::Diamond => Kind::Diamond(inset(1.0)),
         Tool::Ellipse => Kind::Ellipse(inset(2.0)),
@@ -107,6 +155,9 @@ fn icon(tool: Tool, ink: Srgba) -> rune::Shape {
 fn hint(tool: Tool) -> String {
     let what = match tool {
         Tool::Select => return "Click to select  ·  Shift to add  ·  Drag to move or box select  ·  Esc to cancel".into(),
+        Tool::Hand => return "Drag to pan  ·  Wheel to scroll  ·  Ctrl + wheel to zoom  ·  Shift + 1 to fit all".into(),
+        Tool::Line | Tool::Arrow => return "Drag or click point to point  ·  Shift snaps 15°  ·  Enter / Esc / double-click to finish".into(),
+        Tool::Freedraw => return "Drag to draw freely  ·  Esc to cancel  ·  Space + drag to pan".into(),
         Tool::Rectangle => "a rectangle",
         Tool::Diamond => "a diamond",
         Tool::Ellipse => "an ellipse",

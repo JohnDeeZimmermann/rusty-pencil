@@ -8,11 +8,24 @@ pub enum Tool {
     Rectangle,
     Diamond,
     Ellipse,
+    Arrow,
+    Line,
+    Freedraw,
+    Hand,
 }
 
 impl Tool {
     /// Every tool, in toolbar order.
-    pub const ALL: [Tool; 4] = [Tool::Select, Tool::Rectangle, Tool::Diamond, Tool::Ellipse];
+    pub const ALL: [Tool; 8] = [
+        Tool::Select,
+        Tool::Rectangle,
+        Tool::Diamond,
+        Tool::Ellipse,
+        Tool::Arrow,
+        Tool::Line,
+        Tool::Freedraw,
+        Tool::Hand,
+    ];
 
     #[must_use]
     pub fn name(self) -> &'static str {
@@ -21,6 +34,10 @@ impl Tool {
             Tool::Rectangle => "Rectangle",
             Tool::Diamond => "Diamond",
             Tool::Ellipse => "Ellipse",
+            Tool::Arrow => "Arrow",
+            Tool::Line => "Line",
+            Tool::Freedraw => "Pen",
+            Tool::Hand => "Hand",
         }
     }
 
@@ -32,6 +49,10 @@ impl Tool {
             Tool::Rectangle => 'r',
             Tool::Diamond => 'd',
             Tool::Ellipse => 'o',
+            Tool::Arrow => 'a',
+            Tool::Line => 'l',
+            Tool::Freedraw => 'p',
+            Tool::Hand => 'h',
         }
     }
 
@@ -43,6 +64,10 @@ impl Tool {
             Tool::Rectangle => '2',
             Tool::Diamond => '3',
             Tool::Ellipse => '4',
+            Tool::Arrow => '5',
+            Tool::Line => '6',
+            Tool::Freedraw => '7',
+            Tool::Hand => 'h',
         }
     }
 

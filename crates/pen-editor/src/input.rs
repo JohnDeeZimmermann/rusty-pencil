@@ -6,22 +6,54 @@ use crate::{ScreenPt, ScreenVec};
 pub enum InputEvent {
     /// Move the content by `by` (positive: content moves right / down), as a wheel or
     /// two-finger scroll does.
-    Pan { by: ScreenVec },
+    Pan {
+        by: ScreenVec,
+    },
     /// Multiply the zoom by `factor` (> 1 zooms in), keeping the world point under `about`
     /// fixed on screen.
-    Zoom { about: ScreenPt, factor: f32 },
+    Zoom {
+        about: ScreenPt,
+        factor: f32,
+    },
+    /// Auxiliary pan gestures (middle mouse); primary hand/Space drags use pointer events.
+    PanStart {
+        at: ScreenPt,
+    },
+    PanMove {
+        at: ScreenPt,
+    },
+    PanEnd,
+    Space(bool),
+    Viewport(ScreenVec),
+    FitContent,
+    DoubleClick {
+        at: ScreenPt,
+        mods: Modifiers,
+    },
     /// The primary button went down on the canvas.
-    PointerDown { at: ScreenPt, mods: Modifiers },
+    PointerDown {
+        at: ScreenPt,
+        mods: Modifiers,
+    },
     /// The pointer moved while the primary button is held.
-    PointerMove { at: ScreenPt, mods: Modifiers },
+    PointerMove {
+        at: ScreenPt,
+        mods: Modifiers,
+    },
     /// The primary button came up.
-    PointerUp { at: ScreenPt, mods: Modifiers },
+    PointerUp {
+        at: ScreenPt,
+        mods: Modifiers,
+    },
     /// Modifier keys changed with no pointer movement (Shift pressed mid-drag).
     Modifiers(Modifiers),
     /// The gesture was abandoned (Escape, focus lost). Nothing it started is kept.
     Cancel,
     /// A key press that no text field took.
-    Key { key: Key, mods: Modifiers },
+    Key {
+        key: Key,
+        mods: Modifiers,
+    },
     /// Pick a tool directly (a toolbar button).
     SelectTool(crate::Tool),
 }
@@ -48,6 +80,7 @@ pub enum Key {
     /// A printable character, lowercased.
     Char(char),
     Escape,
+    Enter,
     Delete,
     Backspace,
     Left,
