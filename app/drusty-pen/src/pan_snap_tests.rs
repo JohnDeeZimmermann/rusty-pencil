@@ -23,6 +23,7 @@ fn settle(rt: &mut Runtime<State>) {
 #[test]
 fn a_sub_pixel_pan_at_a_fractional_zoom_moves_every_shape_by_exactly_the_pan() {
     let mut rt = app();
+    key(&mut rt, "q");
     key(&mut rt, "r");
     drag(&mut rt, (400.0, 300.0), (520.0, 390.0));
     key(&mut rt, "\u{1b}");

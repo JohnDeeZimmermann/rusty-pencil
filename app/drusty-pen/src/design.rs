@@ -47,20 +47,38 @@ pub(crate) const T_HINT: TextStyle = TextStyle::new(12.0, 450.0);
 pub(crate) const T_LABEL: TextStyle = TextStyle::new(12.0, 500.0);
 pub(crate) const T_BADGE: TextStyle = TextStyle::new(9.0, 500.0);
 
-/// Floating surfaces use a neutral hairline and a soft, low-opacity shadow.
-pub(crate) fn raised(el: rune::El, radius: f32) -> rune::El {
-    el.radius(radius)
-        .fill(c(PAPER))
-        .border(OUTLINE, c(BORDER))
-        .shadow(LIFT, 8.0, c(SHADOW))
-}
-
 /// Transparent teal for the marquee; it never obscures document strokes.
 pub(crate) const SELECTION_WASH: Srgba = Srgba { a: 24, ..ON_ACCENT };
 pub(crate) const R_HANDLE: f32 = 2.0;
 
 // M4 inspector, file status, and confirmation surfaces.
 pub(crate) const INSPECTOR_TOP: f32 = 128.0;
-pub(crate) const INSPECTOR_WIDTH: f32 = BUTTON * 4.0 + S1 * 3.0 + S3 * 2.0;
+pub(crate) const INSPECTOR_WIDTH: f32 = BUTTON * 5.0 + S1 * 4.0 + S3 * 2.0;
 pub(crate) const FILE_STATUS_WIDTH: f32 = 440.0;
 pub(crate) const CONFIRM_WIDTH: f32 = 360.0;
+
+/// Theme mapping is presentation-only: document colours always remain sRGB.
+pub(crate) fn themed(color: Srgba, dark: bool) -> Color {
+    c(if dark { color.dark() } else { color })
+}
+pub(crate) fn surface(el: rune::El, radius: f32, dark: bool) -> rune::El {
+    el.radius(radius)
+        .fill(themed(PAPER, dark))
+        .border(OUTLINE, themed(BORDER, dark))
+        .shadow(LIFT, 8.0, c(SHADOW))
+}
+pub(crate) fn kit(dark: bool) -> rune_kit::Kit {
+    let mut kit = rune_kit::Kit::neutral(dark);
+    kit.c.bg_base = themed(PAPER, dark);
+    kit.c.text_base = themed(INK, dark);
+    kit.c.text_muted = themed(MUTED, dark);
+    kit.c.border_focus = themed(ON_ACCENT, dark);
+    kit.c.layer_01 = themed(ACCENT_SOFT, dark);
+    kit.ty.ui = T_LABEL;
+    kit.ty.ui_medium = T_LABEL;
+    kit
+}
+pub(crate) const PANEL_HEIGHT_MARGIN: f32 = 220.0;
+pub(crate) const SWATCH: f32 = BUTTON;
+pub(crate) const CONTROL: f32 = BUTTON;
+pub(crate) const SLIDER_HEIGHT: f32 = 44.0;

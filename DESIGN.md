@@ -79,3 +79,17 @@ the current style, keeping outline styling available without an always-open side
 File actions sit at the bottom right, with a muted status above them. Reset opens a compact
 modal with Cancel and Reset canvas actions. The status uses a fixed live-text box so camera
 updates can remain live-only.
+
+## Properties and canvas settings
+
+The left inspector is a 260-point floating surface with 44-point controls. It shows selection
+properties or drawing defaults, followed by canvas settings. A bounded inner column scrolls
+without panning the canvas. Fields that differ across the selection say “Mixed”; changing
+one field preserves every other value. Palette swatches preview the current appearance;
+hex inputs always show the stored sRGB value and apply on Enter. Transparent is explicit.
+
+Text controls appear first when relevant. Fill, stroke, edge and arrowhead choices use the
+same teal active state as the toolbar. Opacity follows the pointer immediately and commits
+on release. Canvas settings expose tool lock, grid snapping, dark mode and background colour.
+Dark appearance reverses colour lightness without modifying the document. The grid has a
+20-world-point pitch and follows camera changes through live scale and phase values.

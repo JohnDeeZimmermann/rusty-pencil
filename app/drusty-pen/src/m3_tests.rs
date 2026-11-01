@@ -36,7 +36,7 @@ fn space(rt: &mut Runtime<State>, pressed: bool) {
 fn line_hover_tail_finishes_on_enter_and_arrow_uses_shortcut_five() {
     let mut rt = app();
     key(&mut rt, "l");
-    click(&mut rt, 250.0, 250.0);
+    click(&mut rt, 300.0, 250.0);
     click(&mut rt, 500.0, 250.0);
     rt.pointer_move(600.0, 400.0);
     rt.frame(FRAME);
@@ -155,7 +155,7 @@ fn zoom_commands_and_return_to_content_do_not_rebuild_the_view() {
     assert_eq!(zoom_text(&rt), "120%");
     command(&mut rt, '0');
     assert_eq!(zoom_text(&rt), "100%");
-    rt.wheel_event(WheelEvent::new(5000.0, 0.0).at(100.0, 500.0));
+    rt.wheel_event(WheelEvent::new(5000.0, 0.0).at(300.0, 500.0));
     rt.frame(FRAME);
     assert!(rt.state.editor.content_offscreen());
     assert_eq!(
@@ -172,17 +172,17 @@ fn zoom_commands_and_return_to_content_do_not_rebuild_the_view() {
 fn freehand_renders_live_commits_once_and_undoes() {
     let mut rt = app();
     key(&mut rt, "7");
-    rt.pointer_down(250.0, 400.0);
+    rt.pointer_down(300.0, 400.0);
     for i in 1..100 {
         rt.pointer_move(
-            250.0 + i as f32 * 3.0,
+            300.0 + i as f32 * 3.0,
             400.0 + (i as f32 * 0.08).sin() * 60.0,
         );
         rt.frame(FRAME);
     }
     assert!(!rt.state.draft.is_empty());
     assert!(kinds(&rt).is_empty());
-    rt.pointer_up(550.0, 460.0);
+    rt.pointer_up(600.0, 460.0);
     rt.frame(FRAME);
     assert!(matches!(&kinds(&rt)[0], Kind::Freedraw(_)));
     command(&mut rt, 'z');

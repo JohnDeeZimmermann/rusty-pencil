@@ -1,121 +1,124 @@
-//! Contextual text controls. Icon buttons preserve the active field's typing focus.
-use crate::{State, design as d, property_icons as icons};
-use pen_core::{Font, TextAlign};
-use pen_editor::{Editor, InputEvent, Tool};
-use rune::{El, Shape, Tx, canvas, col, el, row, text};
+//! Contextual inspector. Each property group owns its controls; edits go through the editor.
+mod arrows;
+mod colors;
+pub(crate) use colors::sync;
+mod fill;
+mod opacity;
+mod settings;
+mod stroke;
+#[path = "properties/text.rs"]
+mod text_controls;
 
-pub(crate) fn panel(editor: &Editor) -> El {
-    let has_text = editor.tool() == Tool::Text
+use crate::{State, design as d};
+use pen_core::{Property, Value};
+use pen_editor::{InputEvent, Tool};
+use rune::{El, Tx, col, row, text};
+
+pub(crate) fn panel(s: &State) -> El {
+    let editor = &s.editor;
+    let dark = editor.settings().dark;
+    let selected = !editor.selection().is_empty();
+    let mut content = col().gap(d::S3);
+    if selected
+        || !matches!(editor.tool(), Tool::Select | Tool::Hand)
         || editor.text_session().is_some()
-        || editor.styled_texts().next().is_some();
-    if !has_text {
-        return el().size(0.0, 0.0);
+    {
+        content = content
+            .child(
+                text(if selected {
+                    "Selection"
+                } else {
+                    "Tool defaults"
+                })
+                .font(d::T_LABEL)
+                .color(d::themed(d::INK, dark)),
+            )
+            .child(text_controls::panel(editor))
+            .child(colors::group(s, colors::Target::Stroke))
+            .child(colors::group(s, colors::Target::Background))
+            .child(fill::group(editor))
+            .child(stroke::group(editor))
+            .child(arrows::group(editor))
+            .child(opacity::group(editor));
     }
-
-    let (font, size, align) = editor.text_style();
-    let fonts = [
-        ("Hand-drawn", Font::HandDrawn),
-        ("Normal", Font::Normal),
-        ("Code", Font::Code),
-    ]
-    .into_iter()
-    .fold(row().gap(d::S1), |r, (name, value)| {
-        r.child(
-            choice(
-                &format!("font-{value:?}"),
-                name,
-                font == value,
-                InputEvent::TextStyle {
-                    font: value,
-                    size,
-                    align,
-                },
-            )
-            .child(icon(icons::font(value, ink(font == value)))),
-        )
-    });
-    let sizes = [("S", 16.0), ("M", 20.0), ("L", 28.0), ("XL", 36.0)]
-        .into_iter()
-        .fold(row().gap(d::S1), |r, (name, value)| {
-            let active = (size - value).abs() < 0.1;
-            r.child(
-                choice(
-                    &format!("size-{name}"),
-                    &format!("Font size {name} · {value:.0} pt"),
-                    active,
-                    InputEvent::TextStyle {
-                        font,
-                        size: value,
-                        align,
-                    },
-                )
-                .child(text(name).font(d::T_LABEL).color(d::c(ink(active)))),
-            )
-        });
-    let aligns = [
-        ("Left", TextAlign::Left),
-        ("Centre", TextAlign::Centre),
-        ("Right", TextAlign::Right),
-    ]
-    .into_iter()
-    .fold(row().gap(d::S1), |r, (name, value)| {
-        r.child(
-            choice(
-                &format!("align-{name}"),
-                &format!("Align {name}"),
-                align == value,
-                InputEvent::TextStyle {
-                    font,
-                    size,
-                    align: value,
-                },
-            )
-            .child(icon(icons::align(value, ink(align == value)))),
-        )
-    });
-    d::raised(col().key("properties"), d::R_ISLAND)
+    content = content.child(settings::group(s));
+    d::surface(col().key("shape-properties"), d::R_ISLAND, dark)
         .transition(rune::Transition::none())
         .absolute(d::S4, d::INSPECTOR_TOP)
         .w(d::INSPECTOR_WIDTH)
+        .h((editor.viewport().dy - d::PANEL_HEIGHT_MARGIN).max(180.0))
         .padding(d::S3)
-        .gap(d::S3)
         .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only())
-        .child(group("Font family", fonts))
-        .child(group("Font size", sizes))
-        .child(group("Text align", aligns))
+        .child(el_scroll(content))
 }
 
-fn group(label: &str, controls: El) -> El {
-    col()
-        .gap(d::S1)
-        .child(text(label).font(d::T_LABEL).color(d::c(d::MUTED)))
-        .child(controls)
-}
-
-fn ink(active: bool) -> pen_core::Srgba {
-    if active { d::ON_ACCENT } else { d::INK }
-}
-
-fn icon(shape: Shape) -> El {
-    canvas(shape).size(d::ICON, d::ICON)
-}
-
-fn choice(key: &str, help: &str, active: bool, event: InputEvent) -> El {
-    el().key(key)
-        .size(d::BUTTON, d::BUTTON)
-        .items_center()
-        .justify_center()
-        .radius(d::R_BUTTON)
-        .fill(d::c(if active { d::ACCENT } else { d::ACCENT_SOFT }))
-        .hover(if active {
-            rune::Color::TRANSPARENT
+fn group(label: &str, mixed: bool, controls: El, dark: bool) -> El {
+    rune_kit::Field::new()
+        .label(if mixed {
+            format!("{label} · Mixed")
         } else {
-            d::c(d::BORDER)
+            label.into()
         })
-        .help(help)
-        .preserve_focus_on_press(true)
-        .press_scale(d::PRESS)
+        .control(controls.w_full())
+        .build(&d::kit(dark))
+}
+
+fn choice(key: &str, label: &str, active: bool, property: Property, dark: bool) -> El {
+    rune_kit::Button::new(label)
         .on_press_tx(move |s: &mut State, tx| {
-            s.input(event.clone(), tx);
+            s.input(InputEvent::Property(property), tx);
         })
+        .build(&d::kit(dark))
+        .key(key)
+        .h(d::BUTTON)
+        .px(d::S1)
+        .min_w(d::BUTTON)
+        .radius(d::R_BUTTON)
+        .preserve_focus_on_press(true)
+        .fill(d::themed(
+            if active { d::ACCENT } else { d::ACCENT_SOFT },
+            dark,
+        ))
+        .help(label)
+}
+
+fn choices<T: Copy + PartialEq>(
+    label: &str,
+    key: &str,
+    value: Value<T>,
+    options: &[(&str, T)],
+    property: impl Fn(T) -> Property,
+    dark: bool,
+) -> El {
+    let controls =
+        options
+            .iter()
+            .enumerate()
+            .fold(row().w_full().gap(d::S1), |row, (i, (label, v))| {
+                row.child(
+                    choice(
+                        &format!("{key}-{i}"),
+                        label,
+                        value == Value::Uniform(*v),
+                        property(*v),
+                        dark,
+                    )
+                    .w((d::INSPECTOR_WIDTH
+                        - 2.0 * d::S3
+                        - d::S1 * (options.len() - 1) as f32)
+                        / options.len() as f32),
+                )
+            });
+    group(label, value == Value::Mixed, controls, dark)
+}
+
+fn el_scroll(content: El) -> El {
+    col()
+        .w_full()
+        .grow(1.0)
+        .min_h(0.0)
+        .scroll(rune::ScrollSpec {
+            stick_bottom: false,
+        })
+        .child(content)
 }

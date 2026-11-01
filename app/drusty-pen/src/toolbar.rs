@@ -10,15 +10,17 @@ use crate::{State, paint};
 
 /// The island, centred at the top, and the active tool's hint below it.
 pub(crate) fn toolbar(editor: &Editor) -> El {
+    let dark = editor.settings().dark;
+    let c = |v| d::themed(v, dark);
     let active = editor.tool();
     let island = Tool::ALL.into_iter().fold(
-        d::raised(row().key("tools"), d::R_ISLAND)
+        d::surface(row().key("tools"), d::R_ISLAND, dark)
             .padding(d::PADDING)
             .gap(d::S1)
             .cursor(Cursor::Default)
             // A press between buttons must not start drawing underneath the island.
             .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only()),
-        |island, tool| island.child(button(tool, tool == active)),
+        |island, tool| island.child(button(tool, tool == active, dark)),
     );
     col()
         .key("toolbar")
@@ -27,7 +29,7 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
         .gap(d::S3)
         .child(island
             .child(el().size(d::S1, d::BUTTON).items_center().justify_center().child(el().size(d::OUTLINE, d::ICON).fill(c(d::BORDER))))
-            .child(roughness_button(editor.roughness())))
+            .child(roughness_button(editor.roughness(), dark)))
         .child(
             text(if editor.editable_points().is_some() { "Drag a point to move  ·  Click a segment to add  ·  Delete removes a point  ·  Esc to finish".into() } else { hint(active) })
                 .key("hint")
@@ -36,7 +38,8 @@ pub(crate) fn toolbar(editor: &Editor) -> El {
         )
 }
 
-fn button(tool: Tool, active: bool) -> El {
+fn button(tool: Tool, active: bool, dark: bool) -> El {
+    let c = |v| d::themed(v, dark);
     let ink = if active { d::ON_ACCENT } else { d::INK };
     el().key(format!("tool-{}", tool.letter()))
         .preserve_focus_on_press(true)
@@ -55,8 +58,8 @@ fn button(tool: Tool, active: bool) -> El {
         .press_scale(d::PRESS)
         .items_center()
         .justify_center()
-        .child(canvas(icon(tool, ink)).size(d::ICON, d::ICON))
-        .child(shortcut(tool.digit().to_ascii_uppercase(), active))
+        .child(canvas(icon(tool, if dark { ink.dark() } else { ink })).size(d::ICON, d::ICON))
+        .child(shortcut(tool.digit().to_ascii_uppercase(), active, dark))
         .help(if tool == Tool::Hand {
             "Hand — H".into()
         } else {
@@ -73,7 +76,8 @@ fn button(tool: Tool, active: bool) -> El {
 }
 
 /// Shortcuts stay inside the hit target and follow the selected tool's colour.
-fn shortcut(digit: char, active: bool) -> El {
+fn shortcut(digit: char, active: bool, dark: bool) -> El {
+    let c = |v| d::themed(v, dark);
     text(digit.to_string())
         .size(d::SHORTCUT, d::SHORTCUT)
         .font(d::T_BADGE)
@@ -179,7 +183,8 @@ fn hint(tool: Tool) -> String {
 }
 
 /// Outline style remains available without opening an inspector on an empty canvas.
-fn roughness_button(current: Roughness) -> El {
+fn roughness_button(current: Roughness, dark: bool) -> El {
+    let c = |v| d::themed(v, dark);
     let (name, next) = match current {
         Roughness::Architect => ("Architect", Roughness::Artist),
         Roughness::Artist => ("Artist", Roughness::Cartoonist),
@@ -193,7 +198,7 @@ fn roughness_button(current: Roughness) -> El {
         .hover(c(d::ACCENT_SOFT))
         .press_scale(d::PRESS)
         .preserve_focus_on_press(true)
-        .child(canvas(crate::property_icons::roughness(current)).size(d::ICON, d::ICON))
+        .child(canvas(crate::property_icons::roughness(current, dark)).size(d::ICON, d::ICON))
         .help(format!(
             "Sloppiness: {name} · Click to cycle outline styles"
         ))

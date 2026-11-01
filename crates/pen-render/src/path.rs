@@ -36,16 +36,6 @@ pub(crate) fn draw_path(kind: &Kind, path: &Path, props: &Props, out: &mut DrawL
             width: props.stroke_width,
             color: props.stroke,
         });
-        if matches!(kind, Kind::Arrow(_))
-            && let Some(head) = path.arrowhead(props.stroke_width)
-        {
-            out.push(Prim::Stroke {
-                points: head.to_vec(),
-                closed: false,
-                width: props.stroke_width,
-                color: props.stroke,
-            });
-        }
     }
 }
 

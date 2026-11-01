@@ -44,7 +44,7 @@ fn alignment(align: TextAlign) -> Align {
 }
 
 /// Laid-out `(width, height)` in world points. With `wrap`, lines break at that width
-/// exactly as [`paint`] and the editing overlay break them.
+/// exactly as [`paint_themed`] and the editing overlay break them.
 pub(crate) fn measure(
     system: &mut TextSystem,
     content: &str,
@@ -96,16 +96,23 @@ fn placed(base: El, bounds: WorldRect) -> El {
         .origin(0.0, 0.0)
 }
 
-fn backdrop(bounds: WorldRect) -> El {
+fn backdrop(bounds: WorldRect, settings: pen_core::Settings) -> El {
     let m = LABEL_MARGIN;
     el().absolute(bounds.min().x - m, bounds.min().y - m)
         .size(bounds.width() + 2.0 * m, bounds.height() + 2.0 * m)
         .radius(LABEL_MARGIN)
-        .fill(d::c(d::CANVAS))
+        .fill(d::themed(settings.canvas, settings.dark))
 }
 
 /// Partition around text so filled shapes still occlude text below them in document order.
-pub(crate) fn paint(prims: &[Prim]) -> El {
+pub(crate) fn paint_themed(prims: &[Prim], settings: pen_core::Settings) -> El {
+    let themed;
+    let prims = if settings.dark {
+        themed = crate::paint::themed(prims);
+        &themed
+    } else {
+        prims
+    };
     let mut root = el()
         .absolute(0.0, 0.0)
         .size(0.0, 0.0)
@@ -140,7 +147,7 @@ pub(crate) fn paint(prims: &[Prim]) -> El {
                         .child(label.w_full().wrap_anywhere()),
                 ),
                 TextFit::Label => root
-                    .child(backdrop(*bounds).key(format!("backdrop-{i}")))
+                    .child(backdrop(*bounds, settings).key(format!("backdrop-{i}")))
                     .child(placed(label, *bounds).key(format!("text-{i}"))),
             };
             start = i + 1;
@@ -168,6 +175,7 @@ pub(crate) fn editor(s: &State) -> El {
     else {
         return el();
     };
+    let settings = s.editor.settings();
     let style = display_style(*font, *size);
     let field = text_input(&s.text_edit, style)
         .key("canvas-text-editor")
@@ -175,8 +183,12 @@ pub(crate) fn editor(s: &State) -> El {
         .w_full()
         .h_full()
         .instant_changes()
-        .color(d::c(session.element.props.stroke))
-        .caret(d::c(d::ON_ACCENT), d::c(d::SELECTION_WASH))
+        .color(d::themed(session.element.props.stroke, settings.dark))
+        .opacity(f32::from(session.element.props.opacity) / 100.0)
+        .caret(
+            d::themed(d::ON_ACCENT, settings.dark),
+            d::themed(d::SELECTION_WASH, settings.dark),
+        )
         .align(alignment(*align))
         .on_edit(|s: &mut State| &mut s.text_edit)
         .on_input_change(|s: &mut State, tx| s.sync_text(tx))
@@ -241,7 +253,7 @@ pub(crate) fn editor(s: &State) -> El {
             .absolute(0.0, 0.0)
             .size(0.0, 0.0)
             .instant_changes()
-            .child(backdrop(*bounds).key("text-edit-backdrop"))
+            .child(backdrop(*bounds, settings).key("text-edit-backdrop"))
             .child(layout);
     }
     layout

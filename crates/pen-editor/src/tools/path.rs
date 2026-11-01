@@ -15,8 +15,15 @@ pub(crate) struct PathDraw {
 }
 
 impl PathDraw {
-    pub(crate) fn begin(tool: Tool, at: ScreenPt, camera: &Camera, mods: Modifiers) -> Self {
-        let current = camera.screen_to_world(at);
+    pub(crate) fn begin(
+        tool: Tool,
+        at: ScreenPt,
+        camera: &Camera,
+        mods: Modifiers,
+        grid: bool,
+    ) -> Self {
+        let current =
+            crate::properties::snap(camera.screen_to_world(at), grid && tool != Tool::Freedraw);
         Self {
             tool,
             path: Path::from_world(&[current]),
@@ -28,8 +35,8 @@ impl PathDraw {
         }
     }
 
-    pub(crate) fn press(&mut self, at: ScreenPt, mods: Modifiers, camera: &Camera) {
-        self.update(Some(at), mods, camera);
+    pub(crate) fn press(&mut self, at: ScreenPt, mods: Modifiers, camera: &Camera, grid: bool) {
+        self.update(Some(at), mods, camera, grid);
         self.press = Some(at);
     }
 
@@ -38,10 +45,14 @@ impl PathDraw {
         at: Option<ScreenPt>,
         mods: Modifiers,
         camera: &Camera,
+        grid: bool,
     ) -> bool {
         let old = (self.pointer, self.current, self.mods);
         if let Some(at) = at {
-            let p = camera.screen_to_world(at);
+            let p = crate::properties::snap(
+                camera.screen_to_world(at),
+                grid && self.tool != Tool::Freedraw,
+            );
             if p.is_finite() {
                 self.pointer = at;
                 self.current = p;

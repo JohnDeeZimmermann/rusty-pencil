@@ -6,6 +6,8 @@ pub const VERSION: u32 = 1;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AppState {
+    #[serde(default)]
+    pub settings: crate::Settings,
     pub scroll: WorldPt,
     pub zoom: f32,
     #[serde(default)]
@@ -25,6 +27,7 @@ fn default_font_size() -> f32 {
 impl Default for AppState {
     fn default() -> Self {
         Self {
+            settings: crate::Settings::default(),
             scroll: WorldPt::ORIGIN,
             zoom: 1.0,
             style: Props::default(),
@@ -142,7 +145,9 @@ impl SceneFile {
 }
 
 fn valid_props(props: &Props) -> bool {
-    props.stroke_width.is_finite() && (0.0..=1000.0).contains(&props.stroke_width)
+    props.opacity <= 100
+        && props.stroke_width.is_finite()
+        && (0.0..=1000.0).contains(&props.stroke_width)
 }
 
 pub fn load(bytes: &[u8]) -> Result<SceneFile, FileError> {

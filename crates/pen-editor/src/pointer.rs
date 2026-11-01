@@ -25,7 +25,7 @@ impl Editor {
             self.point_editor = None;
         }
         if let Some(Gesture::Path(draw)) = &mut self.gesture {
-            draw.press(at, mods, &self.camera);
+            draw.press(at, mods, &self.camera, self.settings.grid);
             return Redraw::Draft;
         }
         self.cancel();
@@ -36,6 +36,7 @@ impl Editor {
                 &self.camera,
                 at,
                 mods,
+                self.settings.grid,
             )))
         } else if matches!(self.tool, Tool::Line | Tool::Arrow | Tool::Freedraw) {
             Some(Gesture::Path(PathDraw::begin(
@@ -43,10 +44,16 @@ impl Editor {
                 at,
                 &self.camera,
                 mods,
+                self.settings.grid,
             )))
         } else {
-            ShapeDrag::start(self.tool, self.camera.screen_to_world(at), at, mods)
-                .map(Gesture::Drawing)
+            ShapeDrag::start(
+                self.tool,
+                crate::properties::snap(self.camera.screen_to_world(at), self.settings.grid),
+                at,
+                mods,
+            )
+            .map(Gesture::Drawing)
         };
         if finished_text {
             Redraw::Scene
@@ -106,11 +113,7 @@ impl Editor {
             element: Element::new(id, kind, self.style),
             at: self.document.elements().len(),
         };
-        if self.execute(command, self.selection.clone()) {
-            Redraw::Scene
-        } else {
-            Redraw::Draft
-        }
+        self.commit_drawing(command, id)
     }
 
     pub(crate) fn double_click(&mut self, at: ScreenPt, mods: Modifiers) -> Redraw {

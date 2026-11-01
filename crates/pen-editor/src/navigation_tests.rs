@@ -96,6 +96,7 @@ fn content_button_detects_empty_gaps_and_refreshes_after_undo() {
     let mut ed = Editor::default();
     assert!(!ed.content_offscreen());
     draw(&mut ed, p(-1000.0, -1000.0), p(-900.0, -900.0));
+    ed.handle(InputEvent::SelectTool(Tool::Rectangle));
     draw(&mut ed, p(2000.0, 2000.0), p(2100.0, 2100.0));
     assert!(
         ed.content_offscreen(),

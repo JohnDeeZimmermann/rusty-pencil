@@ -1,4 +1,4 @@
-use crate::{Container, Font, Path, Roughness, Srgba, TextAlign, WorldRect};
+use crate::{Container, Font, Path, Props, TextAlign, WorldRect};
 use serde::{Deserialize, Serialize};
 
 /// Identifies one element for the life of its document. Ids are handed out in increasing
@@ -182,31 +182,6 @@ impl Kind {
     #[must_use]
     pub fn is_linear(&self) -> bool {
         matches!(self, Self::Line(_) | Self::Arrow(_))
-    }
-}
-
-/// How an element is painted. Defaults match Excalidraw's.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
-pub struct Props {
-    pub stroke: Srgba,
-    /// `None` is a transparent background.
-    pub background: Option<Srgba>,
-    /// In world points, so it scales with zoom.
-    pub stroke_width: f32,
-    pub edges: Edges,
-    #[serde(default)]
-    pub roughness: Roughness,
-}
-
-impl Default for Props {
-    fn default() -> Self {
-        Self {
-            stroke: Srgba::INK,
-            background: None,
-            stroke_width: 2.0,
-            edges: Edges::Round,
-            roughness: Roughness::Artist,
-        }
     }
 }
 

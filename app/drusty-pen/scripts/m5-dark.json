@@ -1,0 +1,253 @@
+[
+  {
+    "t": 0.1,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 0.45,
+    "type": "click",
+    "key": "Stroke-color-2"
+  },
+  {
+    "t": 0.8,
+    "type": "click",
+    "key": "Background-color-1"
+  },
+  {
+    "t": 1.15,
+    "type": "click",
+    "key": "fill-0"
+  },
+  {
+    "t": 1.5,
+    "type": "drag",
+    "x": 290,
+    "y": 245,
+    "dx": 180,
+    "dy": 145,
+    "dur": 0.25
+  },
+  {
+    "t": 2.1,
+    "type": "key",
+    "name": "o"
+  },
+  {
+    "t": 2.45,
+    "type": "click",
+    "key": "Stroke-color-3"
+  },
+  {
+    "t": 2.8,
+    "type": "click",
+    "key": "Background-color-2"
+  },
+  {
+    "t": 3.15,
+    "type": "click",
+    "key": "fill-1"
+  },
+  {
+    "t": 3.5,
+    "type": "drag",
+    "x": 545,
+    "y": 245,
+    "dx": 180,
+    "dy": 145,
+    "dur": 0.25
+  },
+  {
+    "t": 4.1,
+    "type": "key",
+    "name": "d"
+  },
+  {
+    "t": 4.45,
+    "type": "click",
+    "key": "Stroke-color-4"
+  },
+  {
+    "t": 4.8,
+    "type": "click",
+    "key": "Background-color-3"
+  },
+  {
+    "t": 5.15,
+    "type": "click",
+    "key": "fill-2"
+  },
+  {
+    "t": 5.5,
+    "type": "drag",
+    "x": 790,
+    "y": 235,
+    "dx": 165,
+    "dy": 165,
+    "dur": 0.25
+  },
+  {
+    "t": 6.1,
+    "type": "key",
+    "name": "a"
+  },
+  {
+    "t": 6.45,
+    "type": "click",
+    "key": "Stroke-color-0"
+  },
+  {
+    "t": 6.8,
+    "type": "drag",
+    "x": 485,
+    "y": 320,
+    "dx": 45,
+    "dy": 0,
+    "dur": 0.25
+  },
+  {
+    "t": 7.4,
+    "type": "key",
+    "name": "a"
+  },
+  {
+    "t": 7.75,
+    "type": "drag",
+    "x": 740,
+    "y": 320,
+    "dx": 35,
+    "dy": 0,
+    "dur": 0.25
+  },
+  {
+    "t": 8.35,
+    "type": "key",
+    "name": "t"
+  },
+  {
+    "t": 8.7,
+    "type": "click",
+    "x": 330,
+    "y": 435
+  },
+  {
+    "t": 9.05,
+    "type": "click",
+    "key": "size-L"
+  },
+  {
+    "t": 9.4,
+    "type": "type",
+    "text": "A palette for every idea",
+    "every": 0.01
+  },
+  {
+    "t": 10.1,
+    "type": "key",
+    "name": "Escape"
+  },
+  {
+    "t": 10.45,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 10.8,
+    "type": "wheel",
+    "x": 210,
+    "y": 550,
+    "dy": -420
+  },
+  {
+    "t": 11.6,
+    "type": "key",
+    "name": "l"
+  },
+  {
+    "t": 11.95,
+    "type": "click",
+    "key": "stroke-style-1"
+  },
+  {
+    "t": 12.3,
+    "type": "drag",
+    "x": 310,
+    "y": 535,
+    "dx": 220,
+    "dy": 0,
+    "dur": 0.25
+  },
+  {
+    "t": 12.9,
+    "type": "key",
+    "name": "l"
+  },
+  {
+    "t": 13.25,
+    "type": "click",
+    "key": "stroke-style-2"
+  },
+  {
+    "t": 13.6,
+    "type": "drag",
+    "x": 590,
+    "y": 535,
+    "dx": 320,
+    "dy": 0,
+    "dur": 0.25
+  },
+  {
+    "t": 14.2,
+    "type": "key",
+    "name": "a"
+  },
+  {
+    "t": 14.55,
+    "type": "click",
+    "key": "stroke-style-0"
+  },
+  {
+    "t": 14.9,
+    "type": "click",
+    "key": "head-true-DiamondOutline"
+  },
+  {
+    "t": 15.25,
+    "type": "click",
+    "key": "head-false-Triangle"
+  },
+  {
+    "t": 15.6,
+    "type": "drag",
+    "x": 310,
+    "y": 590,
+    "dx": 600,
+    "dy": 0,
+    "dur": 0.25
+  },
+  {
+    "t": 16.2,
+    "type": "key",
+    "name": "r"
+  },
+  {
+    "t": 16.55,
+    "type": "move",
+    "x": 980,
+    "y": 600
+  },
+  {
+    "t": 16.9,
+    "type": "key",
+    "name": "'",
+    "cmd": true,
+    "ctrl": true
+  },
+  {
+    "t": 17.25,
+    "type": "key",
+    "name": "d",
+    "alt": true,
+    "shift": true
+  }
+]

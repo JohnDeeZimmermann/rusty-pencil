@@ -31,12 +31,27 @@ impl Element {
         };
         let reach = tolerance.max(0.0) + radius.max(0.0);
         if let Kind::Arrow(path) = &self.kind
-            && let Some(head) = path.arrowhead(self.props.stroke_width)
-            && head
-                .windows(2)
-                .any(|s| distance(point, s[0], s[1]) <= reach)
+            && self.props.stroke_width > 0.0
         {
-            return true;
+            for head in crate::arrowheads(path, &self.props) {
+                if head
+                    .points
+                    .windows(2)
+                    .any(|s| distance(point, s[0], s[1]) <= reach)
+                {
+                    return true;
+                }
+                if head.closed {
+                    if let (Some(a), Some(b)) = (head.points.first(), head.points.last())
+                        && distance(point, *a, *b) <= reach
+                    {
+                        return true;
+                    }
+                    if head.filled && inside_polygon(point, &head.points) {
+                        return true;
+                    }
+                }
+            }
         }
         if point.x < bounds.min().x - reach
             || point.x > bounds.max().x + reach
@@ -84,4 +99,17 @@ fn distance(p: WorldPt, a: WorldPt, b: WorldPt) -> f32 {
     }
     .clamp(0.0, 1.0);
     (p.x - a.x - t * dx).hypot(p.y - a.y - t * dy)
+}
+
+fn inside_polygon(point: WorldPt, polygon: &[WorldPt]) -> bool {
+    let mut inside = false;
+    for i in 0..polygon.len() {
+        let (a, b) = (polygon[i], polygon[(i + 1) % polygon.len()]);
+        if (a.y > point.y) != (b.y > point.y)
+            && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x
+        {
+            inside = !inside;
+        }
+    }
+    inside
 }

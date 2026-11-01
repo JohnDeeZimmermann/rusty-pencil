@@ -44,6 +44,7 @@ impl SelectionDrag {
         camera: &Camera,
         at: ScreenPt,
         mods: Modifiers,
+        _grid: bool,
     ) -> Self {
         let origin = camera.screen_to_world(at);
         let before = selection.clone();
@@ -110,6 +111,7 @@ impl SelectionDrag {
         at: Option<ScreenPt>,
         mods: Modifiers,
         camera: &Camera,
+        grid: bool,
     ) -> bool {
         let old = (self.pointer, self.current, self.mods);
         if let Some(at) = at {
@@ -136,6 +138,22 @@ impl SelectionDrag {
         );
         match &self.action {
             Action::Move(originals) => {
+                let delta = if grid {
+                    let bounds = originals
+                        .iter()
+                        .map(|e| e.kind.bounds())
+                        .reduce(WorldRect::union);
+                    bounds.map_or(delta, |b| {
+                        let p = b.min();
+                        let next = crate::properties::snap(
+                            WorldPt::new(p.x + delta.x, p.y + delta.y),
+                            true,
+                        );
+                        WorldPt::new(next.x - p.x, next.y - p.y)
+                    })
+                } else {
+                    delta
+                };
                 let (dx, dy) = if mods.shift {
                     if delta.x.abs() >= delta.y.abs() {
                         (delta.x, 0.0)
@@ -152,6 +170,24 @@ impl SelectionDrag {
                 );
             }
             Action::Resize { original, handle } => {
+                let delta = if grid {
+                    let bounds = original.kind.bounds();
+                    let (hx, hy) = handle.axes();
+                    let anchor = WorldPt::new(
+                        bounds.centre().x + hx * bounds.width() / 2.0,
+                        bounds.centre().y + hy * bounds.height() / 2.0,
+                    );
+                    let target = crate::properties::snap(
+                        WorldPt::new(anchor.x + delta.x, anchor.y + delta.y),
+                        true,
+                    );
+                    WorldPt::new(
+                        if hx == 0.0 { 0.0 } else { target.x - anchor.x },
+                        if hy == 0.0 { 0.0 } else { target.y - anchor.y },
+                    )
+                } else {
+                    delta
+                };
                 self.preview.push(original.with_bounds(resize(
                     original.kind.bounds(),
                     *handle,

@@ -92,6 +92,7 @@ impl PointEditor {
         at: Option<ScreenPt>,
         mods: Modifiers,
         camera: &Camera,
+        grid: bool,
     ) -> bool {
         let (Some(drag), Some(index), Some(after)) =
             (&mut self.drag, self.active, self.preview.first_mut())
@@ -107,7 +108,8 @@ impl PointEditor {
             return false;
         }
         let path = linear_path(&mut after.kind);
-        let mut p = WorldPt::new(p.x + drag.grab.x, p.y + drag.grab.y);
+        let mut p =
+            crate::properties::snap(WorldPt::new(p.x + drag.grab.x, p.y + drag.grab.y), grid);
         let anchor = if index > 0 { index - 1 } else { 1 };
         if let Some(from) = path.world_point(anchor) {
             p = snap(from, p, mods.shift);
@@ -120,9 +122,9 @@ impl PointEditor {
         true
     }
 
-    pub(crate) fn camera_moved(&mut self, camera: &Camera) -> bool {
+    pub(crate) fn camera_moved(&mut self, camera: &Camera, grid: bool) -> bool {
         let mods = self.drag.as_ref().map_or(Modifiers::NONE, |d| d.mods);
-        self.update(None, mods, camera)
+        self.update(None, mods, camera, grid)
     }
 
     pub(crate) fn finish(&mut self) -> Option<Command> {

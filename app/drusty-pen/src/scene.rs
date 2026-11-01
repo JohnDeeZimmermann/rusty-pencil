@@ -14,10 +14,20 @@ struct Part {
 pub(crate) struct Scene {
     composition: pen_render::Scene,
     parts: Vec<Part>,
+    settings: pen_core::Settings,
 }
 
 impl Scene {
-    pub(crate) fn show(&mut self, doc: &Document, preview: &[Element]) {
+    pub(crate) fn show_with_settings(
+        &mut self,
+        doc: &Document,
+        preview: &[Element],
+        settings: pen_core::Settings,
+    ) {
+        if self.settings.dark != settings.dark || self.settings.canvas != settings.canvas {
+            self.parts.clear();
+        }
+        self.settings = settings;
         self.composition.update(doc, preview);
         let parts = self.composition.parts();
         self.parts.truncate(parts.len());
@@ -33,7 +43,7 @@ impl Scene {
                 revision: part.revision(),
                 #[cfg(test)]
                 empty: part.prims().is_empty(),
-                node: crate::text::paint(part.prims()),
+                node: crate::text::paint_themed(part.prims(), settings),
             };
             if let Some(old) = self.parts.get_mut(i) {
                 *old = painted;
@@ -53,7 +63,11 @@ impl Scene {
             el().key("scene-parts").absolute(0.0, 0.0).size(0.0, 0.0),
             |node, (i, part)| {
                 let key = format!("scene-part-{i}");
-                node.child(memo(key.clone(), part.revision, || part.node.clone()))
+                node.child(memo(
+                    key.clone(),
+                    (part.revision, self.settings.dark, self.settings.canvas),
+                    || part.node.clone(),
+                ))
             },
         )
     }

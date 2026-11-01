@@ -49,6 +49,7 @@ impl State {
         let mut scene = SceneFile::new(
             self.editor.document(),
             AppState {
+                settings: self.editor.settings(),
                 scroll: self.editor.camera().scroll(),
                 zoom: self.editor.camera().zoom(),
                 style: self.editor.style(),
@@ -125,11 +126,14 @@ impl State {
         let app = &scene_file.app_state;
         self.editor
             .replace_document(doc, Camera::new(app.scroll, app.zoom), app.style);
+        self.editor.handle(InputEvent::Settings(app.settings));
         self.editor
             .restore_text_defaults(app.font, app.font_size, app.text_align);
         self.scene = scene::Scene::default();
         self.text_edit = rune::TextEdit::default();
         self.camera.show(self.editor.camera());
+        self.grid.show(self.editor.camera());
+        crate::properties::sync(self);
         self.overlay.show(&self.editor);
         self.show_feedback();
         self.content_button.set(if self.editor.content_offscreen() {
@@ -309,6 +313,7 @@ pub(crate) fn key(s: &mut State, event: &KeyEvent, tx: &mut Tx) -> bool {
 }
 
 pub(crate) fn controls(s: &State) -> El {
+    let dark = s.editor.settings().dark;
     col()
         .key("file-controls")
         .pin(None, None, Some(d::S4), Some(d::S4))
@@ -320,53 +325,54 @@ pub(crate) fn controls(s: &State) -> El {
                 .size(d::FILE_STATUS_WIDTH, d::S4)
                 .align(rune::Align::End)
                 .font(d::T_HINT)
-                .color(d::c(d::MUTED)),
+                .color(d::themed(d::MUTED, dark)),
         )
         .child(
-            d::raised(row(), d::R_ISLAND)
+            d::surface(row(), d::R_ISLAND, dark)
                 .padding(d::PADDING)
                 .gap(d::S1)
                 .child(
-                    button("Open", "open-file")
+                    button("Open", "open-file", dark)
                         .help("Open canvas · Ctrl+O")
                         .on_press_tx(|s: &mut State, tx| s.open_dialog(tx)),
                 )
                 .child(
-                    button("Save", "save-file")
+                    button("Save", "save-file", dark)
                         .help("Save · Ctrl+S · Save as · Ctrl+Shift+S")
                         .on_press_tx(|s: &mut State, tx| s.save_dialog(false, tx)),
                 )
                 .child(
-                    button("Reset canvas", "reset-canvas")
+                    button("Reset canvas", "reset-canvas", dark)
                         .on_press(|s: &mut State| s.files.confirm_reset = true),
                 ),
         )
 }
 
-fn button(label: &str, key: &str) -> El {
+fn button(label: &str, key: &str, dark: bool) -> El {
     el().key(key)
         .h(d::BUTTON)
         .padding(d::S3)
         .items_center()
         .justify_center()
-        .child(text(label).font(d::T_LABEL).color(d::c(d::INK)))
+        .child(text(label).font(d::T_LABEL).color(d::themed(d::INK, dark)))
         .radius(d::R_BUTTON)
-        .hover(d::c(d::ACCENT_SOFT))
+        .hover(d::themed(d::ACCENT_SOFT, dark))
 }
 
 pub(crate) fn confirmation(s: &State) -> El {
+    let dark = s.editor.settings().dark;
     if !s.files.confirm_reset {
         return el().size(0.0, 0.0);
     }
     el().key("reset-overlay").absolute(0.0, 0.0).w_full().h_full().items_center().justify_center()
-        .fill(d::c(d::SELECTION_WASH))
-        .child(d::raised(col(), d::R_ISLAND).w(d::CONFIRM_WIDTH).padding(d::S4).gap(d::S4)
+        .fill(d::themed(d::SELECTION_WASH,dark))
+        .child(d::surface(col(), d::R_ISLAND,dark).w(d::CONFIRM_WIDTH).padding(d::S4).gap(d::S4)
             .modal(false, |s: &mut State| s.files.confirm_reset = false)
-            .child(text("Reset canvas?").font(d::T_LABEL).color(d::c(d::INK)))
-            .child(text("This clears the canvas and its local recovery. Save a copy first to keep it.").wrap().font(d::T_HINT).color(d::c(d::MUTED)))
+            .child(text("Reset canvas?").font(d::T_LABEL).color(d::themed(d::INK,dark)))
+            .child(text("This clears the canvas and its local recovery. Save a copy first to keep it.").wrap().font(d::T_HINT).color(d::themed(d::MUTED,dark)))
             .child(row().gap(d::S3)
-                .child(button("Cancel", "cancel-reset").on_press(|s: &mut State| s.files.confirm_reset = false))
-                .child(button("Reset canvas", "confirm-reset").fill(d::c(d::ACCENT)).on_press_tx(|s: &mut State, tx| {
+                .child(button("Cancel", "cancel-reset",dark).on_press(|s: &mut State| s.files.confirm_reset = false))
+                .child(button("Reset canvas", "confirm-reset",dark).fill(d::themed(d::ACCENT,dark)).on_press_tx(|s: &mut State, tx| {
                     let camera = Camera::centred_on(WorldPt::ORIGIN, s.editor.viewport(), 1.0);
                     let scene = SceneFile::new(&Document::new(), AppState { scroll: camera.scroll(), ..AppState::default() });
                     s.install(&scene);

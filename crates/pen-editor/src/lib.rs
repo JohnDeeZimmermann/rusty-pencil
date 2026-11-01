@@ -8,6 +8,8 @@ mod history;
 mod input;
 mod navigation;
 mod pointer;
+mod properties;
+pub use properties::GRID_SPACING;
 mod selection;
 mod shortcuts;
 mod text;
@@ -23,6 +25,7 @@ use tools::{path::PathDraw, points::PointEditor, select::SelectionDrag, shape::S
 
 pub use camera::{Camera, ScreenPt, ScreenVec};
 pub use input::{InputEvent, Key, Modifiers};
+pub use pen_core::file::AppState;
 pub use selection::{HANDLE_SIZE, Handle, SELECTION_PADDING, Selection};
 pub use tool::Tool;
 
@@ -43,6 +46,8 @@ pub struct Editor {
     document: Document,
     tool: Tool,
     style: Props,
+    settings: pen_core::Settings,
+    property_edit: Option<properties::PropertyEdit>,
     gesture: Option<Gesture>,
     selection: Selection,
     history: History,
@@ -106,6 +111,11 @@ impl Editor {
     }
 
     fn base_preview(&self) -> &[Element] {
+        if let Some(edit) = &self.property_edit
+            && edit.text_is_absent()
+        {
+            return &edit.elements;
+        }
         if let Some(edit) = &self.text_session {
             return &edit.hidden;
         }
@@ -180,6 +190,13 @@ impl Editor {
             InputEvent::TextChanged { content, bounds } => self.update_text(content, bounds),
             InputEvent::FinishText => self.finish_text(),
             InputEvent::TextStyle { font, size, align } => self.set_text_style(font, size, align),
+            InputEvent::BeginProperty => self.begin_property(),
+            InputEvent::EndProperty { cancel } => self.end_property(cancel),
+            InputEvent::Property(p) => self.set_property(p),
+            InputEvent::Settings(settings) => {
+                self.settings = settings;
+                Redraw::Scene
+            }
             InputEvent::Roughness(roughness) => self.set_roughness(roughness),
             InputEvent::Pan { by } => {
                 self.camera.pan_by(by);
@@ -279,7 +296,7 @@ impl Editor {
         } else if self
             .point_editor
             .as_mut()
-            .is_some_and(|e| e.camera_moved(&self.camera))
+            .is_some_and(|e| e.camera_moved(&self.camera, self.settings.grid))
         {
             Redraw::Draft
         } else {
@@ -289,7 +306,7 @@ impl Editor {
 
     fn drag_to(&mut self, at: Option<ScreenPt>, mods: Modifiers) -> Redraw {
         if let Some(edit) = &mut self.point_editor {
-            return if edit.update(at, mods, &self.camera) {
+            return if edit.update(at, mods, &self.camera, self.settings.grid) {
                 Redraw::Draft
             } else {
                 Redraw::Nothing
@@ -297,7 +314,7 @@ impl Editor {
         }
         match &mut self.gesture {
             Some(Gesture::Path(drag)) => {
-                if drag.update(at, mods, &self.camera) {
+                if drag.update(at, mods, &self.camera, self.settings.grid) {
                     Redraw::Draft
                 } else {
                     Redraw::Nothing
@@ -306,7 +323,8 @@ impl Editor {
             Some(Gesture::Drawing(drag)) => {
                 let before = *drag;
                 if let Some(at) = at {
-                    let point = self.camera.screen_to_world(at);
+                    let point =
+                        properties::snap(self.camera.screen_to_world(at), self.settings.grid);
                     if point.is_finite() {
                         drag.current = point;
                         drag.pointer = at;
@@ -320,7 +338,7 @@ impl Editor {
                 }
             }
             Some(Gesture::Selecting(drag)) => {
-                if drag.update(at, mods, &self.camera) {
+                if drag.update(at, mods, &self.camera, self.settings.grid) {
                     Redraw::Draft
                 } else {
                     Redraw::Nothing
@@ -341,11 +359,7 @@ impl Editor {
             element: Element::new(id, drag.kind(), self.style),
             at: self.document.elements().len(),
         };
-        if self.execute(command, self.selection.clone()) {
-            Redraw::Scene
-        } else {
-            Redraw::Draft
-        }
+        self.commit_drawing(command, id)
     }
 
     /// The only way edits reach the document. Bound text follows inside the same history
@@ -363,7 +377,11 @@ impl Editor {
     }
 
     fn cancel(&mut self) -> bool {
-        let panning = self.navigation.pan.take().is_some();
+        let property = self.property_edit.is_some();
+        if property {
+            self.end_property(true);
+        }
+        let panning = self.navigation.pan.take().is_some() || property;
         let editing = self.point_editor.as_mut().is_some_and(PointEditor::cancel);
         let Some(gesture) = self.gesture.take() else {
             return panning || editing;
@@ -406,3 +424,6 @@ mod navigation_tests;
 
 #[cfg(test)]
 mod bound_text_tests;
+
+#[cfg(test)]
+mod property_tests;

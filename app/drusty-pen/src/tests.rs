@@ -218,10 +218,10 @@ fn keys_and_buttons_switch_tools() {
     assert!(kinds(&rt).is_empty(), "a toolbar click draws nothing");
 
     key(&mut rt, "o");
-    drag(&mut rt, (200.0, 300.0), (300.0, 360.0));
+    drag(&mut rt, (300.0, 300.0), (400.0, 360.0));
     assert_eq!(
         kinds(&rt),
-        [Kind::Ellipse(world(200.0, 300.0, 300.0, 360.0))]
+        [Kind::Ellipse(world(300.0, 300.0, 400.0, 360.0))]
     );
 }
 
@@ -288,7 +288,7 @@ fn ctrl_wheel_zooms_about_the_cursor_without_rebuilding_the_view() {
         cmd: !cfg!(target_os = "macos"),
         ..Mods::default()
     };
-    let cursor = ScreenPt::new(200.0, 500.0);
+    let cursor = ScreenPt::new(300.0, 500.0);
     let under = rt.state.editor.camera().screen_to_world(cursor);
     rt.wheel_event(
         WheelEvent::new(0.0, 100.0)

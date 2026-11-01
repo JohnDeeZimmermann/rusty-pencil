@@ -65,3 +65,19 @@ fn pts(points: &[WorldPt], origin: WorldPt) -> Vec<[f32; 2]> {
         .map(|p| [p.x - origin.x, p.y - origin.y])
         .collect()
 }
+
+pub(crate) fn themed(prims: &[Prim]) -> Vec<Prim> {
+    prims
+        .iter()
+        .cloned()
+        .map(|mut prim| {
+            let color = match &mut prim {
+                Prim::Text { color, .. }
+                | Prim::Fill { color, .. }
+                | Prim::Stroke { color, .. } => color,
+            };
+            *color = color.dark();
+            prim
+        })
+        .collect()
+}

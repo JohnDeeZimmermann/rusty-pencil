@@ -14,6 +14,12 @@ pub enum InputEvent {
         size: f32,
         align: pen_core::TextAlign,
     },
+    BeginProperty,
+    EndProperty {
+        cancel: bool,
+    },
+    Property(pen_core::Property),
+    Settings(pen_core::Settings),
     Roughness(pen_core::Roughness),
     /// Move the content by `by` (positive: content moves right / down), as a wheel or
     /// two-finger scroll does.

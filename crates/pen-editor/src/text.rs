@@ -94,6 +94,7 @@ impl Editor {
         self.style = style;
         self.selection.clear();
         self.history = History::default();
+        self.property_edit = None;
         self.gesture = None;
         self.point_editor = None;
         self.text_session = None;
@@ -193,7 +194,9 @@ impl Editor {
         };
         let empty = content.trim().is_empty();
         let owner = session.container.as_ref().map(Element::id);
-        self.tool = Tool::Select;
+        if !self.settings.tool_lock {
+            self.tool = Tool::Select;
+        }
         // Bound text hands selection back to its container, even when left empty.
         self.selection = match owner {
             Some(owner) => Selection::only(owner),

@@ -41,6 +41,7 @@ pub(super) fn bounds(ed: &Editor) -> WorldRect {
 }
 pub(super) fn one() -> Editor {
     let mut ed = Editor::default();
+    ed.settings.tool_lock = true;
     drag(&mut ed, p(100.0, 100.0), p(300.0, 200.0), NONE);
     key(&mut ed, Key::Char('v'), NONE);
     click(&mut ed, p(150.0, 100.0), NONE);
@@ -50,6 +51,7 @@ pub(super) fn one() -> Editor {
 #[test]
 fn selects_topmost_outline_and_shift_toggles() {
     let mut ed = Editor::default();
+    ed.settings.tool_lock = true;
     drag(&mut ed, p(100.0, 100.0), p(300.0, 200.0), NONE);
     drag(&mut ed, p(120.0, 100.0), p(320.0, 220.0), NONE);
     key(&mut ed, Key::Char('1'), NONE);
@@ -96,6 +98,7 @@ fn marquee_selects_crossing_paths_and_enclosed_shapes_in_every_direction() {
             (p(400.0, 50.0), p(150.0, 400.0)),
         ] {
             let mut ed = Editor::default();
+            ed.settings.tool_lock = true;
             drag(&mut ed, p(200.0, 250.0), p(300.0, 350.0), NONE);
             drag(&mut ed, p(500.0, 250.0), p(600.0, 350.0), NONE);
             ed.handle(InputEvent::SelectTool(tool));
@@ -287,6 +290,7 @@ fn diamond_and_ellipse_resize_keep_their_kind_and_seed() {
         (Tool::Ellipse, Kind::Ellipse),
     ] {
         let mut ed = Editor::default();
+        ed.settings.tool_lock = true;
         ed.handle(InputEvent::SelectTool(tool));
         drag(&mut ed, p(100.0, 100.0), p(300.0, 200.0), NONE);
         key(&mut ed, Key::Char('a'), CTRL);

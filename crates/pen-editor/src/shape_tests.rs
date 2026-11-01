@@ -15,7 +15,9 @@ const ALT: Modifiers = Modifiers {
 
 /// A camera with screen == world, so expectations read directly.
 fn editor() -> Editor {
-    Editor::new(Camera::default())
+    let mut editor = Editor::new(Camera::default());
+    editor.settings.tool_lock = true;
+    editor
 }
 
 fn pt(x: f32, y: f32) -> ScreenPt {

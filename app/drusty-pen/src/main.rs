@@ -4,6 +4,7 @@
 mod design;
 mod events;
 mod files;
+mod grid;
 mod navigation;
 mod overlay;
 mod paint;
@@ -28,9 +29,11 @@ const WINDOW: (f32, f32) = (1024.0, 720.0);
 struct State {
     editor: Editor,
     text_edit: rune::TextEdit,
+    hex: [rune::TextEdit; 3],
     fonts: rune::text::TextSystem,
     files: files::Files,
     camera: present::LiveCamera,
+    grid: grid::Grid,
     scene: scene::Scene,
     /// The element being drawn, rebuilt on every pointer move of a drag.
     draft: Shape,
@@ -46,9 +49,15 @@ impl State {
         Self {
             editor: Editor::new(camera),
             text_edit: rune::TextEdit::default(),
+            hex: [
+                rune::TextEdit::new("#1e1e1e"),
+                rune::TextEdit::default(),
+                rune::TextEdit::new("#f8f9f7"),
+            ],
             fonts: text::system(),
             files: files::Files::default(),
             camera: present::LiveCamera::new(&camera),
+            grid: grid::Grid::new(&camera),
             scene: scene::Scene::default(),
             draft: Shape::new(),
             draft_bounds: WorldRect::default(),
@@ -80,8 +89,23 @@ impl State {
         } else {
             event
         };
+        // Palette fields follow edits and membership changes, never camera or draft moves.
+        let refresh_properties = matches!(
+            &event,
+            InputEvent::Property(pen_core::Property::Stroke(_) | pen_core::Property::Background(_))
+                | InputEvent::PointerDown { .. }
+                | InputEvent::PointerUp { .. }
+                | InputEvent::DoubleClick { .. }
+                | InputEvent::SelectTool(_)
+                | InputEvent::Key { .. }
+                | InputEvent::FinishText
+                | InputEvent::Settings(_)
+                | InputEvent::Cancel
+                | InputEvent::EndProperty { .. }
+        );
         let camera = *self.editor.camera();
         let revision = self.editor.document().revision();
+        let settings = self.editor.settings();
         let style = self.editor.style();
         let text_defaults = self.editor.text_defaults();
         let text_changed = matches!(&event, InputEvent::TextChanged { content, .. } if self.editor.text_session().is_some_and(|s| matches!(&s.element.kind, pen_core::Kind::Text { content: old, .. } if content != old)));
@@ -96,16 +120,21 @@ impl State {
             self.editor.handle(event)
         };
         self.text_session_changed(old_text);
+        if refresh_properties {
+            properties::sync(self);
+        }
         if self.editor.document().revision() != revision
             || *self.editor.camera() != camera
             || self.editor.style() != style
             || self.editor.text_defaults() != text_defaults
+            || self.editor.settings() != settings
             || text_changed
         {
             self.files.changed(tx);
         }
         if *self.editor.camera() != camera {
             self.camera.show(self.editor.camera());
+            self.grid.show(self.editor.camera());
         }
         self.overlay.show(&self.editor);
         self.content_button.set(if self.editor.content_offscreen() {
@@ -122,13 +151,23 @@ impl State {
     }
 
     fn show_feedback(&mut self) {
-        self.scene
-            .show(self.editor.document(), self.editor.preview());
+        self.scene.show_with_settings(
+            self.editor.document(),
+            self.editor.preview(),
+            self.editor.settings(),
+        );
         self.draft_paint.clear();
         if let Some(draft) = self.editor.draft() {
             pen_render::draw_seeded(&draft.kind, &draft.props, draft.seed, &mut self.draft_paint);
         }
-        (self.draft, self.draft_bounds) = paint::bounded(self.draft_paint.prims());
+        let themed;
+        let prims = if self.editor.settings().dark {
+            themed = paint::themed(self.draft_paint.prims());
+            &themed
+        } else {
+            self.draft_paint.prims()
+        };
+        (self.draft, self.draft_bounds) = paint::bounded(prims);
     }
 }
 
@@ -190,7 +229,10 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
         el().key("viewport")
             .w_full()
             .h_full()
-            .fill(design::c(design::CANVAS))
+            .fill(design::themed(
+                s.editor.settings().canvas,
+                s.editor.settings().dark,
+            ))
             .focusable(s.editor.tool() != pen_editor::Tool::Hand && !s.editor.space_held())
             .preserve_focus_on_press(true)
             .cursor(
@@ -202,12 +244,19 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
                     Cursor::Crosshair
                 },
             )
+            .child(s.grid.view(s.editor.settings()))
             .child(world)
-            .child(s.overlay.view())
+            .child(s.overlay.view(s.editor.settings().dark))
             .child(toolbar::toolbar(&s.editor))
-            .child(navigation::zoom_pill(&s.camera.zoom_label))
-            .child(navigation::content_button(&s.content_button))
-            .child(properties::panel(&s.editor))
+            .child(navigation::zoom_pill(
+                &s.camera.zoom_label,
+                s.editor.settings().dark,
+            ))
+            .child(navigation::content_button(
+                &s.content_button,
+                s.editor.settings().dark,
+            ))
+            .child(properties::panel(s))
             .child(files::controls(s))
             .child(files::confirmation(s)),
     )
@@ -290,3 +339,6 @@ fn main() {
 mod pan_snap_tests;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod m5_tests;

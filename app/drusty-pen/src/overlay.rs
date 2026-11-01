@@ -1,6 +1,6 @@
 //! Constant-screen-size feedback presented through live rectangles: pan/zoom needs no view
 //! rebuild. The renderer owns geometry; design tokens own every visual choice.
-use crate::design::{self as d, c};
+use crate::design::{self as d};
 use pen_editor::{Editor, Handle};
 use pen_render::{OverlayKind, OverlayRect};
 use rune::{Cursor, El, Live, el};
@@ -41,7 +41,8 @@ impl Overlay {
         }
     }
 
-    pub(crate) fn view(&self) -> El {
+    pub(crate) fn view(&self, dark: bool) -> El {
+        let c = |v| d::themed(v, dark);
         self.items.iter().enumerate().fold(
             el().key("selection-overlay")
                 .absolute(0.0, 0.0)

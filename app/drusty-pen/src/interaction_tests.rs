@@ -114,10 +114,11 @@ fn escape_and_toolbar_switch_clear_the_live_transform() {
 #[test]
 fn marquee_and_shift_click_work_through_rune_pointer_dispatch() {
     let mut rt = app();
-    drag(&mut rt, (200.0, 300.0), (350.0, 400.0));
+    key(&mut rt, "q");
+    drag(&mut rt, (300.0, 300.0), (400.0, 400.0));
     drag(&mut rt, (500.0, 300.0), (650.0, 400.0));
     key(&mut rt, "v");
-    drag(&mut rt, (180.0, 280.0), (360.0, 420.0));
+    drag(&mut rt, (280.0, 280.0), (420.0, 420.0));
     assert_eq!(rt.state.editor.selection().len(), 1);
     shift(&mut rt, true);
     drag(&mut rt, (550.0, 300.0), (550.0, 300.0));

@@ -5,11 +5,13 @@
 //! maximum zoom, so the result is camera-independent and cacheable.
 #![forbid(unsafe_code)]
 
+mod arrowheads;
 mod cache;
 mod overlay;
 mod path;
 mod rough;
 mod scene;
+mod style;
 pub use rough::{draw_element, draw_seeded};
 
 use pen_core::{Kind, Props, Srgba, WorldPt};
@@ -93,6 +95,24 @@ impl DrawList {
 
 /// Appends the paint for one element (or draft) to `out`: background fill, then stroke.
 pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
+    let first = out.prims.len();
+    draw_base(kind, props, out);
+    if matches!(kind, Kind::Freedraw(_)) {
+        let mut solid = *props;
+        solid.fill = pen_core::FillStyle::Solid;
+        style::finish(out, first, &solid);
+    } else {
+        style::finish(out, first, props);
+    }
+    if matches!(kind, Kind::Arrow(_))
+        && props.stroke_width > 0.0
+        && let Some(path) = kind.path()
+    {
+        arrowheads::draw(path, props, out);
+    }
+}
+
+fn draw_base(kind: &Kind, props: &Props, out: &mut DrawList) {
     if let Kind::Text {
         content,
         font,
@@ -156,3 +176,6 @@ mod scene_tests;
 
 #[cfg(test)]
 mod path_tests;
+
+#[cfg(test)]
+mod style_tests;

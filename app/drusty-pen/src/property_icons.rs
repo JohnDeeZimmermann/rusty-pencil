@@ -54,7 +54,7 @@ pub(crate) fn align(align: TextAlign, color: Srgba) -> Shape {
     })
 }
 
-pub(crate) fn roughness(roughness: Roughness) -> Shape {
+pub(crate) fn roughness(roughness: Roughness, dark: bool) -> Shape {
     let points: &[[f32; 2]] = match roughness {
         Roughness::Architect => &[[2.0, 14.0], [18.0, 6.0]],
         Roughness::Artist => &[
@@ -73,5 +73,9 @@ pub(crate) fn roughness(roughness: Roughness) -> Shape {
             [18.0, 5.0],
         ],
     };
-    stroke(Shape::new(), points, d::INK)
+    stroke(
+        Shape::new(),
+        points,
+        if dark { d::INK.dark() } else { d::INK },
+    )
 }

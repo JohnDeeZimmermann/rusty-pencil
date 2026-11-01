@@ -25,7 +25,22 @@ separate recovery scene in your platform's local application data directory and 
 on the next launch. Reset canvas asks for confirmation; save a named copy before resetting
 if you want to retain the current work.
 
-For isolated visual checks, use `cargo run -p drusty-pen -- --snap snaps/m4.png --scale 1
---script app/drusty-pen/scripts/m4-text-style.json --at 18.6`. Snapshots do not read or write
-normal recovery. Add `--data-dir PATH` to test recovery in a separate directory, or `--open
-PATH` to load a scene directly.
+## Style and view
+
+The left inspector changes selected elements or the defaults for the next drawing. Choose
+stroke and background palettes, enter a six-digit hex colour and press Enter, or choose
+Transparent. Fill, stroke width and pattern, edges, opacity and arrowheads appear in the
+scrolling inspector. A mixed field says “Mixed”; each change updates the entire selection in
+one undo step. An opacity drag previews immediately and commits when released.
+
+Drawing returns to selection. Press Q (or Keep tool) to keep drawing with the same tool.
+Toggle dark mode with Alt+Shift+D and the grid with Ctrl+'. The grid snaps to 20 world points;
+canvas settings also change the background colour. Defaults and settings travel with saved
+scenes and autosave recovery.
+
+## Visual checks
+
+For isolated checks, use `cargo run -p drusty-pen -- --snap snaps/m5.png --scale 1
+--script app/drusty-pen/scripts/m5-properties.json --at 19.5`. Substitute `m5-dark.json` for dark
+mode and grid coverage. Snapshots do not read or write normal recovery. Add `--data-dir PATH`
+to test recovery in a separate directory, or `--open PATH` to load a scene directly.

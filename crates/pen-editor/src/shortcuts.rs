@@ -15,6 +15,21 @@ impl Editor {
             let (font, _, align) = self.text_style();
             return self.set_text_style(font, size, align);
         }
+        if let Key::Char(c) = key {
+            let settings = &mut self.settings;
+            if c == 'd' && mods.alt && mods.shift && !mods.ctrl {
+                settings.dark = !settings.dark;
+                return Redraw::Scene;
+            }
+            if c == '\'' && mods.ctrl && !mods.alt {
+                settings.grid = !settings.grid;
+                return Redraw::Scene;
+            }
+            if c == 'q' && !mods.ctrl && !mods.alt {
+                settings.tool_lock = !settings.tool_lock;
+                return Redraw::Tool;
+            }
+        }
         if self.text_session.is_some() {
             return Redraw::Nothing;
         }
@@ -100,7 +115,11 @@ impl Editor {
                 .map(|id| Command::Remove { id })
                 .collect::<Vec<_>>()
         } else {
-            let step = if mods.shift { 10.0 } else { 1.0 } / self.camera.zoom();
+            let step = if self.settings.grid {
+                crate::GRID_SPACING * if mods.shift { 5.0 } else { 1.0 }
+            } else {
+                (if mods.shift { 10.0 } else { 1.0 }) / self.camera.zoom()
+            };
             let (dx, dy) = match key {
                 Key::Left => (-step, 0.0),
                 Key::Right => (step, 0.0),

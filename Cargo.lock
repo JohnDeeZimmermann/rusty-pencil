@@ -516,6 +516,7 @@ dependencies = [
  "pen-editor",
  "pen-render",
  "rune",
+ "rune-kit",
  "tempfile",
 ]
 
@@ -2294,6 +2295,16 @@ dependencies = [
  "xkbcommon",
  "zbus",
  "zeroize",
+]
+
+[[package]]
+name = "rune-kit"
+version = "0.0.1"
+source = "git+https://github.com/anomalyco/rune?rev=791971423cf6614aff061491e1f82e283dfc9f0e#791971423cf6614aff061491e1f82e283dfc9f0e"
+dependencies = [
+ "rune",
+ "rune-motion",
+ "unicode-segmentation",
 ]
 
 [[package]]

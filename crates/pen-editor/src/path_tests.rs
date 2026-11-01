@@ -27,6 +27,7 @@ fn click(ed: &mut Editor, at: ScreenPt) {
 }
 fn editor(tool: Tool) -> Editor {
     let mut ed = Editor::default();
+    ed.settings.tool_lock = true;
     ed.handle(InputEvent::SelectTool(tool));
     ed
 }

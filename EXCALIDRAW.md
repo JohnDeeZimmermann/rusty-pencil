@@ -22,27 +22,27 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Frame tool (`F`) — M9
 - [ ] Laser pointer (`K`) — M9
 - [ ] Lasso selection — M9
-- [ ] Tool lock (`Q`): stay on the tool after drawing — M5
+- [x] Tool lock (`Q`): stay on the tool after drawing — M5
 - [x] Shift while drawing: square / circle / 45° snapping — M1
 - [x] Alt while drawing: draw from the centre — M1
 
 ## Element properties
 
-- [ ] Stroke colour (palette + custom hex) — M5
-- [ ] Background colour (palette + custom hex, transparent) — M5
-- [ ] Fill style: hachure, cross-hatch, solid — M5
-- [ ] Stroke width: thin, bold, extra bold — M5
-- [ ] Stroke style: solid, dashed, dotted — M5
+- [x] Stroke colour (palette + custom hex) — M5
+- [x] Background colour (palette + custom hex, transparent) — M5
+- [x] Fill style: hachure, cross-hatch, solid — M5
+- [x] Stroke width: thin, bold, extra bold — M5
+- [x] Stroke style: solid, dashed, dotted — M5
 - [x] Sloppiness: architect, artist, cartoonist — M4
-- [ ] Edges: sharp, round — M5
-- [ ] Opacity slider — M5
+- [x] Edges: sharp, round — M5
+- [x] Opacity slider — M5
 - [x] Font family: hand-drawn, normal, code — M4
 - [x] Font size: S, M, L, XL (+ Ctrl+Shift+`<` / `>`) — M4
 - [x] Text align: left, centre, right — M4
 - [ ] Vertical align for text inside a shape — M7
-- [ ] Arrowheads at start/end: none, arrow, bar, dot, triangle, circle, diamond (filled + outline) — M5
+- [x] Arrowheads at start/end: none, arrow, bar, dot, triangle, circle, diamond (filled + outline) — M5
 - [ ] Arrow type: sharp, curved, elbow — M7
-- [ ] Defaults: new elements use the last chosen properties — M5
+- [x] Defaults: new elements use the last chosen properties — M5
 - [ ] Copy styles / paste styles (Ctrl+Alt+C / V) — M6
 
 ## Selecting and editing
@@ -90,7 +90,7 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [ ] Align left, centre, right, top, middle, bottom — M6
 - [ ] Distribute horizontally / vertically — M6
 - [ ] Snap to objects (Alt+S) with guide lines — M9
-- [ ] Grid toggle (Ctrl+') and snap to grid — M5
+- [x] Grid toggle (Ctrl+') and snap to grid — M5
 
 ## Canvas and view
 
@@ -99,8 +99,8 @@ Tags say which milestone ships the item: `M1` … `M9`. Tick the box when it wor
 - [x] Zoom: Ctrl+wheel, pinch, Ctrl+`+` / `-`, zoom indicator — M3
 - [x] Reset zoom (Ctrl+0), zoom to fit (Shift+1), zoom to selection (Shift+2) — M3
 - [x] "Scroll back to content" button — M3
-- [ ] Dark mode (Alt+Shift+D) — M5
-- [ ] Canvas background colour — M5
+- [x] Dark mode (Alt+Shift+D) — M5
+- [x] Canvas background colour — M5
 - [ ] Zen mode (Alt+Z): hide panels — M9
 - [ ] View mode (Alt+R): read only — M9
 - [ ] Stats panel (Alt+/): edit x, y, w, h, angle — M9
