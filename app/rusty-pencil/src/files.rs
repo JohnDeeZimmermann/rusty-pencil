@@ -120,6 +120,7 @@ impl State {
             .and_then(|p| p.parent())
             .map(|p| p.join("workspace.json"));
         self.restore_preferences();
+        self.restore_recent();
         let restored_workspace = self.restore_workspace();
         if !restored_workspace
             && let Some(path) = self.files.recovery.clone().filter(|p| platform::exists(p))
@@ -229,6 +230,7 @@ impl State {
                     }
                 }
                 self.persist_workspace();
+                self.remember_recent(&path, &snapshot);
                 if self.tabs.closing == Some(id) {
                     self.close_tab(id, tx);
                 }
@@ -276,7 +278,7 @@ impl State {
         });
     }
 
-    fn open_dialog(&mut self, tx: &mut Tx) {
+    pub(crate) fn open_dialog(&mut self, tx: &mut Tx) {
         if self.editor.text_session().is_some() {
             self.sync_text(tx);
             self.input(InputEvent::FinishText, tx);
@@ -330,16 +332,7 @@ impl State {
 }
 
 pub(crate) fn identity(path: &Path) -> PathBuf {
-    path.canonicalize().unwrap_or_else(|_| {
-        let parent = path
-            .parent()
-            .filter(|p| !p.as_os_str().is_empty())
-            .unwrap_or_else(|| Path::new("."));
-        match (parent.canonicalize(), path.file_name()) {
-            (Ok(parent), Some(name)) => parent.join(name),
-            _ => path.to_owned(),
-        }
-    })
+    platform::file_identity(path)
 }
 
 pub(crate) fn name(path: &Path) -> String {
@@ -454,6 +447,14 @@ pub(crate) fn menu(s: &State) -> El {
                 s.menu = None;
                 s.open_dialog(tx);
             }),
+        )
+        .child(
+            menu_action("Open recent", "open-recent", "›", dark)
+                .help("Reopen a recently opened or saved canvas")
+                .on_press(|s: &mut State| {
+                    s.recent.selected = None;
+                    s.menu = Some(crate::menu::Section::Recent);
+                }),
         )
         .child(
             menu_action("Save", "save-file", "Ctrl+S", dark)

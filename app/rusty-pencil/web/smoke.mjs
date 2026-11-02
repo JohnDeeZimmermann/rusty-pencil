@@ -147,6 +147,27 @@ try {
     await page.waitForTimeout(500);
     await shot('5-opened');
 
+    // Recent files keep a browser-local copy after a reload and after their tab is closed.
+    const recentKey = '/rusty-pencil/recent-files.json';
+    const recent = JSON.parse((await stored())[recentKey]);
+    assert.equal(recent.paths[0], results.saved);
+    assert.equal(JSON.parse((await stored())[`/rusty-pencil/recent/${results.saved}`]).elements.length, 3);
+    await page.reload();
+    await ready();
+    await page.keyboard.press('Alt+w');
+    await page.waitForTimeout(300);
+    const tabsBeforeRecent = JSON.parse((await stored())['/rusty-pencil/workspace.json']).tabs.length;
+    await page.mouse.click(46, 86);
+    await page.waitForTimeout(200);
+    await page.mouse.click(100, 216);
+    await shot('5a-recent-files');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(500);
+    assert.equal(await elements(), 3, 'recent files reopen the stored browser copy without a picker');
+    assert.equal(JSON.parse((await stored())['/rusty-pencil/workspace.json']).tabs.length, tabsBeforeRecent + 1);
+    results.reopenedRecent = results.saved;
+
     // Drop an image and a scene onto the canvas.
     const image = (await readFile(fixture)).toString('base64');
     await page.evaluate(async ([png]) => {
@@ -241,6 +262,21 @@ try {
     const panGaps = pan.slice(1).map((t, i) => t - pan[i]).sort((a, b) => a - b);
     results.panFrames = { count: pan.length, medianMs: panGaps[panGaps.length >> 1], p95Ms: panGaps[Math.floor(panGaps.length * 0.95)] };
     await shot('8-panned');
+
+    // Clearing history keeps open canvases and removes the bounded browser copies.
+    const beforeClear = JSON.parse((await stored())['/rusty-pencil/workspace.json']).tabs.length;
+    const recentPaths = JSON.parse((await stored())[recentKey]).paths;
+    await page.mouse.click(46, 86);
+    await page.waitForTimeout(200);
+    await page.mouse.click(100, 216);
+    await page.waitForTimeout(300);
+    // Header and two 60-point rows; footer Clear history is at the bottom right.
+    await page.mouse.click(304, 384);
+    await page.waitForTimeout(300);
+    assert.deepEqual(JSON.parse((await stored())[recentKey]).paths, []);
+    assert.equal(JSON.parse((await stored())['/rusty-pencil/workspace.json']).tabs.length, beforeClear);
+    for (const name of recentPaths) assert.equal((await stored())[`/rusty-pencil/recent/${name}`], undefined);
+    await shot('11-recent-empty');
 
     assert.deepEqual(errors, []);
     await writeFile(`${output}/results.json`, JSON.stringify(results, null, 2));

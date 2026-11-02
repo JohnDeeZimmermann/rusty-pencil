@@ -131,6 +131,32 @@ pub(crate) fn same_file(_: &Path, _: &Path) -> bool {
     false
 }
 
+pub(crate) fn file_identity(path: &Path) -> PathBuf {
+    PathBuf::from(crate::files::name(path))
+}
+
+/// Browser pickers give names, not reusable disk access. Keep a bounded local scene copy.
+pub(crate) fn cache_recent(
+    directory: &Path,
+    path: &Path,
+    scene: &pen_core::file::SceneFile,
+) -> Result<(), String> {
+    let bytes = pen_core::file::save(scene).map_err(|e| e.to_string())?;
+    write(&recent_source(directory, path), &bytes)
+}
+
+pub(crate) fn recent_source(directory: &Path, path: &Path) -> PathBuf {
+    directory.join("recent").join(crate::files::name(path))
+}
+
+pub(crate) fn remove_recent_copy(directory: &Path, path: &Path) -> Result<(), String> {
+    remove(&recent_source(directory, path))
+}
+
+pub(crate) fn recent_location(_: &Path) -> String {
+    "Saved in this browser".into()
+}
+
 /// Runs `f` with the app state on the next turn of the event loop.
 fn update(f: impl FnOnce(&mut State, &mut Tx) + Send + 'static) {
     HANDLE.with_borrow(|handle| {

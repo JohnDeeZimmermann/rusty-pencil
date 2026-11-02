@@ -57,6 +57,11 @@ all live in `app/rusty-pencil/src/platform/`:
 Saving in the browser always downloads a new copy, since a page cannot overwrite a file on
 disk. The tab keeps the downloaded name, and the next Ctrl+S downloads under it again.
 
+File → Open recent keeps the ten most recently opened or saved scenes in browser storage.
+Reopening uses that local copy, including after its tab closes or the page reloads. Entries with
+the same filename share the most recent copy. Clear history removes the list and those copies;
+open tabs and downloaded files remain available.
+
 Pending edits are flushed when the page is hidden or closed (`pagehide` and
 `visibilitychange`), and each IndexedDB write commits at once. A reload right after an edit
 keeps it. Everything stays in this browser profile: clearing site data clears your canvases,
@@ -67,7 +72,8 @@ so save anything you want to keep.
 `app/rusty-pencil/web/smoke.mjs` drives the built page through Playwright with real input. It
 draws, reloads, toggles dark mode, saves, opens a scene and an `.excalidraw` file, drops an
 image, copies and pastes (scene, plain text and image), exports PNG and SVG, and round-trips the
-library. It writes screenshots and frame timings to `target/web-proof`.
+library. It also reopens a recent scene after a reload and tab close, and checks clearing history.
+It writes screenshots and frame timings to `target/web-proof`.
 
 ```sh
 HEADED=1 node app/rusty-pencil/web/smoke.mjs target/web target/web-proof

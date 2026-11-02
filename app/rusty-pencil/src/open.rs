@@ -15,7 +15,7 @@ impl State {
         if self.switch_to_open(&path, tx) {
             return;
         }
-        match std::fs::read(&path) {
+        match platform::read(&path) {
             Ok(bytes) => self.open_picked(&Picked { path, bytes }, tx),
             Err(error) => self.files.status.set(format!("Could not open: {error}")),
         }
@@ -23,7 +23,7 @@ impl State {
 
     /// Switches to the tab that already shows `path`; true when there was one, or when a tab is
     /// closing and nothing may open.
-    fn switch_to_open(&mut self, path: &Path, tx: &mut Tx) -> bool {
+    pub(crate) fn switch_to_open(&mut self, path: &Path, tx: &mut Tx) -> bool {
         if self.tabs.closing.is_some() {
             return true;
         }
@@ -38,6 +38,7 @@ impl State {
             return false;
         };
         self.switch_tab(id, tx);
+        self.remember_recent(path, &self.snapshot());
         true
     }
 
@@ -71,6 +72,7 @@ impl State {
                 } else {
                     format!("Opened {}", name(&path))
                 });
+                self.remember_recent(&path, &scene);
             }
             Err(error) => self.files.status.set(format!("Could not open: {error}")),
         }

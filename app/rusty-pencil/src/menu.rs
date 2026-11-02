@@ -1,10 +1,11 @@
 //! Application menus reuse the inspector and toolbar's surfaces and controls.
-use crate::{State, design as d, files, properties};
+use crate::{State, design as d, files, properties, recent};
 use rune::{Cursor, El, Tx, el, row, text};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Section {
     File,
+    Recent,
     Preferences,
 }
 
@@ -21,12 +22,17 @@ pub(crate) fn view(s: &State) -> El {
             d::surface(el().key("app-menu-popup"), d::R_ISLAND, dark)
                 .instant_changes()
                 .absolute(d::S4, d::APP_MENU_TOP)
-                .w(d::INSPECTOR_WIDTH)
+                .w(if section == Section::Recent {
+                    d::RECENT_WIDTH.min(s.editor.viewport().dx - d::S4 * 2.0)
+                } else {
+                    d::INSPECTOR_WIDTH
+                })
                 .padding(d::S3)
                 .cursor(Cursor::Default)
                 .on_drag(|_: &mut State, _, tx: &mut Tx| tx.live_only())
                 .child(match section {
                     Section::File => files::menu(s),
+                    Section::Recent => recent::view(s),
                     Section::Preferences => properties::settings::group(s),
                 }),
         );
@@ -57,7 +63,8 @@ pub(crate) fn view(s: &State) -> El {
 
 fn tab(s: &State, section: Section, label: &str, key: &str, width: f32) -> El {
     let dark = s.editor.settings().dark;
-    let active = s.menu == Some(section);
+    let active =
+        s.menu == Some(section) || (section == Section::File && s.menu == Some(Section::Recent));
     el().key(key)
         .size(width, d::CONTROL)
         .radius(d::R_BUTTON)
@@ -79,11 +86,7 @@ fn tab(s: &State, section: Section, label: &str, key: &str, width: f32) -> El {
                 s.input(pen_editor::InputEvent::FinishText, tx);
             }
             s.context = None;
-            s.menu = if s.menu == Some(section) {
-                None
-            } else {
-                Some(section)
-            };
+            s.menu = if active { None } else { Some(section) };
             tx.blur();
         })
 }

@@ -24,6 +24,7 @@ mod preferences;
 mod present;
 mod properties;
 mod property_icons;
+mod recent;
 mod scene;
 mod tabs;
 mod text;
@@ -47,6 +48,7 @@ struct State {
     context: Option<pen_editor::ScreenPt>,
     menu: Option<menu::Section>,
     preferences: preferences::Preferences,
+    recent: recent::Recent,
     tabs: tabs::Tabs,
     editor: Editor,
     text_edit: rune::TextEdit,
@@ -74,6 +76,7 @@ impl State {
             context: None,
             menu: None,
             preferences: preferences::Preferences::default(),
+            recent: recent::Recent::default(),
             tabs: tabs::Tabs::default(),
             editor: Editor::new(camera),
             text_edit: rune::TextEdit::default(),
@@ -387,6 +390,9 @@ fn on_key(s: &mut State, ev: &KeyEvent, tx: &mut Tx) -> bool {
     }
     if ev.key == Key::Escape && s.menu.take().is_some() {
         tx.blur();
+        return true;
+    }
+    if recent::key(s, ev, tx) {
         return true;
     }
     if export::key(s, ev, tx) {

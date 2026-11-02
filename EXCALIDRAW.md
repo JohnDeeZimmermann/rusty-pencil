@@ -139,6 +139,7 @@ Tags say which milestone ships the item: `M1` … `M10`. Tick the box when it wo
 
 - [x] Save / Save as scene file (JSON) — M4
 - [x] Open scene file, also by drag-and-drop onto the window — M4
+- [x] Recent files menu: ten persistent entries, keyboard navigation, clear history and browser-local copies — M4 follow-up
 - [x] Autosave and restore open canvases on launch — M4, multi-tab follow-up
 - [x] Multiple canvas tabs: new, switch, close, independent history and camera — multi-tab follow-up
 - [x] Unsaved tab indicators, Save / Discard / Cancel, workspace recovery — multi-tab follow-up

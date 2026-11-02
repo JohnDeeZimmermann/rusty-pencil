@@ -94,6 +94,13 @@ surfaces from overlapping. Closing the menu restores the inspector in place with
 selection. Menus close on Escape, a second press of their tab, or an outside press. Dismissal consumes
 the pointer gesture so it cannot draw on the canvas.
 
+File → Open recent replaces the dropdown with a 344-point paper surface. A quiet back control
+and caption sit above 60-point rows, each with a teal document icon, filename and muted folder.
+Long names fade; tooltips carry the full path. The ten most recent opens and saves appear newest
+first and scroll within the viewport. Arrow keys highlight a row, Enter opens it, and Left returns
+to File. Clear history sits below a fine divider; the empty state offers Open a canvas. All states
+use the same light/dark tokens as the surrounding chrome.
+
 ## Properties and canvas settings
 
 The left inspector is a compact 216-point floating surface (192-point inner column, 12-point

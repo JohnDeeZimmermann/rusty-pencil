@@ -56,6 +56,45 @@ pub(crate) fn same_file(a: &Path, b: &Path) -> bool {
     a == b
 }
 
+pub(crate) fn file_identity(path: &Path) -> PathBuf {
+    path.canonicalize().unwrap_or_else(|_| {
+        let parent = path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        match (parent.canonicalize(), path.file_name()) {
+            (Ok(parent), Some(name)) => parent.join(name),
+            _ => path.to_owned(),
+        }
+    })
+}
+
+/// Desktop recents reopen the original file, so no separate scene copy is needed.
+pub(crate) fn cache_recent(
+    _: &Path,
+    _: &Path,
+    _: &pen_core::file::SceneFile,
+) -> Result<(), String> {
+    Ok(())
+}
+
+pub(crate) fn recent_source(_: &Path, path: &Path) -> PathBuf {
+    path.to_owned()
+}
+
+pub(crate) fn remove_recent_copy(_: &Path, _: &Path) -> Result<(), String> {
+    Ok(())
+}
+
+pub(crate) fn recent_location(path: &Path) -> String {
+    let parent = path.parent().unwrap_or(path);
+    // Keep the distinguishing folder visible; the row's tooltip carries the full path.
+    parent.file_name().map_or_else(
+        || parent.display().to_string(),
+        |folder| format!("…/{}", folder.to_string_lossy()),
+    )
+}
+
 /// Asks for a file to open and reads it; `then` gets `Ok(None)` when the user cancels.
 pub(crate) fn open_file(
     tx: &mut Tx,

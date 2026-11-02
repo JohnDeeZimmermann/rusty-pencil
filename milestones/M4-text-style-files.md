@@ -13,6 +13,8 @@
 - [x] Sloppiness architect / artist / cartoonist renders a rough, stable, hand-drawn outline.
 - [x] Ctrl+S / Ctrl+Shift+S save, Ctrl+O opens, dropping a file on the window opens it.
 - [x] The last scene restores on launch (autosave); "Reset canvas" clears it with confirmation.
+- [x] File → Open recent keeps ten opened/saved files across launches, reopens without replacing
+      unsaved work, and supports keyboard navigation and clearing history.
 
 ## Tasks
 
@@ -35,6 +37,12 @@
 - Rough output is identical for the same seed and differs for another seed.
 
 ## Notes
+
+- Recent files live in `recent-files.json`, separately from recovery and document files. Desktop
+  entries reopen the original path or focus its existing tab. Browser entries retain the most
+  recently opened/saved scene for each filename in IndexedDB, because file pickers do not grant
+  reusable disk access. Eviction and Clear history remove those browser copies, keeping open tabs
+  and files on disk intact.
 
 - Rune's `TextEdit` owns caret movement, selection, clipboard input and IME composition.
   A transparent intrinsic label sizes the editing overlay even before preedit commits.

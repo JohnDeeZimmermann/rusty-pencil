@@ -113,6 +113,9 @@ pub(crate) const ROTATE_STEM: f32 = 19.0;
 pub(crate) const APP_MENU_TOP: f32 = CHROME_TOP + CONTROL + PADDING * 2.0 + S2;
 pub(crate) const FILE_TAB_WIDTH: f32 = 48.0;
 pub(crate) const PREFERENCES_TAB_WIDTH: f32 = 96.0;
+pub(crate) const RECENT_WIDTH: f32 = 344.0;
+pub(crate) const RECENT_ROW: f32 = 60.0;
+pub(crate) const RECENT_ICON: f32 = 36.0;
 
 // Document tabs reserve a quiet strip above the floating drawing controls.
 pub(crate) const TAB_BAR_HEIGHT: f32 = 48.0;
