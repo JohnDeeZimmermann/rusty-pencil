@@ -1,8 +1,10 @@
 //! World-space patterns are generated once with element geometry, never with the camera.
-use crate::{DrawList, Prim};
+use crate::{DrawList, Prim, rough::Wobble};
 use pen_core::{FillStyle, Props, StrokeStyle, WorldPt};
 
-pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props) {
+/// Applies opacity, fill and stroke styles to `out.prims[first..]`. `wobble` perturbs each
+/// stroke with its final paint index; dashed strokes are perturbed whole, then cut.
+pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props, wobble: Option<Wobble>) {
     let mut result = Vec::new();
     for mut prim in out.prims.drain(first..) {
         if matches!(prim, Prim::Image { .. }) {
@@ -16,6 +18,7 @@ pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props) {
             }
         };
         color.a = (u16::from(color.a) * u16::from(props.opacity.min(100)) / 100) as u8;
+        let start = result.len();
         match prim {
             Prim::Fill { points, color } if props.fill != FillStyle::Solid => {
                 hatch(&points, color, false, &mut result);
@@ -34,6 +37,10 @@ pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props) {
                     StrokeStyle::Dotted => (0.01, 5.0_f32.max(width * 2.0)),
                     StrokeStyle::Solid => unreachable!(),
                 };
+                let points = match wobble {
+                    Some(wobble) => wobble.apply(&points, closed, start),
+                    None => points,
+                };
                 for segment in pattern(&points, closed, dash, gap) {
                     result.push(Prim::Stroke {
                         points: segment,
@@ -42,8 +49,16 @@ pub(crate) fn finish(out: &mut DrawList, first: usize, props: &Props) {
                         color,
                     });
                 }
+                continue;
             }
             other => result.push(other),
+        }
+        if let Some(wobble) = wobble {
+            for (i, prim) in result.iter_mut().enumerate().skip(start) {
+                if let Prim::Stroke { points, closed, .. } = prim {
+                    *points = wobble.apply(points, *closed, i);
+                }
+            }
         }
     }
     out.prims.extend(result);

@@ -142,3 +142,76 @@ fn every_arrowhead_renders_at_both_ends_and_degenerate_paths_stay_finite() {
         }
     }
 }
+
+fn segments(list: &DrawList) -> usize {
+    list.prims()
+        .iter()
+        .map(|prim| match prim {
+            Prim::Stroke { points, closed, .. } => points.len() - usize::from(!closed),
+            _ => 0,
+        })
+        .sum()
+}
+
+#[test]
+fn rough_dashes_cut_the_wobbled_contour_without_resampling_each_dash() {
+    // Wobbling each dash on its own resampled an 8 pt dash into hundreds of points: a 480 x 360
+    // dashed ellipse painted 15,831 Rune instances (dotted 19,872) against 1,778 for solid.
+    let kind = Kind::Ellipse(WorldRect::from_corners(
+        WorldPt::ORIGIN,
+        WorldPt::new(480.0, 360.0),
+    ));
+    for roughness in [pen_core::Roughness::Artist, pen_core::Roughness::Cartoonist] {
+        let paint = |stroke_style| {
+            let props = Props {
+                stroke_style,
+                roughness,
+                ..Default::default()
+            };
+            let mut list = DrawList::new();
+            draw_seeded(&kind, &props, 99, &mut list);
+            list
+        };
+        let solid = paint(StrokeStyle::Solid);
+        let Some(Prim::Stroke {
+            points: contour, ..
+        }) = solid.prims().first()
+        else {
+            panic!("expected the solid outline");
+        };
+        for style in [StrokeStyle::Dashed, StrokeStyle::Dotted] {
+            let styled = paint(style);
+            assert!(styled.prims().len() > 50, "{style:?} has visible dashes");
+            assert!(
+                segments(&styled) <= segments(&solid),
+                "{style:?}: {} segments, solid {}",
+                segments(&styled),
+                segments(&solid)
+            );
+            // Every dash point lies on the solid wobble, so styles share one hand-drawn line.
+            for prim in styled.prims() {
+                let Prim::Stroke { points, .. } = prim else {
+                    continue;
+                };
+                for p in points {
+                    let near = contour
+                        .iter()
+                        .zip(contour.iter().cycle().skip(1))
+                        .any(|(a, b)| distance_to_segment(*p, *a, *b) < 0.001);
+                    assert!(near, "{style:?} point {p:?} is off the wobbled contour");
+                }
+            }
+        }
+    }
+}
+
+fn distance_to_segment(p: WorldPt, a: WorldPt, b: WorldPt) -> f32 {
+    let (dx, dy) = (b.x - a.x, b.y - a.y);
+    let length = dx * dx + dy * dy;
+    let t = if length > 0.0 {
+        (((p.x - a.x) * dx + (p.y - a.y) * dy) / length).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    (p.x - a.x - dx * t).hypot(p.y - a.y - dy * t)
+}

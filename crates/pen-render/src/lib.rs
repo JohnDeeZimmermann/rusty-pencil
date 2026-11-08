@@ -111,6 +111,11 @@ impl DrawList {
 
 /// Appends the paint for one element (or draft) to `out`: background fill, then stroke.
 pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
+    draw_with(kind, props, None, out);
+}
+
+/// [`draw`], with each stroke wobbled before stroke styles cut it into dashes.
+fn draw_with(kind: &Kind, props: &Props, wobble: Option<rough::Wobble>, out: &mut DrawList) {
     let curved;
     let kind = if let Kind::Arrow(path) = kind
         && props.arrow_type == pen_core::ArrowType::Curved
@@ -125,15 +130,23 @@ pub fn draw(kind: &Kind, props: &Props, out: &mut DrawList) {
     if matches!(kind, Kind::Freedraw(_)) {
         let mut solid = *props;
         solid.fill = pen_core::FillStyle::Solid;
-        style::finish(out, first, &solid);
+        style::finish(out, first, &solid, wobble);
     } else {
-        style::finish(out, first, props);
+        style::finish(out, first, props, wobble);
     }
     if matches!(kind, Kind::Arrow(_))
         && props.stroke_width > 0.0
         && let Some(path) = kind.path()
     {
+        let heads = out.prims.len();
         arrowheads::draw(path, props, out);
+        if let Some(wobble) = wobble {
+            for (i, prim) in out.prims.iter_mut().enumerate().skip(heads) {
+                if let Prim::Stroke { points, closed, .. } = prim {
+                    *points = wobble.apply(points, *closed, i - first);
+                }
+            }
+        }
     }
 }
 

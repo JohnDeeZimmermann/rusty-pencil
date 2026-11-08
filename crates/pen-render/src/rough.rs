@@ -1,6 +1,6 @@
 //! Smooth seeded perturbations of our canonical contours. No camera input is required:
 //! flattening at the maximum zoom keeps cached geometry stable throughout pan and zoom.
-use crate::{DrawList, Prim, draw};
+use crate::{DrawList, Prim};
 use pen_core::{Element, Kind, Roughness, WorldPt};
 use std::f32::consts::TAU;
 
@@ -28,26 +28,43 @@ pub fn draw_element(element: &Element, out: &mut DrawList) {
 }
 
 pub fn draw_seeded(kind: &Kind, props: &pen_core::Props, seed: u32, out: &mut DrawList) {
-    let first = out.prims.len();
-    draw(kind, props, out);
-    if matches!(
-        kind,
-        Kind::Frame { .. } | Kind::Text { .. } | Kind::Freedraw(_)
-    ) {
-        return;
-    }
-    let amount = match props.roughness {
-        Roughness::Architect => 0.0,
-        Roughness::Artist => 0.7,
-        Roughness::Cartoonist => 1.6,
-    };
-    if amount == 0.0 {
-        return;
-    }
-    for (i, prim) in out.prims[first..].iter_mut().enumerate() {
-        if let Prim::Stroke { points, closed, .. } = prim {
-            *points = perturb(points, *closed, seed.wrapping_add(i as u32), amount);
+    crate::draw_with(kind, props, Wobble::new(kind, props, seed), out);
+}
+
+/// One element's seeded wobble. Each stroke perturbs with the seed offset by its index in the
+/// element's paint, so neighbouring strokes (outline, hatch lines, heads) wobble differently.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Wobble {
+    seed: u32,
+    amount: f32,
+}
+
+impl Wobble {
+    fn new(kind: &Kind, props: &pen_core::Props, seed: u32) -> Option<Self> {
+        if matches!(
+            kind,
+            Kind::Frame { .. } | Kind::Text { .. } | Kind::Freedraw(_)
+        ) {
+            return None;
         }
+        let amount = match props.roughness {
+            Roughness::Architect => return None,
+            Roughness::Artist => 0.7,
+            Roughness::Cartoonist => 1.6,
+        };
+        Some(Self { seed, amount })
+    }
+
+    /// Resamples a whole contour. Apply it before cutting dashes: the sample spacing scales
+    /// with contour length, so wobbling each dash on its own would turn an 8 pt dash into
+    /// hundreds of points (and a dot into ~100), which Rune draws as one instance each.
+    pub(crate) fn apply(self, points: &[WorldPt], closed: bool, index: usize) -> Vec<WorldPt> {
+        perturb(
+            points,
+            closed,
+            self.seed.wrapping_add(index as u32),
+            self.amount,
+        )
     }
 }
 

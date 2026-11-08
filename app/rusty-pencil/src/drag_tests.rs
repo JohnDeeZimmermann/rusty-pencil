@@ -150,3 +150,59 @@ fn live_move_presents_the_offset_and_escape_restores_the_scene() {
     assert!(rt.state.editor.preview().is_empty());
     assert_eq!(rects(&rt).len(), 1, "cancel restores the static scene");
 }
+
+/// Release, 480 x 360 Artist ellipse, 240 input+frame samples each (p95 create / move):
+/// before wobbling whole contours, dashed 1.439 / 0.497 ms and dotted 1.883 / 0.645 ms against
+/// solid 0.526 / 0.166 ms; after, dashed 0.556 / 0.153 ms and dotted 0.566 / 0.142 ms. On the
+/// GPU the same ellipse drew 15,831 (dashed) and 19,872 (dotted) instances; now 1,329 and 775.
+#[test]
+#[ignore = "release timing harness: cargo test --release -p rusty-pencil stroke_style_timing -- --ignored --nocapture"]
+fn stroke_style_timing() {
+    use pen_core::{Property, StrokeStyle};
+    fn stats(times: &mut [f64]) -> String {
+        times.sort_by(f64::total_cmp);
+        format!(
+            "mean {:.3} ms, p50 {:.3} ms, p95 {:.3} ms",
+            times.iter().sum::<f64>() / times.len() as f64,
+            times[times.len() / 2],
+            times[times.len() * 95 / 100]
+        )
+    }
+    for style in [StrokeStyle::Solid, StrokeStyle::Dashed, StrokeStyle::Dotted] {
+        let mut rt = app();
+        rt.state
+            .editor
+            .handle(InputEvent::Property(Property::StrokeStyle(style)));
+        key(&mut rt, "o");
+        rt.pointer_move(300.0, 200.0);
+        rt.pointer_down(300.0, 200.0);
+        rt.frame(FRAME);
+        let mut create = Vec::new();
+        for frame in 0..240 {
+            let start = std::time::Instant::now();
+            rt.pointer_move(400.0 + frame as f32 * 2.0, 300.0 + frame as f32 * 1.5);
+            rt.frame(FRAME);
+            create.push(start.elapsed().as_secs_f64() * 1000.0);
+        }
+        rt.pointer_up(880.0, 660.0);
+        rt.frame(FRAME);
+        key(&mut rt, "v");
+        rt.pointer_move(300.0, 400.0);
+        rt.pointer_down(300.0, 400.0);
+        rt.frame(FRAME);
+        let mut moves = Vec::new();
+        for frame in 0..240 {
+            let start = std::time::Instant::now();
+            rt.pointer_move(300.0 + frame as f32 * 0.7, 400.0 + frame as f32 * 0.3);
+            rt.frame(FRAME);
+            moves.push(start.elapsed().as_secs_f64() * 1000.0);
+        }
+        rt.pointer_up(470.0, 470.0);
+        rt.frame(FRAME);
+        let doc = rt.state.editor.document();
+        assert_eq!(doc.elements().len(), 1);
+        assert_eq!(doc.elements()[0].props.stroke_style, style);
+        eprintln!("{style:?} create: {}", stats(&mut create));
+        eprintln!("{style:?} move:   {}", stats(&mut moves));
+    }
+}
