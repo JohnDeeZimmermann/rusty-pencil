@@ -44,6 +44,10 @@ if [[ ! -f $rune/.patched ]]; then
     patch -d "$rune" -p1 --quiet < "$here/rune-live-wasm.patch"
     touch "$rune/.patched"
 fi
+# The path patch below makes cargo rewrite Cargo.lock without rune's git source; put it back.
+lock_backup=$(mktemp)
+cp Cargo.lock "$lock_backup"
+trap 'cp "$lock_backup" Cargo.lock; rm -f "$lock_backup"' EXIT
 source=https://github.com/anomalyco/rune
 build=(build -p rusty-pencil --bin rusty-pencil --target wasm32-unknown-unknown
     --config "patch.\"$source\".rune.path=\"$rune/crates/rune\""

@@ -9,6 +9,8 @@
 Sketch ideas, map out systems and doodle in the margins. No account, no cloud, no waiting.
 Just you, a blank canvas and a pen that feels like paper.
 
+**[Try it in your browser](https://johndeezimmermann.github.io/rusty-pencil/)** (needs a WebGPU browser such as current Chrome or Edge)
+
 <img src="assets/readme/hero.png" alt="A hand-drawn flowchart in rusty-pencil, from 'Spark of an idea' to 'Ship it!'" width="820">
 
 </div>
@@ -113,8 +115,9 @@ That's it. Grab the rectangle (`2`), drag on the canvas, and you're drawing. Dra
 
 ### In the browser
 
-The same app also builds as a static WebAssembly page that runs in any WebGPU browser and keeps
-your drawings in browser storage:
+The same app also runs as a static WebAssembly page in any WebGPU browser, keeping your
+drawings in browser storage. The latest `main` is always live at
+[johndeezimmermann.github.io/rusty-pencil/](https://johndeezimmermann.github.io/rusty-pencil/). To build and serve it yourself:
 
 ```sh
 app/rusty-pencil/web/build.sh

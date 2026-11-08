@@ -35,6 +35,20 @@ skip the assert on wasm32, where rune runs on a single thread), and points only 
 at that copy. Native builds always use the pinned git revision untouched. Delete the patch and
 that part of `build.sh` once rune fixes this upstream.
 
+## Hosted on GitHub Pages
+
+Every push to `main` publishes the release build to
+[johndeezimmermann.github.io/rusty-pencil/](https://johndeezimmermann.github.io/rusty-pencil/), so curious visitors can open the app without
+installing anything. The workflow in `.github/workflows/pages.yml` installs the pinned
+toolchain, the matching `wasm-bindgen` CLI and a checksummed Binaryen release, then runs the
+same `build.sh` as above and deploys its output folder. It can also be started by hand from the
+Actions tab.
+
+Because the page shell loads `app.js`, the wasm and the favicon by relative path, it works
+unchanged under the `/rusty-pencil/` subpath. Pages serves HTTPS, which WebGPU requires. Each
+visitor's canvases live in their own browser's IndexedDB, so the hosted page stays as
+local-first as the desktop app.
+
 ## Supported browsers
 
 Anything with WebGPU: current Chrome and Edge, Safari 26, and Firefox 141 or later on Windows.
