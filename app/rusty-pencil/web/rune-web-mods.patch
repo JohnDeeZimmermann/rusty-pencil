@@ -1,0 +1,24 @@
+Rune's web host keeps the modifier state from winit's `ModifiersChanged` to itself, and winit's web
+backend sends that event after the key's `KeyboardInput`. So the runtime's held modifiers
+(`Tx::mods`) are one key behind in the browser: Shift reads as up while held and as down after
+it is released. Pointer handlers then miss Shift (15° snapping) and Ctrl (no binding). This
+forwards the change to the runtime as the native host does. Drop this file once rune does that
+upstream.
+
+--- a/crates/rune/src/platform/web/input.rs
++++ b/crates/rune/src/platform/web/input.rs
+@@ -134,7 +134,13 @@
+         let mut activate = false;
+         let mut immediate = false;
+         match event {
+-            WindowEvent::ModifiersChanged(mods) => { self.input.mods = mods.state(); return false; }
++            WindowEvent::ModifiersChanged(mods) => {
++                // winit's web backend sends a key's ModifiersChanged after its KeyboardInput, so
++                // the key event carried the old flags. Tell the runtime, as the native host does,
++                // so `Tx::mods` in pointer handlers sees the keys held now.
++                self.input.mods = mods.state();
++                return self.rt.physical_observation(crate::PhysicalInput::Modifiers(modifiers(self.input.mods)));
++            }
+             WindowEvent::CursorMoved { position, .. } if self.input.touch.is_none() => {
+                 self.rt.pointer_move(position.x as f32 / scale, position.y as f32 / scale);
+                 self.cursor.apply(window, self.rt.cursor(), true);

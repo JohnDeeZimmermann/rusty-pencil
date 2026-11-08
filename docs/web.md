@@ -26,14 +26,24 @@ The release `.wasm` is about **9.1 MB raw and 4.0 MB gzipped** after `wasm-opt -
 browser build bundles a subset of Inter (see `assets/fonts/README.md`) and leaves out rune's
 own fallback fonts.
 
-### The temporary rune patch
+### Temporary rune patches
 
-At the pinned rune revision, every `rune::Live` value asserts lock-free 128-bit atomics, which
-wasm32 does not have, so an unpatched build panics on start. The build script copies the pinned
-rune checkout to `~/.cache/rusty-pencil/web-rune/`, applies `rune-live-wasm.patch` (one line:
-skip the assert on wasm32, where rune runs on a single thread), and points only the web build
-at that copy. Native builds always use the pinned git revision untouched. Delete the patch and
-that part of `build.sh` once rune fixes this upstream.
+The pinned rune revision needs two fixes before it works properly in a browser. The build script
+copies the pinned checkout to `~/.cache/rusty-pencil/web-rune/`, applies every
+`app/rusty-pencil/web/rune-*.patch` to it, and points only the web build at that copy. It
+re-copies whenever the set of patches changes. Native builds always use the pinned git revision
+untouched.
+
+- **`rune-live-wasm.patch`** skips an assert that every `rune::Live` value has lock-free 128-bit
+  atomics. wasm32 has none, so an unpatched build panics on start, but rune runs on a single
+  thread in the page, so the fallback lock is safe.
+- **`rune-web-mods.patch`** forwards winit's `ModifiersChanged` to the runtime, as the native
+  host does. winit's web backend sends that event after the key event, so without it the
+  modifiers that pointer handlers see (`Tx::mods`) are one key behind. Shift would not snap
+  arrows and lines to 15°, and Ctrl would not turn off arrow binding.
+
+Delete each patch once rune fixes the problem upstream. When the last one goes, delete the
+patching in `build.sh` too.
 
 ## Hosted on GitHub Pages
 
@@ -86,7 +96,8 @@ so save anything you want to keep.
 `app/rusty-pencil/web/smoke.mjs` drives the built page through Playwright with real input. It
 draws, reloads, toggles dark mode, saves, opens a scene and an `.excalidraw` file, drops an
 image, copies and pastes (scene, plain text and image), exports PNG and SVG, and round-trips the
-library. It also reopens a recent scene after a reload and tab close, and checks clearing history.
+library. It also reopens a recent scene after a reload and tab close, checks clearing history, and
+checks that Shift held mid-drag snaps an arrow while a released Shift does not.
 It writes screenshots and frame timings to `target/web-proof`.
 
 ```sh

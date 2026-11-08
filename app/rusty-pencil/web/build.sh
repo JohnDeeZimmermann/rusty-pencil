@@ -4,9 +4,8 @@
 #   app/rusty-pencil/web/build.sh [--out DIR] [--dev]
 #
 # Needs the wasm32-unknown-unknown target and the wasm-bindgen CLI at the version in Cargo.lock;
-# runs wasm-opt when it is on PATH. Follows rune's scripts/web-build.sh, plus a temporary rune
-# patch (rune-live-wasm.patch) applied to a copy of the pinned checkout. Native builds never see
-# the patch.
+# runs wasm-opt when it is on PATH. Follows rune's scripts/web-build.sh, plus temporary rune
+# patches (rune-*.patch) applied to a copy of the pinned checkout. Native builds never see them.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../../.." && pwd)
@@ -30,19 +29,20 @@ if [[ $(wasm-bindgen --version 2>/dev/null) != "wasm-bindgen $version" ]]; then
     exit 2
 fi
 
-# Copy the pinned rune checkout and patch it, once per rune rev.
+# Copy the pinned rune checkout and patch it, once per rune rev and set of patches.
 "$cargo" fetch --target wasm32-unknown-unknown --quiet
 manifest=$("$cargo" metadata --format-version 1 --filter-platform wasm32-unknown-unknown | python3 -c '
 import json,sys; m=json.load(sys.stdin); print(next(p["manifest_path"] for p in m["packages"] if p["name"]=="rune"))')
 checkout=$(dirname "$(dirname "$(dirname "$manifest")")")
 # Outside the workspace: cargo would make a path dependency under it a workspace member.
 rune=${XDG_CACHE_HOME:-$HOME/.cache}/rusty-pencil/web-rune/$(basename "$checkout")
-if [[ ! -f $rune/.patched ]]; then
+patches=$(cat "$here"/rune-*.patch | sha256sum)
+if [[ $(cat "$rune/.patched" 2>/dev/null) != "$patches" ]]; then
     rm -rf "$rune"
     mkdir -p "$(dirname "$rune")"
     cp -r "$checkout" "$rune"
-    patch -d "$rune" -p1 --quiet < "$here/rune-live-wasm.patch"
-    touch "$rune/.patched"
+    for p in "$here"/rune-*.patch; do patch -d "$rune" -p1 --quiet < "$p"; done
+    echo "$patches" > "$rune/.patched"
 fi
 # The path patch below makes cargo rewrite Cargo.lock without rune's git source; put it back.
 lock_backup=$(mktemp)

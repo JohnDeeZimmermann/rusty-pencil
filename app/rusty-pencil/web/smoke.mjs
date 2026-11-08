@@ -278,6 +278,33 @@ try {
     for (const name of recentPaths) assert.equal((await stored())[`/rusty-pencil/recent/${name}`], undefined);
     await shot('11-recent-empty');
 
+    // Modifiers reach pointer input: Shift held mid-drag snaps an arrow to 15°, and a Shift
+    // tapped before a drag does not stay held (rune-web-mods.patch).
+    await page.keyboard.press('Alt+t');
+    await page.keyboard.press('5');
+    await page.mouse.move(400, 380);
+    await page.mouse.down();
+    await page.keyboard.down('Shift');
+    await page.mouse.move(700, 420, { steps: 24 });
+    await page.mouse.up();
+    await page.keyboard.up('Shift');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('5');
+    await page.keyboard.press('Shift');
+    await drag([400, 520], [700, 560]);
+    await page.keyboard.press('Escape');
+    await shot('12-shift-snap');
+    await page.waitForTimeout(1300);
+    const workspace = JSON.parse((await stored())['/rusty-pencil/workspace.json']);
+    const scene = JSON.parse((await stored())[workspace.tabs.find(t => t.id === workspace.active).recovery]);
+    const degrees = scene.elements.map(e => {
+        const end = e.kind.Arrow.points.at(-1).offset;
+        return Math.atan2(end.y, end.x) * 180 / Math.PI;
+    });
+    results.arrowDegrees = degrees.map(d => +d.toFixed(2));
+    assert.ok(Math.abs(degrees[0] - 15) < 0.01, `Shift snapped the arrow to 15°, got ${degrees[0]}`);
+    assert.ok(Math.abs(degrees[1] - 7.59) < 0.1, `a released Shift left the arrow free, got ${degrees[1]}`);
+
     assert.deepEqual(errors, []);
     await writeFile(`${output}/results.json`, JSON.stringify(results, null, 2));
     console.log(JSON.stringify(results));

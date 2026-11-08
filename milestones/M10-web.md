@@ -134,5 +134,7 @@ Where the plan changed:
 Follow-ups, not blocking:
 
 - [ ] Upstream the `Live` wasm fix to rune, then delete `web/rune-live-wasm.patch`.
+- [ ] Upstream the web modifier fix (forward `ModifiersChanged` to the runtime) to rune, then
+  delete `web/rune-web-mods.patch`.
 - [ ] `showSaveFilePicker` on Chromium so Ctrl+S overwrites the same file.
 - [ ] A CI workflow for the wasm check and the smoke test (the repo has no CI yet).
