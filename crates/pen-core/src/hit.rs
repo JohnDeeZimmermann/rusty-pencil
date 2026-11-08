@@ -152,17 +152,7 @@ impl crate::Document {
         let mut top = None;
         self.spatial().visit(area, |at| {
             let e = &self.elements()[at];
-            if top.is_some_and(|index| at <= index)
-                || (unlocked
-                    && (e.locked
-                        || e.frame_id
-                            .and_then(|id| self.get(id))
-                            .is_some_and(|frame| frame.locked)
-                        || self
-                            .get(crate::bound::owner(self, e.id()))
-                            .is_some_and(|e| e.locked)))
-                || !crate::frames::visible_at(self, e, point)
-            {
+            if top.is_some_and(|index| at <= index) || !self.hittable(e, point, unlocked) {
                 return;
             }
             if if interior {
@@ -174,6 +164,51 @@ impl crate::Document {
             }
         });
         top.and_then(|at| self.elements().get(at))
+    }
+
+    /// The element a click at `point` selects. Visible ink (stroke, fill, text, image) wins,
+    /// topmost first. Failing that, the smallest hollow rectangle, diamond or ellipse whose
+    /// interior holds the point: nothing covers a hollow interior, so the tightest enclosing
+    /// shape is the one the user means, whatever its z-order. Frames select by their edge
+    /// and label only, so a press inside one can still start a box selection.
+    pub fn pick(&self, point: WorldPt, tolerance: f32, unlocked: bool) -> Option<&Element> {
+        let area = crate::WorldRect::from_centre(point, tolerance.max(0.0), tolerance.max(0.0));
+        let mut ink: Option<usize> = None;
+        let mut hollow: Option<(f32, usize)> = None;
+        self.spatial().visit(area, |at| {
+            let e = &self.elements()[at];
+            if ink.is_some_and(|index| at <= index) || !self.hittable(e, point, unlocked) {
+                return;
+            }
+            if e.hit_test(point, tolerance) {
+                ink = Some(at);
+            } else if ink.is_none()
+                && matches!(e.kind, Kind::Rect(_) | Kind::Diamond(_) | Kind::Ellipse(_))
+                && e.hit_test_interior(point, tolerance)
+            {
+                let size = e.kind.bounds().width() * e.kind.bounds().height();
+                // Equal sizes fall back to z-order, so the result never depends on visit order.
+                if hollow
+                    .is_none_or(|(best, index)| size.total_cmp(&best).then(index.cmp(&at)).is_lt())
+                {
+                    hollow = Some((size, at));
+                }
+            }
+        });
+        ink.or(hollow.map(|(_, at)| at))
+            .and_then(|at| self.elements().get(at))
+    }
+
+    fn hittable(&self, e: &Element, point: WorldPt, unlocked: bool) -> bool {
+        !(unlocked
+            && (e.locked
+                || e.frame_id
+                    .and_then(|id| self.get(id))
+                    .is_some_and(|frame| frame.locked)
+                || self
+                    .get(crate::bound::owner(self, e.id()))
+                    .is_some_and(|e| e.locked)))
+            && crate::frames::visible_at(self, e, point)
     }
 }
 

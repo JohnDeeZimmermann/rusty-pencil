@@ -11,6 +11,10 @@ line, and finish with Escape or a click away. Double-click a text element to edi
 Double-click inside a rectangle, diamond or ellipse to write text that wraps inside it (the
 shape grows to fit), or on a line or arrow to label it. That text moves, resizes and deletes
 with its shape. Ctrl+Enter or Ctrl+double-click edits a line's points.
+Click anywhere inside a rectangle, diamond or ellipse to select it, even without a fill. A
+stroke, fill or text under the pointer still wins, and among hollow shapes the smallest one
+around the pointer is picked. Frames select only by their edge or title, so a drag inside an
+empty frame still draws a selection box.
 Text controls appear when creating, editing or selecting text. Use their icons to change
 font family and alignment, or S/M/L/XL for size. The stroke icon at the end of the toolbar
 cycles outline sloppiness. Undo uses Ctrl+Z

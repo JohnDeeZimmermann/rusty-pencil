@@ -65,11 +65,38 @@ fn selects_topmost_outline_and_shift_toggles() {
 }
 
 #[test]
-fn hollow_interior_does_not_select_an_unselected_shape() {
+fn pressing_inside_a_hollow_shape_selects_and_drags_it() {
     let mut ed = one();
     key(&mut ed, Key::Escape, NONE);
     click(&mut ed, p(200.0, 150.0), NONE);
-    assert!(ed.selection().is_empty());
+    assert_eq!(ed.selection().len(), 1);
+    key(&mut ed, Key::Escape, NONE);
+    drag(&mut ed, p(200.0, 150.0), p(240.0, 170.0), NONE);
+    assert_eq!(bounds(&ed), r(140.0, 120.0, 200.0, 100.0));
+    click(&mut ed, p(600.0, 600.0), NONE);
+    assert!(ed.selection().is_empty(), "outside still clears");
+}
+
+#[test]
+fn ink_beats_hollow_interiors_and_the_tightest_hollow_shape_wins() {
+    let mut ed = Editor::default();
+    ed.settings.tool_lock = true;
+    drag(&mut ed, p(150.0, 150.0), p(250.0, 200.0), NONE);
+    ed.handle(InputEvent::SelectTool(Tool::Line));
+    drag(&mut ed, p(300.0, 300.0), p(400.0, 300.0), NONE);
+    ed.handle(InputEvent::SelectTool(Tool::Ellipse));
+    // Drawn last, so topmost: a big hollow ellipse around both.
+    drag(&mut ed, p(50.0, 50.0), p(550.0, 450.0), NONE);
+    ed.handle(InputEvent::SelectTool(Tool::Select));
+    let ids: Vec<_> = ed.document().elements().iter().map(Element::id).collect();
+    for (at, want) in [
+        (p(200.0, 175.0), ids[0]),
+        (p(350.0, 300.0), ids[1]),
+        (p(450.0, 250.0), ids[2]),
+    ] {
+        click(&mut ed, at, NONE);
+        assert_eq!(ed.selection().ids().collect::<Vec<_>>(), [want]);
+    }
 }
 
 #[test]

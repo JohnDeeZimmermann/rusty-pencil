@@ -48,6 +48,7 @@ Tags say which milestone ships the item: `M1` … `M10`. Tick the box when it wo
 ## Selecting and editing
 
 - [x] Click to select, Shift+click to add/remove — M2
+- [x] Click inside a hollow rectangle, diamond or ellipse to select it; visible ink and the tightest enclosing shape win
 - [x] Drag a box to select overlapping elements, including partially enclosed paths — M2
 - [x] Select all (Ctrl+A) — M2
 - [x] Move by dragging; arrow keys nudge 1 px, Shift+arrow 10 px — M2

@@ -59,3 +59,56 @@ fn tolerance_converts_from_screen_pixels_and_rejects_bad_points() {
     assert!(!element.hit_test(WorldPt::new(f32::NAN, 0.0), 5.0));
     assert!(!element.hit_test(WorldPt::ORIGIN, f32::INFINITY));
 }
+
+#[test]
+fn pick_prefers_ink_then_the_smallest_hollow_shape_but_never_a_frame_interior() {
+    let mut doc = Document::new();
+    let rect = |x0, y0, x1, y1| WorldRect::from_corners(WorldPt::new(x0, y0), WorldPt::new(x1, y1));
+    let elements = [
+        (
+            Kind::Frame {
+                name: String::new(),
+                bounds: rect(-100.0, -100.0, 400.0, 300.0),
+            },
+            false,
+        ),
+        (Kind::Rect(rect(20.0, 20.0, 40.0, 40.0)), true),
+        (Kind::Rect(bounds()), false),
+        // Topmost, and encloses everything but the frame.
+        (Kind::Ellipse(rect(-50.0, -50.0, 250.0, 150.0)), false),
+    ]
+    .map(|(kind, filled)| {
+        let props = element(kind.clone(), filled, Edges::Sharp).props;
+        Element::new(doc.alloc_id(), kind, props)
+    });
+    let ids = elements.each_ref().map(Element::id);
+    for (at, element) in elements.into_iter().enumerate() {
+        doc.apply(Command::Add { element, at }).unwrap();
+    }
+    let pick = |x, y| doc.pick(WorldPt::new(x, y), 5.0, true).map(Element::id);
+    assert_eq!(
+        pick(30.0, 30.0),
+        Some(ids[1]),
+        "ink under a hollow shape wins"
+    );
+    assert_eq!(
+        pick(100.0, 50.0),
+        Some(ids[2]),
+        "the tightest hollow shape wins"
+    );
+    assert_eq!(pick(230.0, 50.0), Some(ids[3]));
+    assert_eq!(
+        pick(350.0, 250.0),
+        None,
+        "frame interiors stay empty canvas"
+    );
+    assert_eq!(
+        pick(150.0, -100.0),
+        Some(ids[0]),
+        "frame edges still select"
+    );
+    assert!(
+        doc.hit(WorldPt::new(100.0, 50.0), 5.0, false, true)
+            .is_none()
+    );
+}

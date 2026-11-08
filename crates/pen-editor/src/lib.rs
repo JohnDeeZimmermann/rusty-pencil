@@ -236,10 +236,7 @@ impl Editor {
                 self.cancel();
                 self.tool = Tool::Select;
                 let point = self.camera.screen_to_world(at);
-                if let Some(e) = self
-                    .document
-                    .hit(point, 5.0 / self.camera.zoom(), false, false)
-                {
+                if let Some(e) = self.document.pick(point, 5.0 / self.camera.zoom(), false) {
                     let id = pen_core::bound::owner(&self.document, e.id());
                     if !self.selection.contains(id) {
                         self.selection = Selection::only(id);

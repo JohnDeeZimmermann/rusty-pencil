@@ -78,7 +78,7 @@ impl SelectionDrag {
             selection.len() == 1 || !selection.bounds(doc).is_some_and(|b| b.contains(origin))
         });
         let hit = doc
-            .hit(origin, 5.0 / camera.zoom(), false, true)
+            .pick(origin, 5.0 / camera.zoom(), true)
             .map(|e| pen_core::bound::owner(doc, e.id()));
         let action = if let Some(handle) = handle {
             let originals = selection.elements(doc).cloned().collect();
