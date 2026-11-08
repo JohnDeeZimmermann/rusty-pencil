@@ -86,7 +86,14 @@ fn perturb(points: &[WorldPt], closed: bool, seed: u32, amount: f32) -> Vec<Worl
     let amplitude = amount.min(length * 0.012);
     // Keep frequency tied to identity so resizing never jumps between wave counts.
     let waves = 1.0 + (seed % 3) as f32;
-    let max_step = (length / (waves * 96.0)).min(1.0);
+    // Space samples by the wave, not by a fixed distance, so linear interpolation stays within
+    // TOLERANCE of the true wobble at any length. The wobble's curvature is at most
+    // |(2.2, 3.7)| * amplitude * (2pi / wavelength)^2 < 4.3 * ... (the 2w and 3w harmonics
+    // dominate), and a chord of length s misses a curve of curvature k by at most k s^2 / 8;
+    // 5 leaves f32 margin. The previous fixed 1 pt spacing gave a hatched 480 x 360 ellipse
+    // ~19,000 segments.
+    let wavelength = length / waves;
+    let max_step = wavelength / TAU * (8.0 * crate::TOLERANCE / (5.0 * amplitude)).sqrt();
     let mut result = Vec::new();
     let mut distance = 0.0;
     for i in 0..count {

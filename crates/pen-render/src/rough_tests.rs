@@ -63,3 +63,59 @@ fn releasing_a_draft_keeps_exactly_the_same_seeded_outline() {
     });
     assert_eq!(drawing, paint(&editor.document().elements()[0]));
 }
+
+#[test]
+fn sparse_wobble_samples_stay_within_tolerance_of_the_true_wobble() {
+    // The wobble is a function of arc length, so subdividing a straight input samples the
+    // true curve densely; the sparse output must pass within TOLERANCE of every such sample.
+    for (length, closed) in [(6.0, false), (40.0, false), (300.0, false), (1400.0, true)] {
+        let corners = if closed {
+            let side = length / 4.0;
+            vec![
+                WorldPt::new(0.0, 0.0),
+                WorldPt::new(side, 0.0),
+                WorldPt::new(side, side),
+                WorldPt::new(0.0, side),
+            ]
+        } else {
+            vec![WorldPt::new(0.0, 0.0), WorldPt::new(length, 0.0)]
+        };
+        let sides = corners.len() - usize::from(!closed);
+        let dense: Vec<_> = (0..sides)
+            .flat_map(|i| {
+                let (a, b) = (corners[i], corners[(i + 1) % corners.len()]);
+                let n = ((b.x - a.x).hypot(b.y - a.y) / 0.05).ceil() as usize;
+                (0..n).map(move |j| {
+                    let t = j as f32 / n as f32;
+                    WorldPt::new(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
+                })
+            })
+            .chain((!closed).then(|| corners[corners.len() - 1]))
+            .collect();
+        for seed in 0..6 {
+            for amount in [0.7, 1.6] {
+                let sparse = perturb(&corners, closed, seed, amount);
+                let reference = perturb(&dense, closed, seed, amount);
+                assert!(sparse.len() * 4 < reference.len(), "{length}: not sparse");
+                let segments = sparse.len() - usize::from(!closed);
+                for p in &reference {
+                    let miss = (0..segments)
+                        .map(|i| distance(*p, sparse[i], sparse[(i + 1) % sparse.len()]))
+                        .fold(f32::INFINITY, f32::min);
+                    assert!(miss <= crate::TOLERANCE, "{length}/{seed}/{amount}: {miss}");
+                }
+            }
+        }
+    }
+}
+
+fn distance(p: WorldPt, a: WorldPt, b: WorldPt) -> f32 {
+    let (dx, dy) = (b.x - a.x, b.y - a.y);
+    let length = dx * dx + dy * dy;
+    let t = if length > 0.0 {
+        (((p.x - a.x) * dx + (p.y - a.y) * dy) / length).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    (p.x - a.x - dx * t).hypot(p.y - a.y - dy * t)
+}

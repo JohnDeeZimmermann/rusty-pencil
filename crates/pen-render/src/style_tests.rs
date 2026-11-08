@@ -182,8 +182,9 @@ fn rough_dashes_cut_the_wobbled_contour_without_resampling_each_dash() {
         for style in [StrokeStyle::Dashed, StrokeStyle::Dotted] {
             let styled = paint(style);
             assert!(styled.prims().len() > 50, "{style:?} has visible dashes");
+            // Cutting adds at most one segment per dash; resampling dashes added hundreds.
             assert!(
-                segments(&styled) <= segments(&solid),
+                segments(&styled) <= segments(&solid) + styled.prims().len(),
                 "{style:?}: {} segments, solid {}",
                 segments(&styled),
                 segments(&solid)
